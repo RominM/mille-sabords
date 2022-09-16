@@ -52,6 +52,7 @@ const checkSkulls = (diceElement, randomly) => {
     diceElement.classList.add('dice-el', 'blocked');
     diceElement.classList.remove('turn');
   }
+  //test
 };
 
 const selectDices = (diceElement) => {
