@@ -1,6 +1,18 @@
 .home {
   min-height: 100vh;
   text-align: center;
+  .header {
+    display: flex;
+    justify-content: space-between;
+    div,
+    h1,
+    a {
+      width: 300px;
+    }
+    img {
+      cursor: pointer;
+    }
+  }
   .title {
     color: #0070f3;
     text-decoration: none;

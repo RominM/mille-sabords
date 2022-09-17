@@ -14,8 +14,15 @@ const Home = () => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      <h1 className={styles.title}>Mille Sabords</h1>
+      <header className={styles.header}>
+        <div></div>
+        <h1 className={styles.title}>Mille Sabords</h1>
+        <Link href="/rules">
+          <a>
+            <img src="/" alt="rules" />
+          </a>
+        </Link>
+      </header>
       <form className={styles.form}>
         <label htmlFor="nickname" />
         <input
