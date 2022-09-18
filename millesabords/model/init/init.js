@@ -1,18 +1,28 @@
-export const initDices = {
-  d1: null,
-  d2: null,
-  d3: null,
-  d4: null,
-  d5: null,
-  d6: null,
-  d7: null,
-  d8: null,
-};
+export const initFaces = [
+  { id: 'f1', name: 'gold', image: '/assets/coin.png' },
+  { id: 'f2', name: 'diamond', image: '/assets/diamond.png' },
+  { id: 'f3', name: 'parrot', image: '/assets/parrot2.png' },
+  { id: 'f4', name: 'monkey', image: '/assets/monkey2.png' },
+  { id: 'f5', name: 'saber', image: '/assets/saber.png' },
+  { id: 'f6', name: 'skull', image: '/assets/skull2.png' },
+];
+
+export const initMultiplicator = [
+  { id: 'm1', value: 'gold', points: 100 },
+  { id: 'm2', value: 'diamond', points: 100 },
+  { id: 'm3', value: 'multi_3', points: 100 },
+  { id: 'm4', value: 'multi_4', points: 200 },
+  { id: 'm5', value: 'multi_5', points: 500 },
+  { id: 'm6', value: 'multi_6', points: 1000 },
+  { id: 'm7', value: 'multi_7', points: 2000 },
+  { id: 'm8', value: 'multi_8', points: 4000 },
+  { id: 'm9', value: 'treasure', points: 500 },
+];
 
 // 35 cards
 export const initCards = [
   {
-    id: 1,
+    id: 'c1',
     name: 'diamond',
     points: 100,
     image: '',
@@ -24,7 +34,7 @@ export const initCards = [
     },
   },
   {
-    id: 2,
+    id: 'c2',
     name: 'diamond',
     points: 100,
     image: '',
@@ -36,7 +46,7 @@ export const initCards = [
     },
   },
   {
-    id: 3,
+    id: 'c3',
     name: 'diamond',
     points: 100,
     image: '',
@@ -48,7 +58,7 @@ export const initCards = [
     },
   },
   {
-    id: 4,
+    id: 'c4',
     name: 'diamond',
     points: 100,
     image: '',
@@ -60,7 +70,7 @@ export const initCards = [
     },
   },
   {
-    id: 5,
+    id: 'c5',
     name: 'gold',
     points: 100,
     image: '',
@@ -72,7 +82,7 @@ export const initCards = [
     },
   },
   {
-    id: 6,
+    id: 'c6',
     name: 'gold',
     points: 100,
     image: '',
@@ -84,7 +94,7 @@ export const initCards = [
     },
   },
   {
-    id: 7,
+    id: 'c7',
     name: 'gold',
     points: 100,
     image: '',
@@ -96,7 +106,7 @@ export const initCards = [
     },
   },
   {
-    id: 8,
+    id: 'c8',
     name: 'gold',
     points: 100,
     image: '',
@@ -108,7 +118,7 @@ export const initCards = [
     },
   },
   {
-    id: 9,
+    id: 'c9',
     name: 'treasure',
     points: 100,
     image: '',
@@ -120,7 +130,7 @@ export const initCards = [
     },
   },
   {
-    id: 10,
+    id: 'c10',
     name: 'treasure',
     points: 100,
     image: '',
@@ -132,7 +142,7 @@ export const initCards = [
     },
   },
   {
-    id: 11,
+    id: 'c11',
     name: 'treasure',
     points: 100,
     image: '',
@@ -144,7 +154,7 @@ export const initCards = [
     },
   },
   {
-    id: 12,
+    id: 'c12',
     name: 'treasure',
     points: 100,
     image: '',
@@ -156,7 +166,7 @@ export const initCards = [
     },
   },
   {
-    id: 13,
+    id: 'c13',
     name: 'monkeyParrot',
     points: 100,
     image: '',
@@ -168,7 +178,7 @@ export const initCards = [
     },
   },
   {
-    id: 14,
+    id: 'c14',
     name: 'monkeyParrot',
     points: null,
     image: '',
@@ -180,7 +190,7 @@ export const initCards = [
     },
   },
   {
-    id: 15,
+    id: 'c15',
     name: 'monkeyParrot',
     points: null,
     image: '',
@@ -192,7 +202,7 @@ export const initCards = [
     },
   },
   {
-    id: 16,
+    id: 'c16',
     name: 'monkeyParrot',
     points: null,
     image: '',
@@ -204,7 +214,7 @@ export const initCards = [
     },
   },
   {
-    id: 17,
+    id: 'c17',
     name: 'pirate',
     points: null,
     image: '',
@@ -216,7 +226,7 @@ export const initCards = [
     },
   },
   {
-    id: 18,
+    id: 'c18',
     name: 'pirate',
     points: null,
     image: '',
@@ -228,7 +238,7 @@ export const initCards = [
     },
   },
   {
-    id: 19,
+    id: 'c19',
     name: 'pirate',
     points: null,
     image: '',
@@ -240,7 +250,7 @@ export const initCards = [
     },
   },
   {
-    id: 20,
+    id: 'c20',
     name: 'pirate',
     points: null,
     image: '',
@@ -252,7 +262,7 @@ export const initCards = [
     },
   },
   {
-    id: 21,
+    id: 'c21',
     name: 'witcher',
     points: null,
     image: '',
@@ -264,7 +274,7 @@ export const initCards = [
     },
   },
   {
-    id: 22,
+    id: 'c22',
     name: 'witcher',
     points: null,
     image: '',
@@ -276,7 +286,7 @@ export const initCards = [
     },
   },
   {
-    id: 23,
+    id: 'c23',
     name: 'witcher',
     points: null,
     image: '',
@@ -288,7 +298,7 @@ export const initCards = [
     },
   },
   {
-    id: 24,
+    id: 'c24',
     name: 'witcher',
     points: null,
     image: '',
@@ -300,8 +310,8 @@ export const initCards = [
     },
   },
   {
-    id: 25,
-    name: 'challenge_2',
+    id: 'c25',
+    name: 'challenge',
     points: 300,
     image: '',
     penality: {
@@ -312,8 +322,8 @@ export const initCards = [
     },
   },
   {
-    id: 26,
-    name: 'challenge_2',
+    id: 'c26',
+    name: 'challenge',
     points: 300,
     image: '',
     penality: {
@@ -324,8 +334,8 @@ export const initCards = [
     },
   },
   {
-    id: 27,
-    name: 'challenge_3',
+    id: 'c27',
+    name: 'challenge',
     points: 500,
     image: '',
     penality: {
@@ -336,8 +346,8 @@ export const initCards = [
     },
   },
   {
-    id: 28,
-    name: 'challenge_3',
+    id: 'c28',
+    name: 'challenge',
     points: 500,
     image: '',
     penality: {
@@ -348,8 +358,8 @@ export const initCards = [
     },
   },
   {
-    id: 29,
-    name: 'challenge_4',
+    id: 'c29',
+    name: 'challenge',
     points: 1000,
     image: '',
     penality: {
@@ -360,8 +370,8 @@ export const initCards = [
     },
   },
   {
-    id: 30,
-    name: 'challenge_4',
+    id: 'c30',
+    name: 'challenge',
     points: 1000,
     image: '',
     penality: {
@@ -372,8 +382,8 @@ export const initCards = [
     },
   },
   {
-    id: 31,
-    name: 'skull_1',
+    id: 'c31',
+    name: 'skull',
     points: null,
     image: '',
     penality: {
@@ -384,8 +394,8 @@ export const initCards = [
     },
   },
   {
-    id: 32,
-    name: 'skull_1',
+    id: 'c32',
+    name: 'skull',
     points: null,
     image: '',
     penality: {
@@ -396,8 +406,8 @@ export const initCards = [
     },
   },
   {
-    id: 33,
-    name: 'skull_1',
+    id: 'c33',
+    name: 'skull',
     points: null,
     image: '',
     penality: {
@@ -408,8 +418,8 @@ export const initCards = [
     },
   },
   {
-    id: 34,
-    name: 'skull_2',
+    id: 'c34',
+    name: 'skull',
     points: null,
     image: '',
     penality: {
@@ -420,8 +430,8 @@ export const initCards = [
     },
   },
   {
-    id: 35,
-    name: 'skull_2',
+    id: 'c35',
+    name: 'skull',
     points: null,
     image: '',
     penality: {

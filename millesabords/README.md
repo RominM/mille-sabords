@@ -1,3 +1,5 @@
+// NPM RUN DEV
+
 CARDS:
 
 4 x Diamond = 100 pts
@@ -42,15 +44,15 @@ If you get 4 skulls to the first throw, you can play all time you have a new sku
 You can throw minimum 2 dices at the same time.
 
 exemple of round:
-You pull a card, that give you the sens of your round 
+You pull a card, that give you the sens of your round
 (ex: get Diamond
-  Throw the 8 dices.
-  You have:
-    1 Skull + 2 Diamonds + 3 Parrots + 1 Gold + 1 Monkey
-    You can stop the game and make total of point you win. In this case, you have 3 Diamonds and 1 Gold, so you win 500 pts (2 dices(200) + you card(100) => it give you 3 Diamonds so you win 100 pts more + 1 Gold(100)). But you have skull, get 2 skulls more to over in the turn.
-    //OR
-    you can keep any dice you want and throw the other one all the time you want. 
-    But, you have to keep the skull dice, it over.
+Throw the 8 dices.
+You have:
+1 Skull + 2 Diamonds + 3 Parrots + 1 Gold + 1 Monkey
+You can stop the game and make total of point you win. In this case, you have 3 Diamonds and 1 Gold, so you win 500 pts (2 dices(200) + you card(100) => it give you 3 Diamonds so you win 100 pts more + 1 Gold(100)). But you have skull, get 2 skulls more to over in the turn.
+//OR
+you can keep any dice you want and throw the other one all the time you want.
+But, you have to keep the skull dice, it over.
 )
 
 INDEX:
@@ -73,4 +75,3 @@ The player 1 must be selected randomly
 The player 1 get he's first card and can throw the dice
 
 Is free to play until he can't continue then is the Player 2 turn etc..
-

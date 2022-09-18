@@ -14,8 +14,10 @@ describe('Given I am on the game pad', () => {
         //test
       });
       describe('When I drop the dice', () => {
-        
-      })
+        test('I should see the result of 8 dices', () => {
+          //test
+        });
+      });
     });
   });
 });

@@ -1,33 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import styles from './Game.module.scss';
-import { dropDices } from '../../controller/dropDices';
-import { initDices } from '../../model/init/init';
+import { throwDices } from '../../controller/throwDices';
+import { initDices, initFaces } from '../../model/init/init';
 import { pickingCards } from '../../controller/pickingCards';
+import Counter from '../../components/counter/counter.js';
+import Dice from '../../components/dice/dice.js';
 
 const Game = () => {
-  /*
-  const dicesValues = ['Gold', 'Diamond', 'Parrot', 'Monkey', 'Saber', 'Skull'];
-  const random = Math.floor(Math.random() * dicesValues.length);
-  const randomly = dicesValues[random];
-  console.log(randomly);
-
-  */
-
-  const [dices, setDices] = useState(initDices);
+  const [turn, setTurn] = useState(0);
   const handleDices = () => {
-    dropDices(setDices);
+    // if you get 3 skull at the fisrt turn then you loose
+    // if you get 4 skull at the first turn then you pass ti the dark side
+    setTurn((count) => count + 1);
+    throwDices(turn + 1);
   };
 
   const handleCards = () => {
     pickingCards();
   };
 
-  /*
-  const handleDices = () => {
-    dropDices();
-  };
-*/
   return (
     <div>
       <Head>
@@ -41,7 +33,9 @@ const Game = () => {
 
       <header>
         <div className="players">
-          
+          <div>
+            Number of turn: <span>{turn}</span>
+          </div>
         </div>
       </header>
       <div className={styles.gamePad}>
@@ -64,13 +58,11 @@ const Game = () => {
         </div>
         <div>
           <div className="card"></div>
-          <ul className="list-dices">
-            {Object.keys(dices).map((dice, i) => (
-              <li key={i} className="dice turn">
-                {dices[dice]}
-              </li>
-            ))}
-          </ul>
+          <ul id="list-dices" className={styles.listDices}></ul>
+          <ul className={styles.listDices} id="bucket-list"></ul>
+          <div>
+            Points : <Counter />
+          </div>
         </div>
       </div>
     </div>
