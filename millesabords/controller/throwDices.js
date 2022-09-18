@@ -1,4 +1,5 @@
 import { initFaces } from '../model/init/init';
+import { looseGame } from '../controller/looseGame.js';
 
 export const throwDices = (turn) => {
   const listDices = document.querySelector('#list-dices');
@@ -25,7 +26,8 @@ export const throwDices = (turn) => {
       turnLoop(initFaces, listDices, bucketList);
     }
   }
-  loose(bucketList, turn);
+  const diceInBucketlist = bucketList.childNodes;
+  looseGame(diceInBucketlist, turn);
 };
 
 const turnLoop = (initFaces, listDices, bucketList) => {
@@ -140,20 +142,4 @@ const selectDices = (bucketList, diceElement, name) => {
     bucketList.removeChild(selected);
     listDices.append(selected);
   });
-};
-
-const loose = (bucketList, turn) => {
-  if (bucketList.childNodes.length) {
-    if (turn === 1 && bucketList.childNodes.length) {
-      const childs = bucketList.childNodes;
-      let skullChild = [];
-      childs.forEach((child) => {
-        skullChild.push(child.classList.contains('skull'));
-        console.log(skullChild);
-        skullChild.length === 3 && console.log('YOU LOOSE !');
-        // in the dark side, you take points to your adversers
-        skullChild.length > 3 && console.log('PASS TO THE DARK SIDE');
-      });
-    }
-  }
 };
