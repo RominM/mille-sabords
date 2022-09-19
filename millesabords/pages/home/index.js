@@ -43,6 +43,7 @@ const Home = () => {
         <Link href="/gamepad">
           <a className={styles.btn}>START</a>
         </Link>
+        {/*         
         <label htmlFor="password" />
         <input
           className={styles.input}
@@ -56,7 +57,7 @@ const Home = () => {
         </Link>
         <Link href="/">
           <a className={styles.btn}>QUIT</a>
-        </Link>
+        </Link> */}
       </form>
     </div>
   );

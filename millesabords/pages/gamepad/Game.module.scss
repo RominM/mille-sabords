@@ -5,6 +5,16 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('/assets/pirate-table.jpeg');
+    background-size: cover;
+    // filter: blur(3px);
+    object-fit: cover;
+    z-index: -1;
+  }
   .dropDicesBtn,
   .pickCard {
     background-color: rgb(103, 77, 234);

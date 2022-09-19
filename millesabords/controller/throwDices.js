@@ -1,28 +1,24 @@
 import { initFaces } from '../model/init/init';
 import { looseGame } from '../controller/looseGame.js';
+import { selectDice } from './selectedDice';
 
 export const throwDices = (turn) => {
   const listDices = document.querySelector('#list-dices');
   const bucketList = document.querySelector('#bucket-list');
 
   // will exist after the first turn
-  const turnDice = document.querySelectorAll('.turn');
-  const turnLength = turnDice.length;
-  // it will check if turn exist from the previous turn
+  const diceInGame = document.querySelectorAll('.turn');
+  // clear the list before each turn
   listDices.innerHTML = '';
 
-  if (turnLength <= 1 && turnLength > 0) {
+  if (diceInGame.length <= 2 && diceInGame.length > 0) {
     alert('END OF TURN');
-  } else if (!turnLength) {
-    // is the first turn
-    // turn on all of dice
-
+  } else if (!diceInGame.length) {
     for (let i = 0; i < 8; i++) {
       turnLoop(initFaces, listDices, bucketList);
     }
   } else {
-    // turn only on the dices with "turn" class. Not "blocked" (skull) or "selected" (points)
-    for (let i = 0; i < turnDice.length; i++) {
+    for (let i = 0; i < diceInGame.length; i++) {
       turnLoop(initFaces, listDices, bucketList);
     }
   }
@@ -39,7 +35,7 @@ const turnLoop = (initFaces, listDices, bucketList) => {
   // diceElement.classList.add('dice-el','turn','turn');
   // diceElement.innerHTML = name;
   diceElement.addEventListener('click', () => {
-    selectDices(bucketList, diceElement, name);
+    selectDice(bucketList, diceElement, name);
   });
   const diceImg = document.createElement('img');
   diceImg.src = initFaces[random].image;
@@ -51,95 +47,31 @@ const turnLoop = (initFaces, listDices, bucketList) => {
 };
 
 const handleDicesValue = (bucketList, diceElement, name) => {
-  // if (name === 'skull') {
-  // }
-
   switch (name) {
     case 'gold': {
       diceElement.classList.add('dice-el', 'turn', 'gold');
-
       break;
     }
     case 'diamond': {
       diceElement.classList.add('dice-el', 'turn', 'diamond');
-
       break;
     }
     case 'parrot': {
       diceElement.classList.add('dice-el', 'turn', 'parrot');
-
       break;
     }
     case 'monkey': {
       diceElement.classList.add('dice-el', 'turn', 'monkey');
-
       break;
     }
     case 'saber': {
       diceElement.classList.add('dice-el', 'turn', 'saber');
-
       break;
     }
     case 'skull': {
       diceElement.classList.add('dice-el', 'blocked', 'skull');
       bucketList.append(diceElement);
-
       break;
     }
   }
-  // if you get 3 skulls throw at the first drop, you loose immediatly
-  // if you get 4 skulls throw at the first drop, you can play all time you have a new skull. You take off 100 pts to your adverse by skull.
-};
-
-const selectDices = (bucketList, diceElement, name) => {
-  switch (name) {
-    case 'gold': {
-      diceElement.classList.add('selected');
-      diceElement.classList.remove('turn');
-      bucketList.append(diceElement);
-      break;
-    }
-    case 'diamond': {
-      diceElement.classList.add('selected');
-      diceElement.classList.remove('turn');
-      bucketList.append(diceElement);
-      break;
-    }
-    case 'parrot': {
-      diceElement.classList.add('selected');
-      diceElement.classList.remove('turn');
-      bucketList.append(diceElement);
-      break;
-    }
-    case 'monkey': {
-      diceElement.classList.add('selected');
-      diceElement.classList.remove('turn');
-      bucketList.append(diceElement);
-      break;
-    }
-    case 'saber': {
-      diceElement.classList.add('selected');
-      diceElement.classList.remove('turn');
-      bucketList.append(diceElement);
-      break;
-    }
-    case 'skull': {
-      diceElement.classList.add('selected');
-      diceElement.classList.remove('turn');
-      bucketList.append(diceElement);
-      break;
-    }
-  }
-  /* TODO
-   ** Doesn't work at the moment
-   ** Have to "deselect" the element
-   */
-
-  const selected = document.querySelector('.selected');
-  selected.addEventListener('click', () => {
-    selected.classList.remove('selected');
-    selected.classList.add('turn');
-    bucketList.removeChild(selected);
-    listDices.append(selected);
-  });
 };
