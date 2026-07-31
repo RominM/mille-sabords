@@ -1,76 +1,91 @@
-CARDS:
+# Mille Sabords — jeu en ligne
 
-4 x Diamond = 100 pts
-4 x Gold = 100 pts
-4 x Treasure = Keep every point you win until 3 skulls
-4 x Monkey&Parrot = Monkey and Parrot on dice have the same value
-4 x Pirate = Double point
-4 x Witcher = Can deleted a skull in your round (one time)
-2 x Challenge_2 = Win 300 pts if you throw 2 sabers (-300 pts if you loose)
-2 x Challenge_3 = Win 500 pts if you throw 3 sabers (-500 pts if you loose)
-2 x Challenge_4 = Win 1000 pts if you throw 4 sabers (-1000 pts if you loose)
-3 x Skull_1 = Begin the round with one skull
-2 x Skull_2 = Begin the round with two skulls
+Implémentation complète du jeu de dés (2-5 joueurs), jouable contre l'IA et en multijoueur temps réel avec lobby.
 
-=============================================================================
-DICES FACES: 8 dices
+## Architecture
 
-Gold
-Diamond
-Parrot
-Monkey
-Saber
-Skull
+Monorepo npm workspaces :
 
-=============================================================================
-RULES:
+```
+packages/
+  engine/     ← moteur de jeu pur TypeScript (AUCUNE dépendance framework)
+apps/
+  cli/        ← CLI de test des règles au clavier (phase 1)
+  web/        ← front Nuxt 3 (phase 3)
+  server/     ← serveur autoritaire WebSocket (phase 4)
+```
 
-Min 2 Players
-Max 5 Players
+Le moteur est le cœur : machine à états du tour (`turn.ts`), scoring pur (`scoring.ts`),
+partie complète (`game.ts`). Il tourne à l'identique dans le navigateur (mode solo)
+et sur le serveur (mode multi) — le serveur ré-exécute chaque action et rejette
+les actions illégales (`IllegalActionError`). Les lancers de dés sont injectables
+(`RollFn`) : `Math.random` en prod côté serveur, files déterministes en test,
+PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
 
-Gold = 100 pts
-Diamond = 100 pts
-3 Same = 100 pts more
-4 Same = 200 pts more
-5 Same = 500 pts more
-6 Same = 1000 pts more
-7 Same = 2000 pts more
-8 Same = 4000 pts more
+## Règles implémentées
 
-If all your dice give points, you win 500 pts bonus
-If you get 4 skulls to the first throw, you can play all time you have a new skull. You take off 100 pts to your adverse by skull.
-You can throw minimum 2 dices at the same time.
+- 8 dés Corsaires, barème 3→8 identiques (100 → 4000 pts)
+- +100 par pièce d'or et diamant, cumulables avec les combos
+- Bonus coffre au trésor plein (+500)
+- 3e tête de mort = tour perdu, têtes maudites non relançables
+- Relances : min 2 dés, au moins 1 dé réservé
+- Île de la Tête-de-Mort (4+ têtes au 1er lancer, malus -100/tête aux adversaires)
+- Les 8 cartes Pirate : Île au Trésor, Pirate (x2, malus île x2), Tête de Mort (1-2),
+  Gardienne, Bateau Pirate (3 paliers), Pièce d'or, Diamant, Animaux
+- Victoire à 6000 pts (règle du PDF : le premier arrivé gagne, pas de dernier tour)
+- Timeout par décision (60s) : 0 point, malus île déjà révélés conservés
 
-exemple of round:
-You pull a card, that give you the sens of your round 
-(ex: get Diamond
-  Throw the 8 dices.
-  You have:
-    1 Skull + 2 Diamonds + 3 Parrots + 1 Gold + 1 Monkey
-    You can stop the game and make total of point you win. In this case, you have 3 Diamonds and 1 Gold, so you win 500 pts (2 dices(200) + you card(100) => it give you 3 Diamonds so you win 100 pts more + 1 Gold(100)). But you have skull, get 2 skulls more to over in the turn.
-    //OR
-    you can keep any dice you want and throw the other one all the time you want. 
-    But, you have to keep the skull dice, it over.
-)
+## Interprétations à valider (zones grises du PDF)
 
-INDEX:
+1. **Bateau Pirate + 4 têtes au 1er lancer** : le PDF dit « perd immédiatement
+   son tour ». Implémenté : le malus de la carte s'applique aussi (quota de
+   sabres raté). À confirmer avec la FAQ officielle si tu veux du 100% canon.
+2. **Composition du deck (35 cartes)** : répartition standard Gigamic dans
+   `deck.ts`, non détaillée dans le PDF. Corroborée par les notes de l'ancien
+   repo (`main` d'origine) qui listent exactement la même répartition (4 diamant,
+   4 pièce, 4 trésor, 4 animaux, 4 pirate, 4 gardienne, 2/2/2 bateaux, 3 tête×1,
+   2 tête×2 = 35). Reste à confirmer contre ta boîte pour du 100% canon.
+3. **9 dés identiques** (8 dés + carte Pièce/Diamant) : plafonné au barème de 8
+   (4000 pts).
 
-Input to enter the name of player
-Button to validate the name
+## Lancer les tests
 
-Save the player in the column and hold
+```bash
+npm install
+npm test        # 27 tests, moteur complet
+```
 
-Minimal two (Max 5) player are required fo the button to be available
+## Jouer en CLI (validation des règles)
 
-After clic, come in to the game
+Une CLI hotseat pour dérouler une partie au clavier et vérifier les règles
+contre la boîte physique, **avant** d'investir dans le front. Elle ne contient
+aucune règle : elle appelle `Game`/`applyAction` et affiche l'état renvoyé (toute
+action illégale s'affiche telle quelle).
 
-Wait few seconds to get all the players
+```bash
+npm run play    # ou : npm start -w @ms/cli
+```
 
-The game can be start
+Deux atouts pour la validation :
 
-The player 1 must be selected randomly
+- **Saisie manuelle des dés** (mode « manuel ») : force n'importe quel scénario
+  (3 têtes, Île, coffre plein, quota de sabres…) sans dépendre du hasard.
+- **Graine RNG** (mulberry32) : rejoue une partie à l'identique.
 
-The player 1 get he's first card and can throw the dice
+L'entrée étant lue ligne par ligne, un scénario peut être scripté et rejoué au
+pipe — utile pour reproduire un cas litigieux :
 
-Is free to play until he can't continue then is the Player 2 turn etc..
+```bash
+printf '2\n\n\nm\n4\nk k k k s s m p\nk s m p\ns m p\n' | npm run play
+```
 
+Commandes en jeu : `reroll <id…>` (r), `guard <tête> <id…>` (g), `bank`/`unbank`,
+`stop` (s), `board`, `timeout`, `help`, `quit`.
+
+## Roadmap
+
+- [x] Phase 1 — Moteur de jeu testé + CLI de validation des règles
+- [ ] Phase 2 — IA (espérance de gain, niveaux de difficulté)
+- [ ] Phase 3 — Front Nuxt 3 : jeu solo vs IA, direction artistique pirate
+- [ ] Phase 4 — Serveur autoritaire WebSocket + lobby multijoueur
+- [ ] Phase 5 — Déploiement (front statique + serveur Railway/Fly.io)
