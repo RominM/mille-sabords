@@ -27,6 +27,13 @@ export interface GameState {
   winnerId: string | null
   /** Deadline epoch-ms de la décision en cours (autorité serveur) */
   decisionDeadline: number | null
+  /**
+   * Dernier tour : quand un joueur franchit 6000, chaque AUTRE joueur a droit à
+   * un dernier tour. `finalTurnsLeft` = nombre de tours restants avant la fin
+   * (null tant que le seuil n'est pas franchi). Le vainqueur est le meilleur
+   * score à l'issue de ce dernier tour, pas forcément le déclencheur.
+   */
+  finalTurnsLeft: number | null
 }
 
 export interface GameOptions {
@@ -61,6 +68,7 @@ export class Game {
       phase: 'playing',
       winnerId: null,
       decisionDeadline: null,
+      finalTurnsLeft: null,
     }
   }
 
@@ -119,7 +127,7 @@ export class Game {
     }
     // Dans tous les cas : 0 point pour le joueur actif
     this.state.turn = { ...turn, phase: 'ended', outcome: null }
-    this.rotate(turn.card)
+    this.concludeTurn(turn.card)
   }
 
   isTimedOut(): boolean {
@@ -147,16 +155,39 @@ export class Game {
     const outcome = turn.outcome!
     this.currentPlayer.score += outcome.score
     this.applyOpponentPenalty(outcome.opponentPenalty)
+    this.concludeTurn(turn.card)
+  }
 
-    // Règle du PDF : le premier pirate à atteindre 6000 remporte la partie
-    if (this.currentPlayer.score >= WINNING_SCORE) {
-      this.state.phase = 'finished'
-      this.state.winnerId = this.currentPlayer.id
-      this.state.decisionDeadline = null
-      this.state.discard.push(turn.card)
-      return
+  /**
+   * Fin de tour : gère le déclenchement et le décompte du dernier tour.
+   * - En dernier tour : on décompte ; à 0, la partie se termine.
+   * - Sinon, si le joueur courant franchit 6000 : on ARME le dernier tour
+   *   (un tour pour chaque autre joueur) au lieu de terminer immédiatement.
+   * - Sinon : rotation normale.
+   */
+  private concludeTurn(card: PirateCard): void {
+    if (this.state.finalTurnsLeft !== null) {
+      this.state.finalTurnsLeft -= 1
+      if (this.state.finalTurnsLeft <= 0) return this.finish(card)
+      return this.rotate(card)
     }
-    this.rotate(turn.card)
+    if (this.currentPlayer.score >= WINNING_SCORE) {
+      this.state.finalTurnsLeft = this.state.players.length - 1
+      if (this.state.finalTurnsLeft <= 0) return this.finish(card)
+      return this.rotate(card)
+    }
+    this.rotate(card)
+  }
+
+  /** Clôt la partie : meilleur score = vainqueur (départage : ordre de jeu). */
+  private finish(card: PirateCard): void {
+    this.state.discard.push(card)
+    this.state.phase = 'finished'
+    this.state.decisionDeadline = null
+    const winner = this.state.players.reduce((best, p) =>
+      p.score > best.score ? p : best,
+    )
+    this.state.winnerId = winner.id
   }
 
   private rotate(card: PirateCard): void {

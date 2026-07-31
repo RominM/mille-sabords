@@ -32,7 +32,8 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
 - Île de la Tête-de-Mort (4+ têtes au 1er lancer, malus -100/tête aux adversaires)
 - Les 8 cartes Pirate : Île au Trésor, Pirate (x2, malus île x2), Tête de Mort (1-2),
   Gardienne, Bateau Pirate (3 paliers), Pièce d'or, Diamant, Animaux
-- Victoire à 6000 pts (règle du PDF : le premier arrivé gagne, pas de dernier tour)
+- Franchir 6000 pts déclenche un **dernier tour** : chaque autre joueur rejoue
+  une fois, puis le **meilleur score** l'emporte (pas forcément le déclencheur)
 - Timeout par décision (60s) : 0 point, malus île déjà révélés conservés
 
 ## Interprétations à valider (zones grises du PDF)
