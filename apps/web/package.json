@@ -10,6 +10,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@ms/engine": "*"
+  },
   "devDependencies": {
     "sass": "^1.80.0",
     "typescript": "^5.5.0",

@@ -8,6 +8,7 @@
   "scripts": {
     "test": "npm run test -w @ms/engine",
     "play": "npm start -w @ms/cli",
+    "web": "npm run dev -w @ms/web",
     "design": "npm run dev -w @ms/web"
   },
   "devDependencies": {

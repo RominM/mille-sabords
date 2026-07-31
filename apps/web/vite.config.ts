@@ -7,4 +7,12 @@ export default defineConfig({
       scss: { api: 'modern-compiler' },
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        styleguide: 'styleguide.html',
+      },
+    },
+  },
 })
