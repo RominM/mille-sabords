@@ -82,10 +82,32 @@ printf '2\n\n\nm\n4\nk k k k s s m p\nk s m p\ns m p\n' | npm run play
 Commandes en jeu : `reroll <id…>` (r), `guard <tête> <id…>` (g), `bank`/`unbank`,
 `stop` (s), `board`, `timeout`, `help`, `quit`.
 
+Au démarrage, chaque joueur peut être **humain** ou **IA** (facile / moyenne /
+difficile) — de quoi jouer en solo contre l'ordinateur directement au terminal.
+
+## IA (Phase 2)
+
+`packages/engine/src/ai.ts` — pas de ML, décision par **espérance de gain**.
+À chaque décision, l'IA compare « s'arrêter » et « relancer les dés non
+marquants » : elle énumère tous les tirages possibles des dés relancés (loi
+multinomiale sur 6 faces) et réutilise `applyAction`/`scoreTurn` pour valoriser
+chaque issue (3ᵉ tête, Bateau raté, dés réservés de l'Île au Trésor…). L'espérance
+est donc **exacte à un coup d'avance**, sans aucune règle dupliquée.
+
+- **Niveaux de difficulté** = marge de sécurité (points) exigée pour préférer la
+  relance à l'arrêt : `easy` prudente (+200), `medium` (+75), `hard` EV-optimale (0).
+- **Choix des dés à garder** conscient de la carte : sabres conservés pour le
+  quota d'un Bateau, trésors relancés tant que le quota n'est pas atteint (un
+  Bateau raté annule tout), dés marquants réservés sur l'Île au Trésor.
+- Pure et déterministe → testée au point près (`test/ai.test.ts`), y compris une
+  partie complète IA vs IA jouée jusqu'à la victoire.
+
+API : `decideAction(turn, { difficulty })`, `playBotTurn(game, opts, onStep?)`.
+
 ## Roadmap
 
 - [x] Phase 1 — Moteur de jeu testé + CLI de validation des règles
-- [ ] Phase 2 — IA (espérance de gain, niveaux de difficulté)
+- [x] Phase 2 — IA (espérance de gain, niveaux de difficulté), jouable en CLI
 - [ ] Phase 3 — Front Nuxt 3 : jeu solo vs IA, direction artistique pirate
 - [ ] Phase 4 — Serveur autoritaire WebSocket + lobby multijoueur
 - [ ] Phase 5 — Déploiement (front statique + serveur Railway/Fly.io)

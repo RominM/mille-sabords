@@ -19,10 +19,12 @@ import { stdin as input, stdout as output } from 'node:process'
 
 import {
   applyAction,
+  type BotDifficulty,
   DICE_COUNT,
   Game,
   IllegalActionError,
   mulberry32,
+  playBotTurn,
   type DieFace,
   type RollFn,
   type TurnAction,
@@ -83,6 +85,8 @@ async function need(prompt: string): Promise<string> {
 interface Config {
   manualDice: boolean
   rng: () => number
+  /** Difficulté des joueurs IA, indexée par id de joueur. */
+  botDifficulty: Map<string, BotDifficulty>
 }
 
 // ─── Setup interactif ────────────────────────────────────────────────────────
@@ -104,11 +108,19 @@ async function setup(): Promise<{ game: Game; config: Config }> {
   console.log(dim('Tous les joueurs sont pilotés au clavier (hotseat). Tape « help » en jeu.\n'))
 
   const count = await askInt('Nombre de joueurs (2-5)', 2, 2, 5)
-  const players: { id: string; name: string }[] = []
+  const players: { id: string; name: string; bot: boolean }[] = []
+  const botDifficulty = new Map<string, BotDifficulty>()
   for (let i = 0; i < count; i++) {
     const def = `Joueur ${i + 1}`
     const name = (await ask(`Nom du joueur ${i + 1} ${dim(`[${def}]`)} : `))?.trim() || def
-    players.push({ id: `p${i}`, name })
+    const kind = (
+      (await ask(`  Type — [h]umain, IA [1]facile [2]moyenne [3]difficile ${dim('[h]')} : `)) ?? ''
+    ).trim()[0]
+    const id = `p${i}`
+    const diff: BotDifficulty | null =
+      kind === '1' ? 'easy' : kind === '2' ? 'medium' : kind === '3' ? 'hard' : null
+    players.push({ id, name, bot: diff !== null })
+    if (diff) botDifficulty.set(id, diff)
   }
 
   const manualAns = (
@@ -128,7 +140,7 @@ async function setup(): Promise<{ game: Game; config: Config }> {
   }
 
   const game = new Game(players, { rng })
-  return { game, config: { manualDice, rng } }
+  return { game, config: { manualDice, rng, botDifficulty } }
 }
 
 // ─── Lancers ─────────────────────────────────────────────────────────────────
@@ -327,12 +339,46 @@ async function playTurn(game: Game, config: Config): Promise<boolean> {
     }
   }
 
-  // Fin de tour
+  printTurnResult(game)
+  return true
+}
+
+/** Affiche le résultat d'un tour terminé (score ou timeout). */
+function printTurnResult(game: Game): void {
   const ended = game.state.turn!
   console.log('')
   if (ended.outcome) console.log(renderOutcome(ended.outcome))
   else console.log(dim('Tour terminé (timeout) : 0 point.'))
-  return true
+}
+
+// ─── Tour d'une IA ───────────────────────────────────────────────────────────
+
+function describeBotAction(action: TurnAction): string {
+  switch (action.type) {
+    case 'roll':
+      return dim('  ▸ lance les dés')
+    case 'reroll':
+      return dim(`  ▸ relance les dés ${action.diceIds.join(', ')}`)
+    case 'bank':
+      return dim(`  ▸ réserve les dés ${action.diceIds.join(', ')}`)
+    case 'unbank':
+      return dim(`  ▸ reprend les dés ${action.diceIds.join(', ')}`)
+    case 'stop':
+      return dim('  ▸ s’arrête')
+  }
+}
+
+/** Déroule le tour d'un joueur IA (dés automatiques), en narrant chaque coup. */
+function runBotTurn(game: Game, config: Config): void {
+  const player = game.currentPlayer
+  const difficulty = config.botDifficulty.get(player.id) ?? 'medium'
+  console.log(renderTurnHeader(player.name, game.state.turn!))
+  console.log(dim(`  🤖 IA (${difficulty})`))
+  playBotTurn(game, { difficulty }, (action) => {
+    console.log(describeBotAction(action))
+    if (action.type !== 'stop') showTable(game)
+  })
+  printTurnResult(game)
 }
 
 // ─── Boucle de partie ────────────────────────────────────────────────────────
@@ -344,10 +390,14 @@ async function main(): Promise<void> {
     console.log('\n' + dim('─'.repeat(48)))
     console.log(renderScoreboard(game.state))
     game.startTurn()
-    const keepPlaying = await playTurn(game, config)
-    if (!keepPlaying) {
-      console.log(dim('\nPartie interrompue.'))
-      break
+    if (game.currentPlayer.bot) {
+      runBotTurn(game, config)
+    } else {
+      const keepPlaying = await playTurn(game, config)
+      if (!keepPlaying) {
+        console.log(dim('\nPartie interrompue.'))
+        break
+      }
     }
   }
 
