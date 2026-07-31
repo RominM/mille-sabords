@@ -1,0 +1,86 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// TOKENS — Mille Sabords
+// Deux couches : les « matières » (couleurs brutes nommées) puis les rôles
+// sémantiques. Les composants ne référencent QUE les rôles (--bg, --danger…),
+// jamais une matière directement — on peut ainsi retoucher la matière sans
+// toucher aux composants.
+// ═══════════════════════════════════════════════════════════════════════════
+
+:root {
+  // ── Matières (couleurs brutes) ────────────────────────────────────────────
+  --color-abyss: #2b1b12; // bois profond
+  --color-oak: #4a3222; // chêne vieilli
+  --color-doubloon: #c9a227; // or
+  --color-doubloon-hi: #e8c468; // or clair — hover/glow uniquement
+  --color-wax: #8c2f2f; // rouge cachet de cire
+  --color-bilge: #2f6e68; // teal eau de cale
+  --color-parchment: #ede0c8; // parchemin
+
+  // Variantes assombries/éclaircies des MÊMES teintes (jamais de gris pur)
+  --color-abyss-900: #180e08; // ombres, vignette
+  --color-oak-700: #3a2619; // surfaces secondaires
+  --color-wax-edge: #c0524b; // rouge éclairci — bordures danger (≥3:1 sur Abîme)
+
+  // ── Rôles sémantiques ─────────────────────────────────────────────────────
+  --bg: var(--color-abyss);
+  --surface: var(--color-oak);
+  --surface-2: var(--color-oak-700);
+  --text: var(--color-parchment);
+  --text-dim: rgba(237, 224, 200, 0.72); // texte secondaire (garde le contraste)
+
+  --accent: var(--color-doubloon); // actionnable / gagné UNIQUEMENT
+  --accent-hi: var(--color-doubloon-hi);
+  --danger: var(--color-wax); // fonds danger (texte Parchemin dessus)
+  --danger-edge: var(--color-wax-edge); // traits/bordures danger sur fond sombre
+  --success: var(--color-bilge); // fonds succès (texte Parchemin dessus)
+  --border: var(--color-doubloon);
+  --focus: var(--color-doubloon);
+
+  // Texte à poser SUR un fond coloré (garanti lisible, cf. contrastes calculés)
+  --on-accent: var(--color-abyss); // sur or : 6.8:1
+  --on-danger: var(--color-parchment); // sur rouge : 6.3:1
+  --on-success: var(--color-parchment); // sur teal : 4.5:1
+
+  // ── Typographie ───────────────────────────────────────────────────────────
+  --font-display: 'Pirata One', 'Times New Roman', serif;
+  --font-body: 'Spectral', Georgia, serif;
+  --font-mono: 'Cutive Mono', 'Courier New', monospace;
+
+  --fs-display-xl: 4rem; // titre du jeu
+  --fs-display-l: 2.5rem; // nom de carte Pirate révélée
+  --fs-display-m: 1.75rem; // titre d'écran (plancher lisible de Pirata One)
+  --fs-body-l: 1.125rem;
+  --fs-body-m: 1rem; // défaut UI
+  --fs-body-s: 0.875rem; // labels, captions
+  --fs-mono-score: 2rem; // score en cours
+  --fs-mono-timer: 1.5rem; // countdown
+
+  // ── Espacement ────────────────────────────────────────────────────────────
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --space-6: 4rem;
+
+  // ── Ombres — dérivées d'Abîme, jamais de noir pur ─────────────────────────
+  --shadow-1: 0 2px 6px rgba(24, 14, 8, 0.55);
+  --shadow-2: 0 6px 20px rgba(24, 14, 8, 0.6);
+  --seal-relief: inset 0 2px 3px rgba(255, 240, 200, 0.28),
+    inset 0 -3px 6px rgba(24, 14, 8, 0.55);
+
+  // ── Formes ────────────────────────────────────────────────────────────────
+  --cut: 8px; // coin biseauté des panneaux
+  --radius-btn: 4px; // léger arrondi des boutons d'action
+}
+
+// ── API SCSS documentée (échelle typo) — pour la reprise Nuxt ────────────────
+// Miroir des --fs-* ci-dessus, en variables Sass si l'équipe préfère les $.
+$fs-display-xl: 4rem;
+$fs-display-l: 2.5rem;
+$fs-display-m: 1.75rem;
+$fs-body-l: 1.125rem;
+$fs-body-m: 1rem;
+$fs-body-s: 0.875rem;
+$fs-mono-score: 2rem;
+$fs-mono-timer: 1.5rem;

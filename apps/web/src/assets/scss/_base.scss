@@ -1,0 +1,72 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// BASE — html/body, typographie de fond, focus, préférences de mouvement.
+// ═══════════════════════════════════════════════════════════════════════════
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-body-m);
+  // Fond « table de bois » : vignette sombre + très légère chaleur centrale.
+  // Pas d'image externe (CSP-safe), pas de gris — deux radiaux dérivés d'Abîme.
+  background-image:
+    radial-gradient(120% 90% at 50% 0%, rgba(74, 50, 34, 0.35) 0%, transparent 55%),
+    radial-gradient(100% 100% at 50% 120%, var(--color-abyss-900) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+h1 {
+  font-size: var(--fs-display-xl);
+}
+h2 {
+  font-size: var(--fs-display-l);
+}
+h3 {
+  font-size: var(--fs-display-m);
+}
+
+// Chiffres qui comptent : score, timer, nombre de dés.
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.text-dim {
+  color: var(--text-dim);
+}
+
+// ── Focus clavier — anneau Doublon, décalé pour rester visible même sur un
+// bouton or (l'anneau tombe alors sur le fond sombre). Jamais supprimé.
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+// ── Mouvement réduit : on coupe la vibration danger et l'animation des dés,
+// on garde les transitions d'opacité (cf. règle d'accessibilité).
+@media (prefers-reduced-motion: reduce) {
+  .danger-badge.is-hit,
+  .die {
+    animation: none !important;
+  }
+  .die {
+    transition: none !important;
+  }
+}

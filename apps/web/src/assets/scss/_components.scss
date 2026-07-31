@@ -1,0 +1,198 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPONENTS — briques réutilisables du design system.
+// Chaque composant ne référence que des rôles sémantiques (_tokens).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Panneau à coins découpés (planche taillée) ──────────────────────────────
+// clip-path découpe AUSSI la bordure : on ne peut pas utiliser `border`.
+// Technique : un ::before doré, débordant de 1px et clippé à la même forme,
+// apparaît comme une bordure de 1px qui suit le biseau. Aucun wrapper requis.
+.panel {
+  --panel-clip: polygon(
+    var(--cut) 0,
+    100% 0,
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    0 100%,
+    0 var(--cut)
+  );
+  position: relative;
+  padding: var(--space-4);
+  background: var(--surface);
+  color: var(--text);
+  clip-path: var(--panel-clip);
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: -1px; // déborde de 1px → bordure dorée visible sur tout le contour
+  z-index: -1;
+  background: var(--border);
+  clip-path: var(--panel-clip);
+}
+.panel--flat {
+  clip-path: none;
+}
+.panel--flat::before {
+  display: none;
+}
+
+// Nom de carte Pirate révélée (Display sur panneau)
+.card-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-l);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  line-height: 1.05;
+}
+
+// ── Boutons d'action (léger arrondi, jamais de coins droits SaaS) ───────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--fs-body-m);
+  color: var(--on-accent);
+  background: var(--accent);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-btn);
+  box-shadow: var(--shadow-1);
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+.btn:hover {
+  background: var(--accent-hi);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--ghost {
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
+  box-shadow: none;
+}
+.btn--ghost:hover {
+  color: var(--accent-hi);
+  border-color: var(--accent-hi);
+  background: rgba(201, 162, 39, 0.08);
+}
+
+// ── Signature : le cachet de cire (bouton d'action principal) ────────────────
+.seal {
+  --size: 128px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: var(--space-2);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: var(--fs-display-m);
+  line-height: 1;
+  color: var(--on-danger); // Parchemin — jamais d'or petit sur le rouge
+  background: radial-gradient(circle at 38% 30%, #a83a3a 0%, var(--color-wax) 55%, #611e1e 100%);
+  border: 2px solid rgba(232, 196, 104, 0.5);
+  box-shadow: var(--seal-relief), var(--shadow-2);
+  transition: transform 0.08s ease, border-color 0.15s ease;
+}
+.seal:hover {
+  border-color: var(--accent-hi);
+}
+.seal:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+// ── Diviseur en corde tressée (SVG répété, pas un <hr> plat) ─────────────────
+.rope {
+  height: 14px;
+  border: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='14' viewBox='0 0 48 14'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M0 7 Q12 -1 24 7 T48 7' stroke='%238a6f1c' stroke-width='6'/%3E%3Cpath d='M0 7 Q12 15 24 7 T48 7' stroke='%23c9a227' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: center;
+  opacity: 0.85;
+}
+
+// ── État danger (têtes de mort / malus) ─────────────────────────────────────
+// Fond teinté + bordure éclaircie (le rouge brut échoue le 3:1 sur Abîme)
+// + micro-vibration au moment de l'impact.
+.danger-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--on-danger);
+  background: rgba(140, 47, 47, 0.14);
+  border: 1px solid var(--danger-edge);
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+}
+.danger-badge.is-hit {
+  animation: shake 0.15s linear;
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+// ── Dé Corsaire ──────────────────────────────────────────────────────────────
+.die {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  border-radius: 10px;
+  background: var(--color-parchment);
+  color: var(--color-abyss);
+  border: 1px solid rgba(24, 14, 8, 0.25);
+  box-shadow: var(--shadow-1), inset 0 -4px 0 rgba(24, 14, 8, 0.12);
+  transition: transform 0.12s ease;
+  user-select: none;
+}
+.die--skull {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+.die--locked {
+  outline: 2px solid var(--danger-edge);
+  outline-offset: 2px;
+}
+.die--banked {
+  outline: 2px solid var(--success);
+  outline-offset: 2px;
+}
+
+// ── Chiffres qui comptent ────────────────────────────────────────────────────
+.score {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono-score);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.timer {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono-timer);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.timer.is-low {
+  color: var(--danger-edge);
+}

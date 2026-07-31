@@ -1,0 +1,8 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Design System Mille Sabords — point d'entrée.
+// Portable tel quel vers Nuxt : copier `assets/scss/` et importer ce fichier.
+// ═══════════════════════════════════════════════════════════════════════════
+@use 'tokens';
+@use 'reset';
+@use 'base';
+@use 'components';

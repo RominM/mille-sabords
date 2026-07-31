@@ -11,7 +11,7 @@ packages/
   engine/     ← moteur de jeu pur TypeScript (AUCUNE dépendance framework)
 apps/
   cli/        ← CLI de test des règles au clavier (phase 1)
-  web/        ← front Nuxt 3 (phase 3)
+  web/        ← front (Vite + SCSS) : design system + écrans de jeu (phase 3)
   server/     ← serveur autoritaire WebSocket (phase 4)
 ```
 
@@ -104,10 +104,32 @@ est donc **exacte à un coup d'avance**, sans aucune règle dupliquée.
 
 API : `decideAction(turn, { difficulty })`, `playBotTurn(game, opts, onStep?)`.
 
+## Design system & front (Phase 3)
+
+`apps/web` — Vite + SCSS. Le design system vit dans `src/assets/scss/`
+(**portable tel quel vers Nuxt** si on migre le shell plus tard) :
+
+- `_tokens.scss` — matières (or, cachet de cire, chêne…) + **couche de rôles
+  sémantiques** (`--bg`, `--surface`, `--text`, `--danger`…). Les composants ne
+  référencent que les rôles.
+- `_reset.scss`, `_base.scss`, `_components.scss`, `main.scss`.
+
+Direction artistique : bois vieilli, or comme **signal rare** (actionnable/gagné),
+cachet de cire pour le bouton d'action, panneaux à **coins découpés** (`clip-path`
++ bordure dorée via `::before`), diviseurs en corde. Contrastes WCAG vérifiés
+(rouge et teal en fonds uniquement, jamais en texte sur fond sombre) ; focus
+clavier Doublon décalé ; `prefers-reduced-motion` respecté.
+
+Voir la page style-guide (tous les tokens et composants rendus) :
+
+```bash
+npm run design    # ou : npm run dev -w @ms/web  → http://localhost:5173
+```
+
 ## Roadmap
 
 - [x] Phase 1 — Moteur de jeu testé + CLI de validation des règles
 - [x] Phase 2 — IA (espérance de gain, niveaux de difficulté), jouable en CLI
-- [ ] Phase 3 — Front Nuxt 3 : jeu solo vs IA, direction artistique pirate
+- [~] Phase 3 — Front : design system posé (`apps/web`), écrans de jeu à venir
 - [ ] Phase 4 — Serveur autoritaire WebSocket + lobby multijoueur
 - [ ] Phase 5 — Déploiement (front statique + serveur Railway/Fly.io)
