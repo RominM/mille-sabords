@@ -4,6 +4,8 @@ import layoutUrl from '~/assets/images/ui/layout-game.png'
 
 const {
   WINNING_SCORE,
+  TURN_SECONDS,
+  secondsLeft,
   mode,
   difficulty,
   selected,
@@ -102,6 +104,8 @@ const outcome = computed(() => {
           :key="i"
           :player="players[i - 1] ?? null"
           :current="gamePhase === 'playing' && i - 1 === currentIndex"
+          :seconds="gamePhase === 'playing' && i - 1 === currentIndex ? secondsLeft : undefined"
+          :total-seconds="TURN_SECONDS"
         />
       </div>
 
@@ -247,15 +251,17 @@ const outcome = computed(() => {
   color: var(--text-dim);
 }
 
+// Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.png
+// (mesurée : barreaux entre y 270 et 718 px sur 941, x 99..347 sur 1672).
 .zone-players {
   position: absolute;
-  left: 6%;
-  top: 28%;
-  width: 14%;
-  height: 48%;
+  left: 5.8%;
+  top: 28.79%;
+  width: 14.9%;
+  height: 47.6%;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 0.74cqh; // = l'écart réel entre deux barreaux
 }
 .zone-card {
   position: absolute;
@@ -308,10 +314,10 @@ const outcome = computed(() => {
 // Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte
 .zone-action {
   position: absolute;
-  right: 21%;
-  bottom: 22%;
-  width: 150px;
-  height: 150px;
+  right: 22%;
+  bottom: 25%;
+  width: 100px;
+  height: 100px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

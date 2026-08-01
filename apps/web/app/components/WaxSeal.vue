@@ -1,17 +1,16 @@
 <script setup lang="ts">
 // Bouton d'action principal : le cachet de cire (image PNG fournie).
 // La signature du jeu — on la retrouve sur Jouer / Lancer / Rejouer.
-import sealUrl from '~/assets/images/ui/btn-seal.png'
+import sealUrl from '~/assets/images/ui/wax-seal-lancer.png'
 
 defineProps<{ label: string; disabled?: boolean }>()
 defineEmits<{ click: [] }>()
 </script>
-
 <template>
-  <div class="wax" type="button" :aria-label="label">
+  <button class="wax" type="button" :aria-label="label" :disabled="disabled" @click="$emit('click')">
     <img :src="sealUrl" alt="" class="wax__img" />
-    <button class="wax__label" :disabled="disabled" @click="$emit('click')">{{ label }}</button>
-  </div>
+    <!-- <button class="wax__label" :disabled="disabled" @click="$emit('click')">{{ label }}</button> -->
+  </button>
 </template>
 
 <style scoped lang="scss">
@@ -26,6 +25,9 @@ defineEmits<{ click: [] }>()
   display: grid;
   place-items: center;
   transition: transform 0.08s ease;
+  &:hover {
+    transform: scale(1.03);
+  }
 }
 
 .wax:active {

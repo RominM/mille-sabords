@@ -36,6 +36,30 @@ export function useGame() {
   const turnActor = ref('')
   const transient = ref('')
 
+  // ── Timer de tour (affichage) ───────────────────────────────────────────────
+  // Décompte visuel montré sur la carte du joueur actif. Il n'applique PAS
+  // encore la règle de timeout du moteur (DECISION_TIMEOUT_MS) — ce sera fait
+  // avec la passe sur la logique.
+  const TURN_SECONDS = 60
+  const secondsLeft = ref(TURN_SECONDS)
+  let timerId: ReturnType<typeof setInterval> | null = null
+
+  function stopTimer(): void {
+    if (timerId) {
+      clearInterval(timerId)
+      timerId = null
+    }
+  }
+  function restartTimer(): void {
+    stopTimer()
+    secondsLeft.value = TURN_SECONDS
+    timerId = setInterval(() => {
+      secondsLeft.value = Math.max(0, secondsLeft.value - 1)
+      if (secondsLeft.value === 0) stopTimer()
+    }, 1000)
+  }
+  onScopeDispose(stopTimer)
+
   // Lectures réactives (sur l'instantané cloné).
   const turn = computed<TurnState | null>(() => snapshot.value?.turn ?? null)
   const players = computed(() => snapshot.value?.players ?? [])
@@ -61,13 +85,17 @@ export function useGame() {
     game!.startTurn()
     turnActor.value = game!.currentPlayer.name
     mode.value = 'playing'
+    restartTimer()
     sync()
     if (game!.currentPlayer.bot) void runBot()
   }
 
   function afterAction(): void {
     selected.value = new Set()
-    if (game!.state.turn!.phase === 'ended') mode.value = 'turnEnd'
+    if (game!.state.turn!.phase === 'ended') {
+      mode.value = 'turnEnd'
+      stopTimer()
+    }
     sync()
   }
 
@@ -145,11 +173,14 @@ export function useGame() {
     }
     botThinking.value = false
     mode.value = 'turnEnd'
+    stopTimer()
     sync()
   }
 
   return {
     WINNING_SCORE,
+    TURN_SECONDS,
+    secondsLeft,
     mode,
     difficulty,
     selected,
