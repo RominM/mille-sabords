@@ -13,6 +13,14 @@ body {
     radial-gradient(120% 90% at 50% 0%, rgba(74, 50, 34, 0.35) 0%, transparent 55%),
     radial-gradient(100% 100% at 50% 120%, var(--color-abyss-900) 0%, transparent 60%);
   background-attachment: fixed;
+  cursor:
+    url('../images/ui/cursor-hook-32.png') 3 3,
+    auto;
+  @media (min-resolution: 2dppx) {
+    cursor:
+      url('../images/ui/cursor-hook-64.png') 5 6,
+      auto;
+  }
 }
 
 h1,
@@ -36,6 +44,9 @@ h3 {
   font-size: var(--fs-display-m);
 }
 
+button {
+  cursor: inherit;
+}
 // Chiffres qui comptent : score, timer, nombre de dés.
 .mono {
   font-family: var(--font-mono);

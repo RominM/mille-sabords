@@ -51,12 +51,15 @@ const scoreClass = computed(() => {
 
 // ── Carte joueur ────────────────────────────────────────────────────────────
 // Le PNG source (1024×1536) est surtout du vide orange : le cadre utile n'occupe
-// que la bande y 34.96 % → 61.59 % (ratio 2.504). On cadre donc cette bande via
-// overflow + mise à l'échelle de l'image, plutôt que d'afficher tout le PNG.
+// que la bande y 535..945 px (34.83 % → 61.52 %), de ratio 2.4915. On cadre donc
+// cette bande via overflow + mise à l'échelle, plutôt que d'afficher tout le PNG.
 .pslot {
   position: relative;
-  height: 113%;
-  aspect-ratio: 970 / 418; // ratio réel du cadre → jamais déformé
+  height: 113%; // déborde un peu le barreau pour le remplir visuellement
+  // ⚠️ Doit rester le ratio EXACT de la bande du cadre (mesuré : 1024 × 411 px,
+  // soit 2.4915). Toute autre valeur déforme l'image : un ratio plus petit la
+  // comprime horizontalement, ce qui la fait paraître étirée en hauteur.
+  aspect-ratio: 1024 / 411;
   max-width: 100%;
   overflow: hidden;
   container-type: size; // les enfants se dimensionnent en cqh/cqw
@@ -73,9 +76,11 @@ const scoreClass = computed(() => {
 .pslot__frame {
   position: absolute;
   left: 0;
-  top: -131.3%; // 34.96 % × 375.5 %
+  // Constantes mesurées sur le PNG (1024×1536, bande utile y 535..945) :
+  // hauteur = 100 / (411/1536) ; décalage = (535/1536) × hauteur.
+  top: -130.17%;
   width: 100%;
-  height: 375.5%; // 100 / 26.63 % → la bande du cadre remplit la carte
+  height: 373.72%; // la bande du cadre remplit exactement la hauteur
   object-fit: fill;
   pointer-events: none;
 }
@@ -98,10 +103,10 @@ const scoreClass = computed(() => {
   top: 29.3%;
   width: 31.5%;
   height: 22.2%;
-  padding: 0 2cqh;
+  padding: 0 8cqh 0 12cqh;
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: 12cqh;
+  font-size: 14cqh;
   line-height: 22.2cqh; // = hauteur du champ → centrage vertical
   color: var(--color-parchment, #ede0c8);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
@@ -122,6 +127,7 @@ const scoreClass = computed(() => {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 15cqh;
+  font-weight: 800;
   line-height: 22.2cqh;
   color: var(--color-doubloon, #c9a227);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);

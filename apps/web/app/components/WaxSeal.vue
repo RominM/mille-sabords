@@ -21,7 +21,6 @@ defineEmits<{ click: [] }>()
   padding: 0;
   border: 0;
   background: none;
-  cursor: pointer;
   display: grid;
   place-items: center;
   transition: transform 0.08s ease;
