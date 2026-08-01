@@ -49,7 +49,7 @@
   --fs-display-xl: 4rem; // titre du jeu
   --fs-display-l: 2.5rem; // nom de carte Pirate révélée
   --fs-display-m: 1.75rem; // titre d'écran (plancher lisible de Pirata One)
-  --fs-body-l: 1.125rem;
+  --fs-body-l: 14px;
   --fs-body-m: 1rem; // défaut UI
   --fs-body-s: 0.875rem; // labels, captions
   --fs-mono-score: 2rem; // score en cours
@@ -66,8 +66,7 @@
   // ── Ombres — dérivées d'Abîme, jamais de noir pur ─────────────────────────
   --shadow-1: 0 2px 6px rgba(24, 14, 8, 0.55);
   --shadow-2: 0 6px 20px rgba(24, 14, 8, 0.6);
-  --seal-relief: inset 0 2px 3px rgba(255, 240, 200, 0.28),
-    inset 0 -3px 6px rgba(24, 14, 8, 0.55);
+  --seal-relief: inset 0 2px 3px rgba(255, 240, 200, 0.28), inset 0 -3px 6px rgba(24, 14, 8, 0.55);
 
   // ── Formes ────────────────────────────────────────────────────────────────
   --cut: 8px; // coin biseauté des panneaux

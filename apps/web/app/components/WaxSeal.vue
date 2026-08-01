@@ -48,12 +48,16 @@ defineEmits<{ click: [] }>()
 // un cachet propre sans texte fonctionnera aussi avec ce libellé).
 .wax__label {
   position: absolute;
-  bottom: -1.4rem;
+  bottom: 50px;
   font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  height: 33%;
+  width: 33%;
   font-size: var(--fs-body-l);
   color: var(--accent);
+  background-color: red;
+  border-radius: 100%;
   white-space: nowrap;
 }
 </style>
