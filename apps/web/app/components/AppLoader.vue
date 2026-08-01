@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Écran de chargement : image + loader pendant le préchargement des assets.
-import sealUrl from '~/assets/images/ui/seal-btn.png'
+import sealUrl from '~/assets/images/ui/btn-seal.png'
 
 withDefaults(
   defineProps<{
@@ -11,7 +11,7 @@ withDefaults(
     title?: string
     hint?: string
   }>(),
-  { title: 'Mille Sabords', hint: 'Chargement du trésor…' },
+  { title: 'Mille Sabords', hint: 'Chargement du trésor…' }
 )
 </script>
 
@@ -21,7 +21,13 @@ withDefaults(
       <img :src="image ?? sealUrl" alt="" class="app-loader__mark" />
       <h1 class="app-loader__title">{{ title }}</h1>
       <hr class="rope app-loader__rope" />
-      <div class="app-loader__bar" role="progressbar" :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100">
+      <div
+        class="app-loader__bar"
+        role="progressbar"
+        :aria-valuenow="progress"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
         <span :style="{ width: progress + '%' }" />
       </div>
       <p class="app-loader__hint mono">{{ hint }} {{ progress }}%</p>

@@ -1,24 +1,24 @@
 <script setup lang="ts">
 // Bouton d'action principal : le cachet de cire (image PNG fournie).
 // La signature du jeu — on la retrouve sur Jouer / Lancer / Rejouer.
-import sealUrl from '~/assets/images/ui/seal-btn.png'
+import sealUrl from '~/assets/images/ui/btn-seal.png'
 
 defineProps<{ label: string; disabled?: boolean }>()
 defineEmits<{ click: [] }>()
 </script>
 
 <template>
-  <button class="wax" type="button" :aria-label="label" :disabled="disabled" @click="$emit('click')">
+  <div class="wax" type="button" :aria-label="label">
     <img :src="sealUrl" alt="" class="wax__img" />
-    <span class="wax__label">{{ label }}</span>
-  </button>
+    <button class="wax__label" :disabled="disabled" @click="$emit('click')">{{ label }}</button>
+  </div>
 </template>
 
 <style scoped lang="scss">
 .wax {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 100%;
+  height: 100%;
   padding: 0;
   border: 0;
   background: none;
@@ -27,9 +27,7 @@ defineEmits<{ click: [] }>()
   place-items: center;
   transition: transform 0.08s ease;
 }
-.wax:hover {
-  transform: scale(1.03);
-}
+
 .wax:active {
   transform: scale(0.97);
 }
@@ -48,17 +46,23 @@ defineEmits<{ click: [] }>()
 // un cachet propre sans texte fonctionnera aussi avec ce libellé).
 .wax__label {
   position: absolute;
-  bottom: 50px;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  height: 33%;
-  width: 33%;
+  height: 40%;
+  width: 40%;
   font-size: var(--fs-body-l);
   line-height: 40px;
   color: var(--accent);
-  background-color: red;
+  background-color: #b6060a;
   border-radius: 100%;
   white-space: nowrap;
+
+  &:hover > .wax {
+    transform: scale(1.03);
+  }
 }
 </style>

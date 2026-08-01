@@ -167,48 +167,48 @@ const outcome = computed(() => {
 
   <!-- Overlays ─────────────────────────────────────────────────────────────── -->
   <div v-if="mode === 'start'" class="overlay">
-      <div class="panel">
-        <h2>Mille Sabords</h2>
-        <p class="card-effect">Affronte Le Corsaire (l’IA) en solo. Premier à {{ WINNING_SCORE }} points.</p>
-        <div class="diff-choices">
-          <button
-            v-for="d in diffs"
-            :key="d.value"
-            class="btn"
-            :class="{ 'btn--ghost': pendingDifficulty !== d.value }"
-            @click="pendingDifficulty = d.value"
-          >
-            {{ d.label }}
-          </button>
-        </div>
-        <WaxSeal label="Jouer" @click="newGame(pendingDifficulty)" />
-      </div>
-    </div>
-
-    <div v-else-if="mode === 'turnEnd'" class="overlay">
-      <div class="panel">
-        <h2>{{ outcome.title }}</h2>
-        <div class="outcome-lines">
-          <span v-for="(l, i) in outcome.lines" :key="i">{{ l }}</span>
-          <span :class="outcome.cls">
-            <strong>{{ turnActor }} : {{ outcome.score >= 0 ? '+' : '' }}{{ outcome.score }} pts</strong>
-          </span>
-        </div>
-        <button class="btn" @click="continueGame">
-          {{ gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer' }}
+    <div class="panel">
+      <h2>Mille Sabords</h2>
+      <p class="card-effect">Affronte Le Corsaire (l’IA) en solo. Premier à {{ WINNING_SCORE }} points.</p>
+      <div class="diff-choices">
+        <button
+          v-for="d in diffs"
+          :key="d.value"
+          class="btn"
+          :class="{ 'btn--ghost': pendingDifficulty !== d.value }"
+          @click="pendingDifficulty = d.value"
+        >
+          {{ d.label }}
         </button>
       </div>
+      <WaxSeal label="Jouer" @click="newGame(pendingDifficulty)" />
     </div>
+  </div>
 
-    <div v-else-if="mode === 'finished'" class="overlay">
-      <div class="panel">
-        <h2>🏆 {{ winner?.name }} l’emporte !</h2>
-        <div class="outcome-lines">
-          <span v-for="p in players" :key="p.id">{{ p.name }} : {{ p.score }} pts</span>
-        </div>
-        <WaxSeal label="Rejouer" @click="newGame(difficulty)" />
+  <div v-else-if="mode === 'turnEnd'" class="overlay">
+    <div class="panel">
+      <h2>{{ outcome.title }}</h2>
+      <div class="outcome-lines">
+        <span v-for="(l, i) in outcome.lines" :key="i">{{ l }}</span>
+        <span :class="outcome.cls">
+          <strong>{{ turnActor }} : {{ outcome.score >= 0 ? '+' : '' }}{{ outcome.score }} pts</strong>
+        </span>
       </div>
+      <button class="btn" @click="continueGame">
+        {{ gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer' }}
+      </button>
     </div>
+  </div>
+
+  <div v-else-if="mode === 'finished'" class="overlay">
+    <div class="panel">
+      <h2>🏆 {{ winner?.name }} l’emporte !</h2>
+      <div class="outcome-lines">
+        <span v-for="p in players" :key="p.id">{{ p.name }} : {{ p.score }} pts</span>
+      </div>
+      <WaxSeal label="Rejouer" @click="newGame(difficulty)" />
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
@@ -260,9 +260,9 @@ const outcome = computed(() => {
 .zone-card {
   position: absolute;
   left: 78.999%;
-  top: 26%;
-  width: 13.8%;
-  height: 43%;
+  top: 30%;
+  width: 13.79%;
+  height: 40%;
 }
 
 // Dés en jeu, au centre
@@ -308,10 +308,10 @@ const outcome = computed(() => {
 // Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte
 .zone-action {
   position: absolute;
-  right: 20%;
-  top: 60%;
-  width: 11%;
-  height: 12%;
+  right: 21%;
+  bottom: 22%;
+  width: 150px;
+  height: 150px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -323,8 +323,8 @@ const outcome = computed(() => {
   padding: 0.5cqw 1.2cqw;
 }
 .zone-action :deep(.wax) {
-  width: 11cqw;
-  height: 11cqw;
+  // width: 11cqw;
+  // height: 11cqw;
 }
 .bot-banner {
   display: flex;

@@ -21,7 +21,7 @@ const NAME: Record<PirateCard['type'], string> = {
   ship: 'Bateau Pirate',
   coin: "Pièce d'or",
   diamond: 'Diamant',
-  animals: 'Animaux',
+  animals: 'Animaux'
 }
 
 const image = computed<string>(() => {
@@ -52,6 +52,7 @@ const name = computed(() => NAME[props.card.type])
   <div class="pcard">
     <img :src="image" :alt="name" class="pcard__img" />
     <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}</span>
+    <p class="pcard__name">{{ name }}</p>
   </div>
 </template>
 
@@ -61,25 +62,32 @@ const name = computed(() => NAME[props.card.type])
   width: 100%;
   height: 100%;
   display: grid;
-  place-items: center;
-}
-.pcard__img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 16px rgba(24, 14, 8, 0.7));
-}
-.pcard__skulls {
-  position: absolute;
-  top: 4%;
-  right: 4%;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  color: var(--on-danger);
-  background: rgba(140, 47, 47, 0.85);
-  border: 1px solid var(--danger-edge);
-  border-radius: 6px;
-  padding: 0.3cqw 0.8cqw;
-  font-size: 1.6cqw;
+  place-items: top;
+  &__img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 16px rgba(24, 14, 8, 0.7));
+  }
+  &__skulls {
+    position: absolute;
+    top: 4%;
+    right: 4%;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--on-danger);
+    background: rgba(140, 47, 47, 0.85);
+    border: 1px solid var(--danger-edge);
+    border-radius: 6px;
+    padding: 0.3cqw 0.8cqw;
+    font-size: 1.6cqw;
+  }
+  &__name {
+    font-family: var(--font-body);
+    text-align: center;
+    font-size: clamp(0.5rem, 18px, 2rem);
+    padding: 0 8px;
+    white-space: nowrap;
+  }
 }
 </style>
