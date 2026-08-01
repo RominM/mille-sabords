@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Bouton d'action principal : le cachet de cire (image PNG fournie).
 // La signature du jeu — on la retrouve sur Jouer / Lancer / Rejouer.
-import sealUrl from '~/assets/images/seal-btn.png'
+import sealUrl from '~/assets/images/ui/seal-btn.png'
 
 defineProps<{ label: string; disabled?: boolean }>()
 defineEmits<{ click: [] }>()

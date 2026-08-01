@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Écran de chargement : image + loader pendant le préchargement des assets.
-import sealUrl from '~/assets/images/seal-btn.png'
+import sealUrl from '~/assets/images/ui/seal-btn.png'
 
 withDefaults(
   defineProps<{
