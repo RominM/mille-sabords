@@ -7,9 +7,7 @@ onMounted(preload)
 <template>
   <div>
     <NuxtPage />
-    <Transition name="loader">
-      <AppLoader v-if="!ready" :loaded="loaded" :total="total" :progress="progress" />
-    </Transition>
+    <AppLoader v-if="!ready" :loaded="loaded" :total="total" :progress="progress" />
   </div>
 </template>
 

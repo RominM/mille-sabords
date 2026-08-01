@@ -91,132 +91,146 @@ const outcome = computed(() => {
 </script>
 
 <template>
-  <div v-if="mode !== 'start'" class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
-    <NuxtLink to="/styleguide" class="sg-link">design system ↗</NuxtLink>
+  <div v-if="mode !== 'start'" class="stage">
+    <div class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
+      <NuxtLink to="/styleguide" class="sg-link">design system ↗</NuxtLink>
 
-    <!-- Joueurs : colonne de 5 slots à gauche -->
-    <div class="zone-players">
-      <PlayerSlot
-        v-for="i in 5"
-        :key="i"
-        :player="players[i - 1] ?? null"
-        :current="gamePhase === 'playing' && i - 1 === currentIndex"
-      />
-    </div>
-
-    <!-- Carte Pirate : cadre à droite -->
-    <div v-if="turn" class="zone-card">
-      <PirateCard :card="turn.card" :skulls="skulls" />
-    </div>
-
-    <!-- Dés en jeu : au centre du plateau -->
-    <div v-if="turn" class="zone-center">
-      <div v-for="d in centerDice" :key="d.id" class="die-cell die-cell--big">
-        <DieView :die="d" :clickable="clickable" @click="toggleDie(d.id)" />
-      </div>
-    </div>
-
-    <!-- Dés sélectionnés : dans les slots du bas -->
-    <div v-if="turn" class="zone-slots">
-      <div v-for="i in 8" :key="i" class="die-cell">
-        <DieView
-          v-if="slotDice[i - 1]"
-          :die="slotDice[i - 1]!"
-          :clickable="clickable"
-          :selected="true"
-          @click="toggleDie(slotDice[i - 1]!.id)"
+      <!-- Joueurs : colonne de 5 slots à gauche -->
+      <div class="zone-players">
+        <PlayerSlot
+          v-for="i in 5"
+          :key="i"
+          :player="players[i - 1] ?? null"
+          :current="gamePhase === 'playing' && i - 1 === currentIndex"
         />
       </div>
-    </div>
 
-    <!-- Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte -->
-    <div v-if="turn" class="zone-action">
-      <template v-if="isBotTurn">
-        <span class="bot-banner">Le Corsaire réfléchit…</span>
-      </template>
-      <template v-else-if="turn.phase === 'first-roll' || turn.phase === 'island-roll'">
-        <WaxSeal label="Lancer" @click="roll" />
-      </template>
-      <template v-else-if="turn.phase === 'decision'">
-        <button class="btn" :disabled="rerollCount < 2" @click="reroll">Relancer ({{ rerollCount }})</button>
-        <template v-if="isTreasure">
-          <button class="btn btn--ghost" :disabled="!bankCount" @click="bank">
-            Réserver ({{ bankCount }})
-          </button>
-          <button class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">
-            Reprendre ({{ unbankCount }})
-          </button>
+      <!-- Carte Pirate : cadre à droite -->
+      <div v-if="turn" class="zone-card">
+        <PirateCard :card="turn.card" :skulls="skulls" />
+      </div>
+
+      <!-- Dés en jeu : au centre du plateau -->
+      <div v-if="turn" class="zone-center">
+        <div v-for="d in centerDice" :key="d.id" class="die-cell die-cell--big">
+          <DieView :die="d" :clickable="clickable" @click="toggleDie(d.id)" />
+        </div>
+      </div>
+
+      <!-- Dés sélectionnés : dans les slots du bas -->
+      <div v-if="turn" class="zone-slots">
+        <div v-for="i in 8" :key="i" class="die-cell">
+          <DieView
+            v-if="slotDice[i - 1]"
+            :die="slotDice[i - 1]!"
+            :clickable="clickable"
+            :selected="true"
+            @click="toggleDie(slotDice[i - 1]!.id)"
+          />
+        </div>
+      </div>
+
+      <!-- Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte -->
+      <div v-if="turn" class="zone-action">
+        <template v-if="isBotTurn">
+          <span class="bot-banner">Le Corsaire réfléchit…</span>
         </template>
-        <button class="btn btn--ghost" @click="stop">S’arrêter</button>
-      </template>
-    </div>
+        <template v-else-if="turn.phase === 'first-roll' || turn.phase === 'island-roll'">
+          <WaxSeal label="Lancer" @click="roll" />
+        </template>
+        <template v-else-if="turn.phase === 'decision'">
+          <button class="btn" :disabled="rerollCount < 2" @click="reroll">
+            Relancer ({{ rerollCount }})
+          </button>
+          <template v-if="isTreasure">
+            <button class="btn btn--ghost" :disabled="!bankCount" @click="bank">
+              Réserver ({{ bankCount }})
+            </button>
+            <button class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">
+              Reprendre ({{ unbankCount }})
+            </button>
+          </template>
+          <button class="btn btn--ghost" @click="stop">S’arrêter</button>
+        </template>
+      </div>
 
-    <!-- Indice : sous les slots -->
-    <p v-if="turn && !isBotTurn && turn.phase === 'decision'" class="zone-hint">
-      <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
-      <span v-else>Clique un dé pour le réserver (min 2, garde-en un), puis relance — ou arrête-toi.</span>
-    </p>
-    <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
-      Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.
-    </p>
+      <!-- Indice : sous les slots -->
+      <p v-if="turn && !isBotTurn && turn.phase === 'decision'" class="zone-hint">
+        <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
+        <span v-else>Clique un dé pour le réserver (min 2, garde-en un), puis relance — ou arrête-toi.</span>
+      </p>
+      <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
+        Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.
+      </p>
+    </div>
   </div>
 
   <!-- Overlays ─────────────────────────────────────────────────────────────── -->
   <div v-if="mode === 'start'" class="overlay">
-    <div class="panel">
-      <h2>Mille Sabords</h2>
-      <p class="card-effect">Affronte Le Corsaire (l’IA) en solo. Premier à {{ WINNING_SCORE }} points.</p>
-      <div class="diff-choices">
-        <button
-          v-for="d in diffs"
-          :key="d.value"
-          class="btn"
-          :class="{ 'btn--ghost': pendingDifficulty !== d.value }"
-          @click="pendingDifficulty = d.value"
-        >
-          {{ d.label }}
+      <div class="panel">
+        <h2>Mille Sabords</h2>
+        <p class="card-effect">Affronte Le Corsaire (l’IA) en solo. Premier à {{ WINNING_SCORE }} points.</p>
+        <div class="diff-choices">
+          <button
+            v-for="d in diffs"
+            :key="d.value"
+            class="btn"
+            :class="{ 'btn--ghost': pendingDifficulty !== d.value }"
+            @click="pendingDifficulty = d.value"
+          >
+            {{ d.label }}
+          </button>
+        </div>
+        <WaxSeal label="Jouer" @click="newGame(pendingDifficulty)" />
+      </div>
+    </div>
+
+    <div v-else-if="mode === 'turnEnd'" class="overlay">
+      <div class="panel">
+        <h2>{{ outcome.title }}</h2>
+        <div class="outcome-lines">
+          <span v-for="(l, i) in outcome.lines" :key="i">{{ l }}</span>
+          <span :class="outcome.cls">
+            <strong>{{ turnActor }} : {{ outcome.score >= 0 ? '+' : '' }}{{ outcome.score }} pts</strong>
+          </span>
+        </div>
+        <button class="btn" @click="continueGame">
+          {{ gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer' }}
         </button>
       </div>
-      <WaxSeal label="Jouer" @click="newGame(pendingDifficulty)" />
     </div>
-  </div>
 
-  <div v-else-if="mode === 'turnEnd'" class="overlay">
-    <div class="panel">
-      <h2>{{ outcome.title }}</h2>
-      <div class="outcome-lines">
-        <span v-for="(l, i) in outcome.lines" :key="i">{{ l }}</span>
-        <span :class="outcome.cls">
-          <strong>{{ turnActor }} : {{ outcome.score >= 0 ? '+' : '' }}{{ outcome.score }} pts</strong>
-        </span>
+    <div v-else-if="mode === 'finished'" class="overlay">
+      <div class="panel">
+        <h2>🏆 {{ winner?.name }} l’emporte !</h2>
+        <div class="outcome-lines">
+          <span v-for="p in players" :key="p.id">{{ p.name }} : {{ p.score }} pts</span>
+        </div>
+        <WaxSeal label="Rejouer" @click="newGame(difficulty)" />
       </div>
-      <button class="btn" @click="continueGame">
-        {{ gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer' }}
-      </button>
     </div>
-  </div>
-
-  <div v-else-if="mode === 'finished'" class="overlay">
-    <div class="panel">
-      <h2>🏆 {{ winner?.name }} l’emporte !</h2>
-      <div class="outcome-lines">
-        <span v-for="p in players" :key="p.id">{{ p.name }} : {{ p.score }} pts</span>
-      </div>
-      <WaxSeal label="Rejouer" @click="newGame(difficulty)" />
-    </div>
-  </div>
 </template>
 
 <style scoped lang="scss">
-// ── Plateau plein écran, sans scroll ─────────────────────────────────────────
-// 100dvw × 100dvh, fond étiré (100% 100%) pour rester aligné aux cadres quelle
-// que soit la forme de l'écran. Les zones sont en % → toujours à leur place.
-// Valeurs faciles à ajuster si un cadre n'est pas pile aligné.
-.plateau {
+// ── Scène : remplit la fenêtre, centre le plateau, letterbox autour ─────────
+.stage {
   position: fixed;
   inset: 0;
-  width: 100dvw;
-  height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+// ── Plateau : verrouillé sur l'aspect ratio du fond (16:9) ──────────────────
+// On garde les proportions du fond (pas d'étirement → carte non déformée, cachet
+// rond) et on le fait RENTRER dans la fenêtre (le plus grand 16:9 possible, avec
+// une marge/letterbox). Zones en % → toujours pile alignées aux cadres.
+.plateau {
+  position: relative;
+  aspect-ratio: 1672 / 941;
+  width: min(100dvw, calc(100dvh * 1672 / 941));
+  max-width: 100dvw;
+  max-height: 100dvh;
   background-position: center;
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -235,13 +249,13 @@ const outcome = computed(() => {
 
 .zone-players {
   position: absolute;
-  left: 5%;
+  left: 6%;
   top: 28%;
-  width: 16%;
-  height: 46%;
+  width: 14%;
+  height: 48%;
   display: flex;
   flex-direction: column;
-  gap: 1%;
+  gap: 7px;
 }
 .zone-card {
   position: absolute;
