@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BotDifficulty, DieFace } from '@ms/engine'
+import layoutUrl from '~/assets/images/ui/layout-game.png'
 
 const {
   WINNING_SCORE,
@@ -80,18 +81,27 @@ const outcome = computed(() => {
 </script>
 
 <template>
-  <div v-if="mode !== 'start'" class="board">
-    <div class="topbar">
-      <h1>Mille Sabords</h1>
-      <NuxtLink to="/styleguide">design system ↗</NuxtLink>
-    </div>
+  <div v-if="mode !== 'start'" class="plateau-wrap">
+    <NuxtLink to="/styleguide" class="sg-link">design system ↗</NuxtLink>
 
-    <ScoreBoard :players="players" :current-index="currentIndex" :active="gamePhase === 'playing'" />
+    <div class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
+      <!-- Joueurs : colonne de 5 slots à gauche -->
+      <div class="zone-players">
+        <PlayerSlot
+          v-for="i in 5"
+          :key="i"
+          :player="players[i - 1] ?? null"
+          :current="gamePhase === 'playing' && i - 1 === currentIndex"
+        />
+      </div>
 
-    <div v-if="turn" class="stage">
-      <PirateCard :card="turn.card" :skulls="skulls" />
+      <!-- Carte Pirate : cadre à droite -->
+      <div v-if="turn" class="zone-card">
+        <PirateCard :card="turn.card" :skulls="skulls" />
+      </div>
 
-      <div class="dice-grid">
+      <!-- Dés : rangée de 8 en bas-centre -->
+      <div v-if="turn" class="zone-dice">
         <DieView
           v-for="d in turn.dice"
           :key="d.id"
@@ -102,26 +112,29 @@ const outcome = computed(() => {
         />
       </div>
 
-      <div class="actionbar">
-        <template v-if="isBotTurn"><span class="bot-banner">Le Corsaire réfléchit…</span></template>
-        <template v-else-if="turn.phase === 'first-roll'">
-          <WaxSeal label="Lancer" @click="roll" />
-          <p class="hint">Lance les 8 dés Corsaires.</p>
+      <!-- Zone d'action : centre du plateau -->
+      <div v-if="turn" class="zone-action">
+        <template v-if="isBotTurn">
+          <span class="bot-banner">Le Corsaire réfléchit…</span>
         </template>
-        <template v-else-if="turn.phase === 'island-roll'">
+        <template v-else-if="turn.phase === 'first-roll' || turn.phase === 'island-roll'">
           <WaxSeal label="Lancer" @click="roll" />
-          <p class="hint">Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.</p>
+          <p class="hint">
+            {{ turn.phase === 'island-roll' ? 'Île de la Tête-de-Mort : relance forcée.' : 'Lance les 8 dés.' }}
+          </p>
         </template>
         <template v-else-if="turn.phase === 'decision'">
-          <button class="btn" :disabled="rerollCount < 2" @click="reroll">Relancer ({{ rerollCount }})</button>
-          <template v-if="isTreasure">
-            <button class="btn btn--ghost" :disabled="!bankCount" @click="bank">Réserver ({{ bankCount }})</button>
-            <button class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">Reprendre ({{ unbankCount }})</button>
-          </template>
-          <button class="btn btn--ghost" @click="stop">S’arrêter</button>
+          <div class="action-btns">
+            <button class="btn" :disabled="rerollCount < 2" @click="reroll">Relancer ({{ rerollCount }})</button>
+            <template v-if="isTreasure">
+              <button class="btn btn--ghost" :disabled="!bankCount" @click="bank">Réserver ({{ bankCount }})</button>
+              <button class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">Reprendre ({{ unbankCount }})</button>
+            </template>
+            <button class="btn btn--ghost" @click="stop">S’arrêter</button>
+          </div>
           <p class="hint">
-            <span v-if="transient" class="card-skulls">⛔ {{ transient }}</span>
-            <span v-else>Sélectionne des dés à relancer (min 2, garde-en un), ou arrête-toi.</span>
+            <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
+            <span v-else>Choisis des dés à relancer (min 2, garde-en un), ou arrête-toi.</span>
           </p>
         </template>
       </div>
@@ -173,57 +186,91 @@ const outcome = computed(() => {
 </template>
 
 <style scoped lang="scss">
-.board {
-  max-width: 940px;
-  margin: 0 auto;
+// ── Plateau ──────────────────────────────────────────────────────────────────
+// Le fond `layout-game.png` porte les cadres (joueurs à gauche, dés en bas,
+// carte à droite). Les zones sont positionnées en % pour s'aligner dessus.
+// Ces valeurs sont facilement ajustables si un cadre n'est pas pile aligné.
+.plateau-wrap {
   min-height: 100vh;
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  display: grid;
+  place-items: center;
+  padding: var(--space-3);
+  position: relative;
 }
-.topbar {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-.topbar h1 {
-  font-size: var(--fs-display-m);
-  color: var(--accent);
-}
-.topbar a {
+.sg-link {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  z-index: 2;
   font-family: var(--font-mono);
   font-size: var(--fs-body-s);
   color: var(--text-dim);
 }
-.stage {
-  flex: 1;
+.plateau {
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  aspect-ratio: 1672 / 941;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  container-type: size;
+}
+
+.zone-players {
+  position: absolute;
+  left: 5.4%;
+  top: 27%;
+  width: 15.6%;
+  height: 47.5%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1%;
+}
+.zone-card {
+  position: absolute;
+  left: 77.6%;
+  top: 30%;
+  width: 15%;
+  height: 40%;
+}
+.zone-dice {
+  position: absolute;
+  left: 24.4%;
+  top: 74.8%;
+  width: 46.2%;
+  height: 11%;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.5%;
+  place-items: center;
+}
+.zone-action {
+  position: absolute;
+  left: 49%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  width: 40%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-5);
+  gap: var(--space-2);
+  text-align: center;
 }
-.dice-grid {
+.action-btns {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: var(--space-2);
   justify-content: center;
-  max-width: 620px;
-}
-.actionbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  align-items: center;
-  justify-content: center;
-  min-height: 170px;
 }
 .hint {
-  flex-basis: 100%;
-  text-align: center;
-  color: var(--text-dim);
+  color: var(--parchment, #ede0c8);
+  font-size: clamp(0.75rem, 1.4cqw, 1rem);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+.danger-txt {
+  color: var(--danger-edge);
+  font-weight: 600;
 }
 .bot-banner {
   display: flex;
@@ -231,29 +278,22 @@ const outcome = computed(() => {
   gap: var(--space-2);
   color: var(--accent);
   font-family: var(--font-body);
-  font-size: var(--fs-body-l);
+  font-size: clamp(1rem, 1.8cqw, 1.4rem);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 .bot-banner::before {
   content: '🤖';
 }
-.card-effect {
-  color: var(--text-dim);
-  max-width: 52ch;
-}
-.card-skulls {
-  color: var(--danger-edge);
-  font-weight: 600;
-}
 
-// Overlays
+// ── Overlays (démarrage / fin de tour / victoire) ────────────────────────────
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 20;
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: rgba(24, 14, 8, 0.74);
+  background: rgba(24, 14, 8, 0.78);
 }
 .overlay .panel {
   max-width: 460px;
@@ -266,6 +306,10 @@ const outcome = computed(() => {
 }
 .overlay h2 {
   color: var(--accent);
+}
+.card-effect {
+  color: var(--text-dim);
+  max-width: 52ch;
 }
 .diff-choices {
   display: flex;
