@@ -55,6 +55,7 @@ defineEmits<{ click: [] }>()
   height: 33%;
   width: 33%;
   font-size: var(--fs-body-l);
+  line-height: 40px;
   color: var(--accent);
   background-color: red;
   border-radius: 100%;

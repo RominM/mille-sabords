@@ -229,7 +229,7 @@ const outcome = computed(() => {
   right: 2%;
   z-index: 2;
   font-family: var(--font-mono);
-  font-size: clamp(0.6rem, 1.1cqw, 0.85rem);
+  font-size: 1cqw;
   color: var(--text-dim);
 }
 
@@ -254,10 +254,10 @@ const outcome = computed(() => {
 // Dés en jeu, au centre
 .zone-center {
   position: absolute;
-  left: 25%;
-  top: 30%;
-  width: 47%;
-  height: 30%;
+  left: 21%;
+  top: 21%;
+  width: 58%;
+  height: 45%;
   display: flex;
   flex-wrap: wrap;
   gap: 1.6cqw;
@@ -282,10 +282,13 @@ const outcome = computed(() => {
   place-items: center;
 }
 .die-cell {
-  width: 100%;
-  height: 100%;
   display: grid;
   place-items: center;
+}
+// Dés réservés : remplissent leur slot (et s'étirent avec le plateau au resize).
+.zone-slots .die-cell {
+  width: 100%;
+  height: 100%;
 }
 
 // Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte
@@ -302,8 +305,8 @@ const outcome = computed(() => {
   gap: 0.8cqw;
 }
 .zone-action .btn {
-  font-size: clamp(0.7rem, 1.3cqw, 1rem);
-  padding: 0.4cqw 1cqw;
+  font-size: 1.5cqw;
+  padding: 0.5cqw 1.2cqw;
 }
 .zone-action :deep(.wax) {
   width: 11cqw;
@@ -315,7 +318,7 @@ const outcome = computed(() => {
   gap: var(--space-2);
   color: var(--accent);
   font-family: var(--font-body);
-  font-size: clamp(0.9rem, 1.6cqw, 1.3rem);
+  font-size: 1.9cqw;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 .bot-banner::before {
@@ -329,7 +332,7 @@ const outcome = computed(() => {
   width: 47%;
   text-align: center;
   color: var(--parchment, #ede0c8);
-  font-size: clamp(0.7rem, 1.3cqw, 1rem);
+  font-size: 1.5cqw;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
 .danger-txt {

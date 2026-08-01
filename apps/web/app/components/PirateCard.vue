@@ -79,7 +79,7 @@ const name = computed(() => NAME[props.card.type])
   background: rgba(140, 47, 47, 0.85);
   border: 1px solid var(--danger-edge);
   border-radius: 6px;
-  padding: 2px 8px;
-  font-size: clamp(0.7rem, 1.4vw, 1rem);
+  padding: 0.3cqw 0.8cqw;
+  font-size: 1.6cqw;
 }
 </style>
