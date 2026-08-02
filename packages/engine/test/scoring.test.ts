@@ -54,26 +54,27 @@ describe('coffre au trésor plein', () => {
     expect(bd.total).toBe(5300)
   })
 
-  it('pas de bonus si les symboles sont mélangés, même si tout marque', () => {
-    // 5 pièces + 3 diamants : tout marque, mais ce sont deux symboles différents
+  it('symboles mélangés mais tous marquants : bonus accordé', () => {
+    // 5 pièces (combo) + 3 diamants (combo) : aucun dé inutile → coffre plein
     const bd = scoreTurn(
       dice(['coin', 'coin', 'coin', 'coin', 'coin', 'diamond', 'diamond', 'diamond']),
       guardian,
     )
-    expect(bd.fullChest).toBe(false)
+    expect(bd.fullChest).toBe(true)
   })
 
-  it('8 animaux avec la carte Animaux : singes + perroquets = un seul symbole', () => {
+  it('4 singes + 4 perroquets : deux combinaisons → tout marque, bonus accordé', () => {
     const bd = scoreTurn(
       dice(['monkey', 'parrot', 'monkey', 'parrot', 'monkey', 'monkey', 'parrot', 'parrot']),
-      { type: 'animals' },
+      guardian,
     )
     expect(bd.fullChest).toBe(true)
   })
 
-  it('les mêmes 8 animaux SANS la carte Animaux : deux symboles → pas de bonus', () => {
+  it('un dé isolé non marquant suffit à annuler le bonus', () => {
+    // 4 pièces + 3 sabres + 1 singe seul : le singe ne rapporte rien
     const bd = scoreTurn(
-      dice(['monkey', 'parrot', 'monkey', 'parrot', 'monkey', 'monkey', 'parrot', 'parrot']),
+      dice(['coin', 'coin', 'coin', 'coin', 'sabre', 'sabre', 'sabre', 'monkey']),
       guardian,
     )
     expect(bd.fullChest).toBe(false)

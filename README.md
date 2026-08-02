@@ -26,9 +26,10 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
 
 - 8 dés Corsaires, barème 3→8 identiques (100 → 4000 pts)
 - +100 par pièce d'or et diamant, cumulables avec les combos
-- Bonus coffre au trésor plein (+500) : **les 8 dés doivent afficher le même
-  symbole** (8 pièces, 8 diamants, 8 animaux avec la carte Animaux…). Un mélange
-  (5 pièces + 3 diamants) ne donne pas le bonus, même si tous les dés marquent.
+- Bonus coffre au trésor plein (+500) : **les 8 dés rapportent tous des points**
+  (aucun dé inutile, aucune tête de mort parmi les dés). Les symboles peuvent
+  être mélangés — 5 pièces + 3 diamants donnent le bonus. Le jugement porte sur
+  les dés seuls : une carte Tête de Mort ne bloque pas le bonus.
 - 3e tête de mort = tour perdu, têtes maudites non relançables
 - Relances : min 2 dés (relancer TOUS les dés relançables est permis)
 - Île de la Tête-de-Mort (4+ têtes au 1er lancer, malus -100/tête aux adversaires).
@@ -47,9 +48,9 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
 
 ## Interprétations à valider (zones grises du PDF)
 
-1. **Coffre plein et carte Tête de Mort** : le bonus se juge sur les 8 dés
-   uniquement. 8 pièces donnent donc le coffre plein même si la carte du tour
-   apporte une tête de mort (elle n'est pas un dé). À confirmer.
+1. **Coffre plein et carte Tête de Mort** : validé — le bonus se juge sur les 8
+   dés uniquement, donc 8 pièces donnent le coffre plein même si la carte du tour
+   apporte une tête de mort (elle n'est pas un dé).
 2. **Composition du deck (35 cartes)** : répartition standard Gigamic dans
    `deck.ts`, non détaillée dans le PDF. Corroborée par les notes de l'ancien
    repo (`main` d'origine) qui listent exactement la même répartition (4 diamant,

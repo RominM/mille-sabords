@@ -11,7 +11,6 @@ const sealUrl = computed(() => props.image ?? defaultSeal)
 <template>
   <button class="wax" type="button" :aria-label="label" :disabled="disabled" @click="$emit('click')">
     <img :src="sealUrl" alt="" class="wax__img" />
-    <!-- <button class="wax__label" :disabled="disabled" @click="$emit('click')">{{ label }}</button> -->
   </button>
 </template>
 
