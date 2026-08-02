@@ -1,3 +1,25 @@
+<template>
+  <!-- Rangée de l'échelle : la carte y est centrée, sans déformation -->
+  <div class="pslot-row">
+    <div
+      v-if="player"
+      class="pslot"
+      :class="{ 'pslot--waiting': !current, 'pslot--current': current }"
+    >
+      <img :src="slotFrame" alt="" class="pslot__frame" />
+      <img :src="avatar" alt="" class="pslot__avatar" />
+      <span class="pslot__name">{{ player.name }}</span>
+      <span class="pslot__score" :class="scoreClass">{{ scoreText }}</span>
+      <PlayerTimer
+        v-if="current && seconds !== undefined"
+        class="pslot__timer"
+        :seconds="seconds"
+        :total="totalSeconds ?? 60"
+      />
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { Player } from '@ms/engine'
 import slotFrame from '~/assets/images/ui/gamer-slot.png'
@@ -14,30 +36,15 @@ const props = defineProps<{
 const avatar = computed(() => (props.player?.bot ? botAvatar : pirateAvatar))
 
 const scoreText = computed(() => String(props.player?.score ?? 0))
+
 /** Le score ne doit ni déborder ni être tronqué : on réduit la police si besoin. */
-const scoreClass = computed(() => {
+const scoreClass = computed(function pickScoreClass() {
   const n = scoreText.value.length
-  return n >= 6 ? 'is-xs' : n >= 5 ? 'is-sm' : ''
+  if (n >= 6) return 'pslot__score--xs'
+  if (n >= 5) return 'pslot__score--sm'
+  return ''
 })
 </script>
-
-<template>
-  <!-- Rangée de l'échelle : la carte y est centrée, sans déformation -->
-  <div class="pslot-row">
-    <div v-if="player" class="pslot" :class="{ 'is-waiting': !current, 'is-current': current }">
-      <img :src="slotFrame" alt="" class="pslot__frame" />
-      <img :src="avatar" alt="" class="pslot__avatar" />
-      <span class="pslot__name">{{ player.name }}</span>
-      <span class="pslot__score" :class="scoreClass">{{ scoreText }}</span>
-      <PlayerTimer
-        v-if="current && seconds !== undefined"
-        class="pslot__timer"
-        :seconds="seconds"
-        :total="totalSeconds ?? 60"
-      />
-    </div>
-  </div>
-</template>
 
 <style scoped lang="scss">
 // ── Rangée : centre la carte dans le barreau de l'échelle ───────────────────
@@ -64,88 +71,88 @@ const scoreClass = computed(() => {
   overflow: hidden;
   container-type: size; // les enfants se dimensionnent en cqh/cqw
   transition: filter 0.2s ease;
-}
-// Joueurs en attente : couleur ternie
-.pslot.is-waiting {
-  filter: grayscale(0.7) brightness(0.55);
-}
-.pslot.is-current {
-  filter: drop-shadow(0 0 1.5cqh rgba(232, 196, 104, 0.5));
-}
 
-.pslot__frame {
-  position: absolute;
-  left: 0;
-  // Constantes mesurées sur le PNG (1024×1536, bande utile y 535..945) :
-  // hauteur = 100 / (411/1536) ; décalage = (535/1536) × hauteur.
-  top: -130.17%;
-  width: 100%;
-  height: 373.72%; // la bande du cadre remplit exactement la hauteur
-  object-fit: fill;
-  pointer-events: none;
-}
+  &__frame {
+    position: absolute;
+    top: -130.17%; // (535/1536) × hauteur
+    left: 0;
+    width: 100%;
+    height: 373.72%; // 100 / (411/1536) → la bande remplit exactement la carte
+    object-fit: fill;
+    pointer-events: none;
+  }
 
-// ── Éléments (positions mesurées sur le cadre) ──────────────────────────────
-.pslot__avatar {
-  position: absolute;
-  left: 8.3%;
-  top: 21.3%;
-  width: 22.9%;
-  aspect-ratio: 1; // cercle parfait
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center 15%; // cadrage sur le visage
-}
+  &__avatar {
+    position: absolute;
+    top: 15%;
+    left: 6.5%;
+    width: 23%;
+    height: 70%;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center top;
+  }
 
-.pslot__name {
-  position: absolute;
-  left: 37.5%;
-  top: 29.3%;
-  width: 31.5%;
-  height: 22.2%;
-  padding: 0 8cqh 0 12cqh;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 14cqh;
-  line-height: 22.2cqh; // = hauteur du champ → centrage vertical
-  color: var(--color-parchment, #ede0c8);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
-  // Débordement : coupé proprement (une animation de défilement viendra plus tard)
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  &__name {
+    position: absolute;
+    top: 29.3%;
+    left: 37.5%;
+    width: 31.5%;
+    height: 22.2%;
+    padding: 0 8cqh 0 12cqh;
+    color: var(--color-parchment, #ede0c8);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14cqh;
+    line-height: 22.2cqh; // = hauteur du champ → centrage vertical
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+    // Débordement coupé proprement (une animation de défilement viendra plus tard)
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-.pslot__score {
-  position: absolute;
-  left: 71.8%;
-  top: 29.3%;
-  width: 23.6%;
-  height: 22.2%;
-  padding: 0 1cqh;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 15cqh;
-  font-weight: 800;
-  line-height: 22.2cqh;
-  color: var(--color-doubloon, #c9a227);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  white-space: nowrap;
-  overflow: hidden; // sécurité, mais les paliers ci-dessous évitent la troncature
-}
-.pslot__score.is-sm {
-  font-size: 13cqh;
-} // 5 caractères (ex. -1000)
-.pslot__score.is-xs {
-  font-size: 11cqh;
-} // 6 caractères
+  &__score {
+    position: absolute;
+    top: 29.3%;
+    left: 71.8%;
+    width: 23.6%;
+    height: 22.2%;
+    padding: 0 1cqh;
+    color: var(--color-doubloon, #c9a227);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 15cqh;
+    line-height: 22.2cqh;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    overflow: hidden; // sécurité : les paliers ci-dessous évitent la troncature
 
-.pslot__timer {
-  position: absolute;
-  left: 39.5%;
-  top: 58.7%;
-  width: 58.8%;
-  height: 13.7%;
+    &--sm {
+      font-size: 13cqh; // 5 caractères (ex. -1000)
+    }
+
+    &--xs {
+      font-size: 11cqh; // 6 caractères
+    }
+  }
+
+  &__timer {
+    position: absolute;
+    top: 58.7%;
+    left: 39.5%;
+    width: 58.8%;
+    height: 13.7%;
+  }
+
+  // Joueurs en attente : couleur ternie
+  &--waiting {
+    filter: grayscale(0.7) brightness(0.55);
+  }
+
+  &--current {
+    filter: drop-shadow(0 0 1.5cqh rgba(232, 196, 104, 0.5));
+  }
 }
 </style>

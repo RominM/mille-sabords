@@ -1,3 +1,22 @@
+<template>
+  <button
+    class="die-view"
+    :class="{
+      'die-view--empty': die.face === null,
+      'die-view--clickable': canClick,
+      'die-view--selected': selected,
+      'die-view--locked': die.locked,
+      'die-view--banked': die.banked
+    }"
+    :disabled="die.locked"
+    type="button"
+    :aria-label="die.face ?? 'dé vide'"
+    @click="onClick"
+  >
+    <img v-if="die.face" :src="FACE_IMG[die.face]" alt="" class="die-view__img" />
+  </button>
+</template>
+
 <script setup lang="ts">
 import type { Die, DieFace } from '@ms/engine'
 import sabre from '~/assets/images/dice/die-face_sabre.png'
@@ -10,29 +29,15 @@ import diamond from '~/assets/images/dice/die-face_diamond.png'
 const FACE_IMG: Record<DieFace, string> = { sabre, skull, monkey, parrot, coin, diamond }
 
 const props = defineProps<{ die: Die; clickable?: boolean; selected?: boolean }>()
-defineEmits<{ click: [] }>()
+const emit = defineEmits<{ click: [] }>()
 
+/** Un dé n'est cliquable que s'il est lancé, non verrouillé, et la phase le permet. */
 const canClick = computed(() => props.clickable && !props.die.locked && props.die.face !== null)
-</script>
 
-<template>
-  <button
-    class="die-view"
-    :class="{
-      'is-empty': die.face === null,
-      'is-clickable': canClick,
-      'is-selected': selected,
-      'is-locked': die.locked,
-      'is-banked': die.banked
-    }"
-    :disabled="die.locked"
-    type="button"
-    :aria-label="die.face ?? 'dé vide'"
-    @click="canClick && $emit('click')"
-  >
-    <img v-if="die.face" :src="FACE_IMG[die.face]" alt="" class="die-view__img" />
-  </button>
-</template>
+function onClick(): void {
+  if (canClick.value) emit('click')
+}
+</script>
 
 <style scoped lang="scss">
 .die-view {
@@ -41,38 +46,44 @@ const canClick = computed(() => props.clickable && !props.die.locked && props.di
   height: 100%;
   padding: 0;
   border: 0;
+  border-radius: 12%;
   background: none;
-  border-radius: 12%;
-  transition: transform 0.12s ease;
   cursor: not-allowed;
-}
-.die-view__img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 12%;
-}
-.die-view.is-clickable {
-  cursor: inherit;
-}
-.die-view.is-clickable:hover {
-  transform: translateY(-6%) scale(1.04);
-}
-// États : liseré coloré autour de la tuile
-.die-view.is-selected {
-  outline: 0.4cqw solid var(--accent);
-  outline-offset: -0.4cqw;
-  box-shadow: 0 0 12px rgba(232, 196, 104, 0.6);
-  border-radius: 12%;
-}
-.die-view.is-locked {
-  outline: 0.35cqw solid var(--danger-edge);
-  outline-offset: -0.35cqw;
-  border-radius: 12%;
-}
-.die-view.is-banked {
-  outline: 0.35cqw solid var(--success);
-  outline-offset: -0.35cqw;
-  border-radius: 12%;
+  transition: transform 0.12s ease;
+
+  &__img {
+    width: 100%;
+    height: 100%;
+    border-radius: 12%;
+    object-fit: contain;
+  }
+
+  &--clickable {
+    cursor: inherit;
+
+    &:hover {
+      transform: translateY(-6%) scale(1.04);
+    }
+  }
+
+  // États : liseré coloré autour de la tuile
+  &--selected {
+    border-radius: 12%;
+    outline: 0.4cqw solid var(--accent);
+    outline-offset: -0.4cqw;
+    box-shadow: 0 0 12px rgba(232, 196, 104, 0.6);
+  }
+
+  &--locked {
+    border-radius: 12%;
+    outline: 0.35cqw solid var(--danger-edge);
+    outline-offset: -0.35cqw;
+  }
+
+  &--banked {
+    border-radius: 12%;
+    outline: 0.35cqw solid var(--success);
+    outline-offset: -0.35cqw;
+  }
 }
 </style>

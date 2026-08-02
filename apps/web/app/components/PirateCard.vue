@@ -1,3 +1,11 @@
+<template>
+  <div class="pcard">
+    <img :src="image" :alt="name" class="pcard__img" />
+    <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}</span>
+    <p class="pcard__name">{{ name }}</p>
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { PirateCard } from '@ms/engine'
 import treasure from '~/assets/images/cards/tresur_card.png'
@@ -24,7 +32,8 @@ const NAME: Record<PirateCard['type'], string> = {
   animals: 'Animaux'
 }
 
-const image = computed<string>(() => {
+/** Illustration correspondant à la carte du tour. */
+const image = computed<string>(function pickImage() {
   const c = props.card
   switch (c.type) {
     case 'treasure-island':
@@ -45,48 +54,46 @@ const image = computed<string>(() => {
       return c.value >= 1000 ? ship1000 : c.value >= 500 ? ship500 : ship300
   }
 })
+
 const name = computed(() => NAME[props.card.type])
 </script>
-
-<template>
-  <div class="pcard">
-    <img :src="image" :alt="name" class="pcard__img" />
-    <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}</span>
-    <p class="pcard__name">{{ name }}</p>
-  </div>
-</template>
 
 <style scoped lang="scss">
 .pcard {
   position: relative;
+  display: grid;
+  place-items: start center;
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: top;
+
   &__img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
     filter: drop-shadow(0 6px 16px rgba(24, 14, 8, 0.7));
   }
+
+  // Rappel du nombre de têtes de mort en cours (dés + carte)
   &__skulls {
     position: absolute;
     top: 4%;
     right: 4%;
-    font-family: var(--font-mono);
-    font-weight: 700;
-    color: var(--on-danger);
-    background: rgba(140, 47, 47, 0.85);
+    padding: 0.3cqw 0.8cqw;
     border: 1px solid var(--danger-edge);
     border-radius: 6px;
-    padding: 0.3cqw 0.8cqw;
+    background: rgba(140, 47, 47, 0.85);
+    color: var(--on-danger);
+    font-family: var(--font-mono);
+    font-weight: 700;
     font-size: 1.6cqw;
   }
+
+  // Nom de la carte, dans le bandeau libre sous l'illustration
   &__name {
-    font-family: var(--font-body);
-    text-align: center;
-    font-size: clamp(0.5rem, 18px, 2rem);
     padding: 0 8px;
+    font-family: var(--font-body);
+    font-size: clamp(0.5rem, 18px, 2rem);
+    text-align: center;
     white-space: nowrap;
   }
 }

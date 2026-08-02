@@ -113,8 +113,6 @@ const outcome = computed(() => {
 <template>
   <div v-if="mode !== 'start'" class="stage">
     <div class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
-      <NuxtLink to="/styleguide" class="sg-link">design system ↗</NuxtLink>
-
       <!-- Joueurs : colonne de 5 slots à gauche -->
       <div class="zone-players">
         <PlayerSlot
@@ -309,9 +307,9 @@ const outcome = computed(() => {
 .zone-slots {
   position: absolute;
   left: 24.6%;
-  top: 75.5%;
-  width: 46.4%;
-  height: 10.5%;
+  top: 75.7%;
+  width: 50.7%;
+  height: 11.9%;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 0.6%;
