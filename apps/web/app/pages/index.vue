@@ -334,9 +334,9 @@ const outcome = computed(() => {
   position: absolute;
   display: flex;
   flex-direction: column;
-  right: 17%;
+  right: 18%;
   bottom: 19%;
-  width: 13cqw;
+  width: 12cqw;
   height: 12cqw;
   display: flex;
   align-items: center;
@@ -344,15 +344,15 @@ const outcome = computed(() => {
 }
 .zone-action__roll {
   flex: 0 0 auto;
-  width: 8cqw;
-  height: 8cqw;
-  margin: 0 auto 0 0;
+  width: 8.7cqw;
+  height: 8.7cqw;
+  margin: 0 auto -18px 0;
 }
 // Le cachet « S'arrêter » est volontairement plus petit que « Lancer ».
 .zone-action__stop {
   flex: 0 0 auto;
-  width: 5.4cqw;
-  height: 5.4cqw;
+  width: 6.5cqw;
+  height: 6.5cqw;
   margin: 0 0 0 auto;
 }
 .zone-action .btn {

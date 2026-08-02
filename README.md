@@ -26,10 +26,11 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
 
 - 8 dés Corsaires, barème 3→8 identiques (100 → 4000 pts)
 - +100 par pièce d'or et diamant, cumulables avec les combos
-- Bonus coffre au trésor plein (+500) : **les 8 dés rapportent tous des points**
-  (aucun dé inutile, aucune tête de mort parmi les dés). Les symboles peuvent
-  être mélangés — 5 pièces + 3 diamants donnent le bonus. Le jugement porte sur
-  les dés seuls : une carte Tête de Mort ne bloque pas le bonus.
+- Bonus coffre au trésor plein (+500) : **les 8 dés doivent afficher la même
+  valeur** (8 pièces, 8 diamants, 8 sabres…, ou 8 animaux avec la carte Animaux).
+  Aucun dé n'est alors inutile. Un mélange ne donne pas le bonus, même si tous
+  les dés marquent : 5 pièces + 3 diamants → pas de coffre plein. Le jugement
+  porte sur les 8 dés seuls, donc une carte Tête de Mort ne bloque pas le bonus.
 - 3e tête de mort = tour perdu, têtes maudites non relançables
 - Relances : min 2 dés (relancer TOUS les dés relançables est permis)
 - Île de la Tête-de-Mort (4+ têtes au 1er lancer, malus -100/tête aux adversaires).

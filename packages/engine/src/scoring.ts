@@ -94,23 +94,22 @@ export function scoreTurn(
   const treasures =
     100 * ((counts.get('coin') ?? 0) + (counts.get('diamond') ?? 0))
 
-  // Coffre au trésor plein (+500) : les 8 DÉS rapportent tous des points —
-  // aucun dé inutile, aucune tête de mort parmi les dés. Un dé marque s'il est
-  // pièce/diamant ou membre d'une combinaison de 3+.
-  // Le jugement porte sur les dés seuls : une carte Tête de Mort ne bloque donc
-  // pas le bonus (8 pièces restent 8 pièces), et une carte Pièce/Diamant peut
-  // en revanche compléter une combinaison.
+  // Coffre au trésor plein (+500) : les 8 DÉS doivent afficher la MÊME valeur
+  // (8 pièces, 8 diamants, 8 sabres…, ou 8 animaux avec la carte Animaux qui
+  // fusionne singes et perroquets). Aucun dé n'est alors inutile.
+  // Un mélange ne donne PAS le bonus, même si tous les dés marquent :
+  // 5 pièces + 3 diamants → pas de coffre plein.
+  // Le jugement porte sur les 8 dés seuls : une carte Tête de Mort ne bloque
+  // donc pas le bonus (8 pièces restent 8 pièces).
   const chestKey = (f: DieFace): DieFace | 'animals' =>
     merge && (f === 'monkey' || f === 'parrot') ? 'animals' : f
+  const first = realFaces[0]
   const fullChest =
     !opts.bankedOnly &&
     dice.length > 0 &&
     realFaces.length === dice.length &&
-    realFaces.every(f => {
-      if (f === 'skull') return false
-      if (f === 'coin' || f === 'diamond') return true
-      return (counts.get(chestKey(f)) ?? 0) >= 3
-    })
+    first !== undefined &&
+    realFaces.every(f => f !== 'skull' && chestKey(f) === chestKey(first))
 
   let total =
     combos.reduce((s, c) => s + c.points, 0) + treasures + (fullChest ? 500 : 0)
