@@ -86,36 +86,7 @@
   background: rgba(201, 162, 39, 0.08);
 }
 
-// ── Signature : le cachet de cire (bouton d'action principal) ────────────────
-.seal {
-  background-image: url(./../images/seal-btn.png);
-  --size: 128px;
-  width: var(--size);
-  height: var(--size);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  padding: var(--space-2);
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-size: var(--fs-display-m);
-  line-height: 1;
-  color: var(--on-danger); // Parchemin — jamais d'or petit sur le rouge
-  background: radial-gradient(circle at 38% 30%, #a83a3a 0%, var(--color-wax) 55%, #611e1e 100%);
-  border: 2px solid rgba(232, 196, 104, 0.5);
-  box-shadow: var(--seal-relief), var(--shadow-2);
-  transition:
-    transform 0.08s ease,
-    border-color 0.15s ease;
-}
-.seal:hover {
-  border-color: var(--accent-hi);
-}
-.seal:active {
-  transform: translateY(1px) scale(0.99);
-}
+// Le cachet de cire vit désormais dans le composant WaxSeal (image dédiée).
 
 // ── Diviseur en corde tressée (SVG répété, pas un <hr> plat) ─────────────────
 .rope {

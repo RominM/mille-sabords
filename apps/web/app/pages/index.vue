@@ -3,19 +3,19 @@
     <div class="home__panel panel">
       <h1 class="home__title">Mille Sabords</h1>
       <p class="home__tagline">
-        Huit dés, une carte, et l'appât du gain. Arrête-toi à temps — la troisième
-        tête de mort emporte tout.
+        Huit dés, une carte, et l'appât du gain. Arrête-toi à temps — la troisième tête de mort emporte tout.
       </p>
 
       <hr class="rope home__rope" />
-<Modal/>
-      <nav class="home__menu">
-        <NuxtLink to="/solo" class="btn home__link">Jouer en solo</NuxtLink>
-        <NuxtLink to="/lobby" class="btn btn--ghost home__link">Multijoueur</NuxtLink>
-        <button class="btn btn--ghost home__link" type="button" @click="toggleRules">
-          {{ showRules ? 'Masquer les règles' : 'Les règles' }}
-        </button>
-      </nav>
+      <Modal>
+        <nav class="home__menu">
+          <NuxtLink to="/solo" class="btn home__link">Jouer en solo</NuxtLink>
+          <NuxtLink to="/lobby" class="btn btn--ghost home__link">Multijoueur</NuxtLink>
+          <button class="btn btn--ghost home__link" type="button" @click="toggleRules">
+            {{ showRules ? 'Masquer les règles' : 'Les règles' }}
+          </button>
+        </nav>
+      </Modal>
 
       <section v-if="showRules" class="home__rules">
         <ul class="home__rules-list">

@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 // Écran de chargement : image + jauge pendant le préchargement des assets.
-import sealUrl from '~/assets/images/ui/btn-seal.png'
+import sealUrl from '~/assets/images/ui/btn-seal.webp'
 
 withDefaults(
   defineProps<{
@@ -43,7 +43,7 @@ withDefaults(
   place-items: center;
   padding: var(--space-4);
   background-color: var(--bg);
-  background-image: url(./../assets/images/ui/app-loader.png);
+  background-image: url(./../assets/images/ui/app-loader.webp);
   width: 100%;
   height: 100%;
   &__inner {

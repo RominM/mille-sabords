@@ -136,11 +136,28 @@ cachet de cire pour le bouton d'action, panneaux à **coins découpés** (`clip-
 (rouge et teal en fonds uniquement, jamais en texte sur fond sombre) ; focus
 clavier Doublon décalé ; `prefers-reduced-motion` respecté.
 
-Voir la page style-guide (tous les tokens et composants rendus) :
+### Images
+
+Les visuels sont livrés en **WebP** et dimensionnés pour leur taille d'affichage
+réelle. Après avoir déposé de nouveaux PNG/JPG dans `app/assets/images/` :
 
 ```bash
-npm run design    # ou : npm run dev -w @ms/web  → http://localhost:5173
+npm run assets -w @ms/web          # convertit, redimensionne, met à jour les imports
+npm run assets -w @ms/web -- --dry # simulation : affiche les gains sans rien écrire
 ```
+
+Le script est réexécutable sans risque (les WebP déjà présents sont ignorés) et
+réécrit lui-même les `import … from '….png'` du code. La largeur maximale est
+réglée par dossier dans `scripts/optimize-images.mjs` (dés 320 px, avatars
+400 px, cartes 700 px, décor 2000 px).
+
+### Lancer le front
+
+```bash
+npm run web    # → http://localhost:5173
+```
+
+Pages : `/` (accueil), `/lobby` (salle d'attente), `/solo` (plateau de jeu).
 
 ## Roadmap
 

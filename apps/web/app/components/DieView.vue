@@ -19,12 +19,12 @@
 
 <script setup lang="ts">
 import type { Die, DieFace } from '@ms/engine'
-import sabre from '~/assets/images/dice/die-face_sabre.png'
-import skull from '~/assets/images/dice/die-face_skull.png'
-import monkey from '~/assets/images/dice/die-face_monkey.png'
-import parrot from '~/assets/images/dice/die-face_parot.png'
-import coin from '~/assets/images/dice/die-fice_coin.png'
-import diamond from '~/assets/images/dice/die-face_diamond.png'
+import sabre from '~/assets/images/dice/die-face_sabre.webp'
+import skull from '~/assets/images/dice/die-face_skull.webp'
+import monkey from '~/assets/images/dice/die-face_monkey.webp'
+import parrot from '~/assets/images/dice/die-face_parot.webp'
+import coin from '~/assets/images/dice/die-fice_coin.webp'
+import diamond from '~/assets/images/dice/die-face_diamond.webp'
 
 const FACE_IMG: Record<DieFace, string> = { sabre, skull, monkey, parrot, coin, diamond }
 

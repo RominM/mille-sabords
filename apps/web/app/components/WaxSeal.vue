@@ -10,7 +10,7 @@
  * C'est la signature visuelle du jeu — on le retrouve sur Jouer / Lancer /
  * S'arrêter / Rejouer. L'image est interchangeable via la prop `image`.
  */
-import defaultSeal from '~/assets/images/ui/wax-seal-lancer.png'
+import defaultSeal from '~/assets/images/ui/wax-seal-lancer.webp'
 
 const props = defineProps<{ label: string; disabled?: boolean; image?: string }>()
 defineEmits<{ click: [] }>()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BotDifficulty, DieFace } from '@ms/engine'
-import layoutUrl from '~/assets/images/ui/layout-game.png'
-import stopSeal from '~/assets/images/ui/wax-seal-stop.png'
+import layoutUrl from '~/assets/images/ui/layout-game.webp'
+import stopSeal from '~/assets/images/ui/wax-seal-stop.webp'
 import darkLaught from './assets/sounds/soundscrate-evil-chuckle-02.mp3'
 
 const {
@@ -278,7 +278,7 @@ const outcome = computed(() => {
   color: var(--text-dim);
 }
 
-// Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.png
+// Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.webp
 // (mesurée : barreaux entre y 270 et 718 px sur 941, x 99..347 sur 1672).
 .zone-players {
   position: absolute;

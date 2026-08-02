@@ -14,7 +14,7 @@
  * Purement décoratif (aria-hidden, pointer-events: none) : le composant se
  * superpose au plateau sans jamais intercepter de clic.
  *
- * Les positions sont mesurées sur `layout-game.png` (1672 × 941) :
+ * Les positions sont mesurées sur `layout-game.webp` (1672 × 941) :
  * œil gauche 48,6 % / droit 51,2 % en x, 7,1 % en y.
  */
 </script>
