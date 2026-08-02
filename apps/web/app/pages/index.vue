@@ -1,456 +1,106 @@
-<script setup lang="ts">
-import type { BotDifficulty, DieFace } from '@ms/engine'
-import layoutUrl from '~/assets/images/ui/layout-game.png'
-import stopSeal from '~/assets/images/ui/wax-seal-stop.png'
-
-const {
-  WINNING_SCORE,
-  TURN_SECONDS,
-  secondsLeft,
-  mode,
-  difficulty,
-  selected,
-  rolling,
-  turnActor,
-  transient,
-  turn,
-  players,
-  currentIndex,
-  currentPlayer,
-  gamePhase,
-  winner,
-  newGame,
-  roll,
-  reroll,
-  rollOrReroll,
-  stop,
-  bank,
-  unbank,
-  toggleDie,
-  continueGame,
-  eligibleReroll
-} = useGame()
-
-const FACE: Record<DieFace, string> = {
-  sabre: '⚔️',
-  skull: '💀',
-  monkey: '🐵',
-  parrot: '🦜',
-  coin: '🪙',
-  diamond: '💎'
-}
-
-const diffs: { value: BotDifficulty; label: string }[] = [
-  { value: 'easy', label: 'Facile' },
-  { value: 'medium', label: 'Moyen' },
-  { value: 'hard', label: 'Difficile' }
-]
-const pendingDifficulty = ref<BotDifficulty>('medium')
-
-const skulls = computed(() => {
-  const t = turn.value
-  if (!t) return 0
-  return t.dice.filter((d) => d.face === 'skull').length + (t.card.type === 'skulls' ? t.card.count : 0)
-})
-const isBotTurn = computed(() => !!currentPlayer.value?.bot)
-/** Les cachets restent affichés en permanence ; ils sont grisés hors de notre tour. */
-const myTurn = computed(() => !isBotTurn.value && !rolling.value && turn.value?.phase !== 'ended')
-const canRoll = computed(
-  () => myTurn.value && ['first-roll', 'island-roll', 'decision'].includes(turn.value?.phase ?? '')
-)
-const canStop = computed(() => myTurn.value && turn.value?.phase === 'decision')
-const clickable = computed(() => !isBotTurn.value && turn.value?.phase === 'decision')
-const isTreasure = computed(() => turn.value?.card.type === 'treasure-island')
-const rerollCount = computed(() => eligibleReroll().length)
-const bankCount = computed(
-  () =>
-    [...selected.value].filter(
-      (id) => !turn.value!.dice[id]!.banked && turn.value!.dice[id]!.face !== 'skull'
-    ).length
-)
-const unbankCount = computed(() => [...selected.value].filter((id) => turn.value!.dice[id]!.banked).length)
-
-/**
- * Centre = dés encore en jeu (ils repartiront à la relance).
- * Slots du bas = dés GARDÉS : ceux choisis par le joueur, plus les têtes de mort
- * (verrouillées, donc gardées d'office) et les dés réservés de l'Île au Trésor.
- */
-const isKept = (d: { id: number; locked: boolean; banked: boolean }) =>
-  d.locked || d.banked || selected.value.has(d.id)
-
-const centerDice = computed(() =>
-  turn.value ? turn.value.dice.filter((d) => d.face !== null && !isKept(d)) : []
-)
-const slotDice = computed(() =>
-  turn.value ? turn.value.dice.filter((d) => d.face !== null && isKept(d)) : []
-)
-
-const outcome = computed(() => {
-  const o = turn.value?.outcome
-  if (!o) return { title: 'Tour terminé', lines: [] as string[], score: 0, cls: '' }
-  const lines: string[] = []
-  let title = ''
-  if (o.reason === 'stopped') {
-    title = 'Tour terminé'
-    const b = o.breakdown!
-    for (const c of b.combos)
-      lines.push(`${c.count}× ${c.face === 'animals' ? 'Animaux' : FACE[c.face]} → +${c.points}`)
-    if (b.treasures) lines.push(`Trésors → +${b.treasures}`)
-    if (b.fullChest) lines.push('Coffre plein → +500')
-    if (b.shipResult === 'success') lines.push('Bateau réussi ✅')
-    if (b.shipResult === 'failed') lines.push('Bateau raté ❌')
-    if (b.doubled) lines.push('Carte Pirate ×2')
-  } else if (o.reason === 'three-skulls') {
-    title = '💀 Trois têtes — tour perdu'
-  } else {
-    title = '☠ Île de la Tête-de-Mort'
-    lines.push(`Chaque adversaire perd ${o.opponentPenalty} pts`)
-  }
-  return { title, lines, score: o.score, cls: o.score < 0 ? 'neg' : o.score > 0 ? 'pos' : '' }
-})
-</script>
-
 <template>
-  <div v-if="mode !== 'start'" class="stage">
-    <div class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
-      <!-- Joueurs : colonne de 5 slots à gauche -->
-      <div class="zone-players">
-        <PlayerSlot
-          v-for="i in 5"
-          :key="i"
-          :player="players[i - 1] ?? null"
-          :current="gamePhase === 'playing' && i - 1 === currentIndex"
-          :seconds="gamePhase === 'playing' && i - 1 === currentIndex ? secondsLeft : undefined"
-          :total-seconds="TURN_SECONDS"
-        />
-      </div>
-
-      <!-- Carte Pirate : cadre à droite -->
-      <div v-if="turn" class="zone-card">
-        <PirateCard :card="turn.card" :skulls="skulls" />
-      </div>
-
-      <!-- Dés en jeu : au centre du plateau -->
-      <div v-if="turn" class="zone-center">
-        <div v-for="d in centerDice" :key="d.id" class="die-cell die-cell--big">
-          <DieView :die="d" :clickable="clickable" @click="toggleDie(d.id)" />
-        </div>
-      </div>
-
-      <!-- Dés sélectionnés : dans les slots du bas -->
-      <div v-if="turn" class="zone-slots">
-        <div v-for="i in 8" :key="i" class="die-cell">
-          <DieView
-            v-if="slotDice[i - 1]"
-            :die="slotDice[i - 1]!"
-            :clickable="clickable"
-            :selected="true"
-            @click="toggleDie(slotDice[i - 1]!.id)"
-          />
-        </div>
-      </div>
-
-      <!-- Zone d'action : les DEUX cachets sont toujours présents, simplement
-           grisés quand l'action n'est pas possible (jet en cours, tour de l'IA). -->
-      <div v-if="turn" class="zone-action">
-        <div class="zone-action__roll">
-          <WaxSeal label="Lancer" :disabled="!canRoll" @click="rollOrReroll" />
-        </div>
-        <div class="zone-action__stop">
-          <WaxSeal label="S’arrêter" :image="stopSeal" :disabled="!canStop" @click="stop" />
-        </div>
-        <span v-if="isBotTurn" class="bot-banner">Le Corsaire réfléchit…</span>
-      </div>
-
-      <!-- Île au Trésor : réserver / reprendre des dés -->
-      <div v-if="turn && !isBotTurn && turn.phase === 'decision' && isTreasure" class="zone-side">
-        <button class="btn btn--ghost" :disabled="!bankCount" @click="bank">
-          Réserver ({{ bankCount }})
-        </button>
-        <button class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">
-          Reprendre ({{ unbankCount }})
-        </button>
-      </div>
-
-      <!-- Indice : sous les slots -->
-      <p v-if="turn && !isBotTurn && turn.phase === 'decision'" class="zone-hint">
-        <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
-        <span v-else>Sélectionne les dés que tu veux GARDER, puis relance les autres — ou arrête-toi.</span>
+  <main class="home">
+    <div class="home__panel panel">
+      <h1 class="home__title">Mille Sabords</h1>
+      <p class="home__tagline">
+        Huit dés, une carte, et l'appât du gain. Arrête-toi à temps — la troisième
+        tête de mort emporte tout.
       </p>
-      <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
-        Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.
-      </p>
-    </div>
-  </div>
 
-  <!-- Overlays ─────────────────────────────────────────────────────────────── -->
-  <div v-if="mode === 'start'" class="overlay">
-    <div class="panel">
-      <h2>Mille Sabords</h2>
-      <p class="card-effect">Affronte Le Corsaire (l’IA) en solo. Premier à {{ WINNING_SCORE }} points.</p>
-      <div class="diff-choices">
-        <button
-          v-for="d in diffs"
-          :key="d.value"
-          class="btn"
-          :class="{ 'btn--ghost': pendingDifficulty !== d.value }"
-          @click="pendingDifficulty = d.value"
-        >
-          {{ d.label }}
+      <hr class="rope home__rope" />
+
+      <nav class="home__menu">
+        <NuxtLink to="/solo" class="btn home__link">Jouer en solo</NuxtLink>
+        <NuxtLink to="/lobby" class="btn btn--ghost home__link">Multijoueur</NuxtLink>
+        <button class="btn btn--ghost home__link" type="button" @click="toggleRules">
+          {{ showRules ? 'Masquer les règles' : 'Les règles' }}
         </button>
-      </div>
-      <WaxSeal label="Jouer" @click="newGame(pendingDifficulty)" />
-    </div>
-  </div>
+      </nav>
 
-  <div v-else-if="mode === 'turnEnd'" class="overlay">
-    <div class="panel">
-      <h2>{{ outcome.title }}</h2>
-      <div class="outcome-lines">
-        <span v-for="(l, i) in outcome.lines" :key="i">{{ l }}</span>
-        <span :class="outcome.cls">
-          <strong>{{ turnActor }} : {{ outcome.score >= 0 ? '+' : '' }}{{ outcome.score }} pts</strong>
-        </span>
-      </div>
-      <button class="btn" @click="continueGame">
-        {{ gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer' }}
-      </button>
+      <section v-if="showRules" class="home__rules">
+        <ul class="home__rules-list">
+          <li v-for="rule in RULES" :key="rule">{{ rule }}</li>
+        </ul>
+      </section>
     </div>
-  </div>
-
-  <div v-else-if="mode === 'finished'" class="overlay">
-    <div class="panel">
-      <h2>🏆 {{ winner?.name }} l’emporte !</h2>
-      <div class="outcome-lines">
-        <span v-for="p in players" :key="p.id">{{ p.name }} : {{ p.score }} pts</span>
-      </div>
-      <WaxSeal label="Rejouer" @click="newGame(difficulty)" />
-    </div>
-  </div>
+  </main>
 </template>
 
+<script setup lang="ts">
+import { WINNING_SCORE } from '@ms/engine'
+
+const RULES: string[] = [
+  `Le premier à ${WINNING_SCORE} points déclenche le dernier tour — le meilleur score l'emporte.`,
+  'Trois têtes de mort et le tour est perdu : les têtes sont maudites, impossible de les relancer.',
+  'Une relance se fait avec au moins deux dés ; garde ceux qui rapportent.',
+  'Trois symboles identiques ou plus rapportent des points (100 pour 3, jusqu’à 4000 pour 8).',
+  'Chaque pièce d’or et chaque diamant valent 100 points de plus.',
+  'Les 8 dés sur la même valeur : coffre au trésor plein, +500 points.',
+  'Quatre têtes de mort au premier lancer, et te voilà sur l’Île de la Tête-de-Mort : tes adversaires trinquent.'
+]
+
+const showRules = ref(false)
+
+function toggleRules(): void {
+  showRules.value = !showRules.value
+}
+</script>
+
 <style scoped lang="scss">
-// ── Scène : remplit la fenêtre, centre le plateau, letterbox autour ─────────
-.stage {
-  position: fixed;
-  inset: 0;
+.home {
   display: grid;
   place-items: center;
-  overflow: hidden;
-}
-
-// ── Plateau : verrouillé sur l'aspect ratio du fond (16:9) ──────────────────
-// On garde les proportions du fond (pas d'étirement → carte non déformée, cachet
-// rond) et on le fait RENTRER dans la fenêtre (le plus grand 16:9 possible, avec
-// une marge/letterbox). Zones en % → toujours pile alignées aux cadres.
-.plateau {
-  position: relative;
-  aspect-ratio: 1672 / 941;
-  width: min(100dvw, calc(100dvh * 1672 / 941));
-  max-width: 100dvw;
-  max-height: 100dvh;
-  background-position: center;
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  container-type: size;
-  overflow: hidden;
-}
-.sg-link {
-  position: absolute;
-  top: 1.5%;
-  right: 2%;
-  z-index: 2;
-  font-family: var(--font-mono);
-  font-size: 1cqw;
-  color: var(--text-dim);
-}
-
-// Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.png
-// (mesurée : barreaux entre y 270 et 718 px sur 941, x 99..347 sur 1672).
-.zone-players {
-  position: absolute;
-  left: 5.8%;
-  top: 28.79%;
-  width: 14.9%;
-  height: 47.6%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.74cqh; // = l'écart réel entre deux barreaux
-}
-.zone-card {
-  position: absolute;
-  left: 78.999%;
-  top: 30%;
-  width: 13.79%;
-  height: 40%;
-}
-
-// Dés en jeu, au centre
-.zone-center {
-  position: absolute;
-  left: 21%;
-  top: 21%;
-  width: 58%;
-  height: 45%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.6cqw;
-  align-content: center;
-  justify-content: center;
-}
-.die-cell--big {
-  width: 9.5cqw;
-  height: 9.5cqw;
-}
-
-// Slots du bas : dés sélectionnés
-.zone-slots {
-  position: absolute;
-  left: 24.6%;
-  top: 75.7%;
-  width: 50.7%;
-  height: 11.9%;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 0.6%;
-  place-items: center;
-}
-.die-cell {
-  display: grid;
-  place-items: center;
-}
-// Dés réservés : remplissent leur slot (et s'étirent avec le plateau au resize).
-.zone-slots .die-cell {
-  width: 100%;
-  height: 100%;
-}
-
-// Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte
-// Zone d'action élargie : « Lancer » calé à gauche, « S'arrêter » à droite.
-// Tailles en cqw → elles suivent le plateau au redimensionnement.
-.zone-action {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  right: 18%;
-  bottom: 19%;
-  width: 12cqw;
-  height: 12cqw;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.zone-action__roll {
-  flex: 0 0 auto;
-  width: 8.7cqw;
-  height: 8.7cqw;
-  margin: 0 auto -18px 0;
-}
-// Le cachet « S'arrêter » est volontairement plus petit que « Lancer ».
-.zone-action__stop {
-  flex: 0 0 auto;
-  width: 6.5cqw;
-  height: 6.5cqw;
-  margin: 0 0 0 auto;
-}
-.zone-action .btn {
-  font-size: 1.5cqw;
-  padding: 0.5cqw 1.2cqw;
-}
-
-// Actions secondaires (s'arrêter / Île au Trésor), sous le cachet
-.zone-side {
-  position: absolute;
-  right: 20%;
-  top: 73%;
-  width: 11%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6cqw;
-  align-items: center;
-  justify-content: center;
-}
-.zone-side .btn {
-  font-size: 1.3cqw;
-  padding: 0.4cqw 1cqw;
-}
-// Le cachet remplit la boîte que lui donne .zone-action__roll / __stop
-.zone-action :deep(.wax) {
-  width: 100%;
-  height: 100%;
-}
-.bot-banner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--accent);
-  font-family: var(--font-body);
-  font-size: 1.9cqw;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-.bot-banner::before {
-  content: '🤖';
-}
-
-.zone-hint {
-  position: absolute;
-  bottom: 50px;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 47%;
-  text-align: center;
-  color: var(--parchment, #ede0c8);
-  font-size: 1.3cqw;
-  font-weight: 300;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
-}
-.danger-txt {
-  color: var(--danger-edge);
-  font-weight: 600;
-}
-
-// ── Overlays ─────────────────────────────────────────────────────────────────
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
+  min-height: 100dvh;
   padding: var(--space-4);
-  background: rgba(24, 14, 8, 0.78);
-}
-.overlay .panel {
-  max-width: 460px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  text-align: center;
-}
-.overlay h2 {
-  color: var(--accent);
-}
-.card-effect {
-  color: var(--text-dim);
-  max-width: 52ch;
-}
-.diff-choices {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.outcome-lines {
-  font-family: var(--font-body);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.outcome-lines .neg {
-  color: var(--danger-edge);
-}
-.outcome-lines .pos {
-  color: var(--success);
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    width: min(560px, 100%);
+    text-align: center;
+  }
+
+  &__title {
+    color: var(--accent);
+    font-size: var(--fs-display-xl);
+  }
+
+  &__tagline {
+    max-width: 46ch;
+    color: var(--text-dim);
+  }
+
+  &__rope {
+    width: 100%;
+  }
+
+  &__menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    justify-content: center;
+  }
+
+  &__link {
+    min-width: 12rem;
+    justify-content: center;
+  }
+
+  &__rules {
+    width: 100%;
+    text-align: left;
+  }
+
+  &__rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding-left: var(--space-4);
+    color: var(--text-dim);
+    font-size: var(--fs-body-s);
+  }
 }
 </style>
