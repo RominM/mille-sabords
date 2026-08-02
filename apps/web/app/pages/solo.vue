@@ -48,6 +48,21 @@ const diffs: { value: BotDifficulty; label: string }[] = [
 ]
 const pendingDifficulty = ref<BotDifficulty>('medium')
 
+/**
+ * Table composée dans le lobby : si elle existe, on démarre directement avec cet
+ * équipage et l'écran de choix est sauté. Sinon on retombe sur le solo par
+ * défaut (Toi contre Le Corsaire), accessible depuis l'accueil.
+ */
+const tableSetup = useTableSetup()
+
+onMounted(function startFromLobby() {
+  const setup = tableSetup.value
+  if (!setup?.roster.length) return
+  pendingDifficulty.value = setup.difficulty
+  newGame(setup.difficulty, setup.roster)
+  tableSetup.value = null // consommée : « Rejouer » réutilisera le même équipage
+})
+
 const skulls = computed(() => {
   const t = turn.value
   if (!t) return 0

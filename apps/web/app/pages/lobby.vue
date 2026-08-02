@@ -28,6 +28,22 @@
         <button class="btn" type="button" :disabled="!canJoin" @click="addSelf">
           Rejoindre
         </button>
+
+        <div class="lobby__field">
+          <span class="lobby__label">Niveau des IA</span>
+          <div class="lobby__diffs">
+            <button
+              v-for="d in DIFFICULTIES"
+              :key="d.value"
+              class="btn"
+              :class="{ 'btn--ghost': difficulty !== d.value }"
+              type="button"
+              @click="difficulty = d.value"
+            >
+              {{ d.label }}
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- Équipage : 5 sièges, remplis ou vides -->
@@ -90,8 +106,16 @@
  * Elle sera branchée sur le serveur WebSocket autoritaire en phase 4 — la forme
  * de l'état (sièges, « paré », capitaine) est déjà celle qu'il diffusera.
  */
+import type { BotDifficulty } from '@ms/engine'
+
 const MAX_SEATS = 5
 const MIN_PLAYERS = 2
+
+const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
+  { value: 'easy', label: 'Facile' },
+  { value: 'medium', label: 'Moyen' },
+  { value: 'hard', label: 'Difficile' }
+]
 
 interface Seat {
   name: string
@@ -100,6 +124,8 @@ interface Seat {
 }
 
 const router = useRouter()
+const tableSetup = useTableSetup()
+const difficulty = ref<BotDifficulty>('medium')
 
 const pseudo = ref('')
 const seats = ref<(Seat | null)[]>(Array.from({ length: MAX_SEATS }, () => null))
@@ -157,8 +183,17 @@ function toggleReady(index: number): void {
   seats.value = [...seats.value]
 }
 
+/** Transmet la table composée à la partie, puis y navigue. */
 function startGame(): void {
   if (!canStart.value) return
+  tableSetup.value = {
+    difficulty: difficulty.value,
+    roster: filled.value.map((seat, i) => ({
+      id: `p${i}`,
+      name: seat.name,
+      bot: seat.bot
+    }))
+  }
   router.push('/solo')
 }
 </script>

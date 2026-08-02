@@ -5,8 +5,8 @@
       <div class="modal-dialog__content">
         <header class="modal-dialog__content--header">
           <h2 class="modal-dialog__content--header__title">{{ title }}</h2>
-          <button v-if="showCross" @click="emit('close')">
-            <img class="modal-dialog__content--header__cross" src="./../assets/images/ui/cross-bones.png" />
+          <button v-if="showCross" class="modal-dialog__content--header__cross" @click="emit('close')">
+            <img src="./../assets/images/ui/cross-bones.png" />
           </button>
         </header>
         <div class="modal-dialog__content__slot">
@@ -56,7 +56,7 @@ defineProps({
     transform: translate(-50%, -50%);
     width: 430px;
     max-height: 440px;
-    padding: 25px;
+    padding: 0 25px;
     overflow: hidden;
     z-index: 99;
     &--header {
@@ -67,7 +67,7 @@ defineProps({
       }
       &__cross {
         position: absolute;
-        top: 25px;
+        top: 0;
         right: 20px;
         width: 40px;
         z-index: 999;
@@ -78,7 +78,7 @@ defineProps({
       }
     }
     &__slot {
-      height: 100%;
+      height: 370px;
       overflow: auto;
     }
   }

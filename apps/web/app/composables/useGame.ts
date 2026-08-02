@@ -73,12 +73,19 @@ export function useGame() {
 
   // ── Cycle de jeu ────────────────────────────────────────────────────────────
 
-  function newGame(diff: BotDifficulty): void {
+  /** Équipage par défaut si la partie est lancée sans passer par le lobby. */
+  const DEFAULT_ROSTER: TableSeat[] = [
+    { id: 'you', name: 'Toi', bot: false },
+    { id: 'bot', name: 'Le Corsaire', bot: true },
+  ]
+
+  /** Mémorisé pour que « Rejouer » relance la même table. */
+  let currentRoster: TableSeat[] = DEFAULT_ROSTER
+
+  function newGame(diff: BotDifficulty, roster?: TableSeat[]): void {
     difficulty.value = diff
-    game = new Game([
-      { id: 'you', name: 'Toi' },
-      { id: 'bot', name: 'Le Corsaire', bot: true },
-    ])
+    if (roster?.length) currentRoster = roster
+    game = new Game(currentRoster.map(s => ({ id: s.id, name: s.name, bot: s.bot })))
     startTurn()
   }
 
