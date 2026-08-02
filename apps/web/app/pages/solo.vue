@@ -53,6 +53,12 @@ const skulls = computed(() => {
   return t.dice.filter((d) => d.face === 'skull').length + (t.card.type === 'skulls' ? t.card.count : 0)
 })
 const isBotTurn = computed(() => !!currentPlayer.value?.bot)
+
+/** Tour perdu : les yeux du crâne du plateau s'embrasent. */
+const isDefeat = computed(function detectDefeat() {
+  const reason = turn.value?.outcome?.reason
+  return reason === 'three-skulls' || reason === 'skull-island'
+})
 /** Les cachets restent affichés en permanence ; ils sont grisés hors de notre tour. */
 const myTurn = computed(() => !isBotTurn.value && !rolling.value && turn.value?.phase !== 'ended')
 const canRoll = computed(
@@ -227,6 +233,9 @@ const outcome = computed(() => {
       <WaxSeal label="Rejouer" @click="newGame(difficulty)" />
     </div>
   </div>
+
+  <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
+  <SkullEyes v-if="isDefeat" />
 </template>
 
 <style scoped lang="scss">
