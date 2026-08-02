@@ -143,17 +143,25 @@ export class Game {
     this.state.decisionDeadline = this.now() + DECISION_TIMEOUT_MS
   }
 
+  /**
+   * Un score de joueur ne descend JAMAIS sous zéro : les malus (Île de la
+   * Tête-de-Mort, Bateau Pirate raté) font au pire retomber à 0.
+   */
+  private static clamp(score: number): number {
+    return Math.max(0, score)
+  }
+
   private applyOpponentPenalty(penalty: number): void {
     if (penalty <= 0) return
     this.state.players.forEach((p, i) => {
-      if (i !== this.state.currentPlayerIndex) p.score -= penalty
+      if (i !== this.state.currentPlayerIndex) p.score = Game.clamp(p.score - penalty)
     })
   }
 
   private settleTurn(): void {
     const turn = this.state.turn!
     const outcome = turn.outcome!
-    this.currentPlayer.score += outcome.score
+    this.currentPlayer.score = Game.clamp(this.currentPlayer.score + outcome.score)
     this.applyOpponentPenalty(outcome.opponentPenalty)
     this.concludeTurn(turn.card)
   }

@@ -26,10 +26,17 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
 
 - 8 dés Corsaires, barème 3→8 identiques (100 → 4000 pts)
 - +100 par pièce d'or et diamant, cumulables avec les combos
-- Bonus coffre au trésor plein (+500)
+- Bonus coffre au trésor plein (+500) : **les 8 dés doivent afficher le même
+  symbole** (8 pièces, 8 diamants, 8 animaux avec la carte Animaux…). Un mélange
+  (5 pièces + 3 diamants) ne donne pas le bonus, même si tous les dés marquent.
 - 3e tête de mort = tour perdu, têtes maudites non relançables
-- Relances : min 2 dés, au moins 1 dé réservé
+- Relances : min 2 dés (relancer TOUS les dés relançables est permis)
 - Île de la Tête-de-Mort (4+ têtes au 1er lancer, malus -100/tête aux adversaires)
+- **Un score ne descend jamais sous zéro** : un malus fait au pire retomber à 0
+- **Bateau Pirate** : le défi est obligatoire pour marquer. Réussi → les dés
+  comptent + la prime. Raté → **0 point** (même les dés), mais aucune pénalité.
+  Le quota de sabres reste acquis même si le tour se perd sur la 3ᵉ tête : les
+  sabres sont comptés en même temps que les têtes du lancer fatal.
 - Les 8 cartes Pirate : Île au Trésor, Pirate (x2, malus île x2), Tête de Mort (1-2),
   Gardienne, Bateau Pirate (3 paliers), Pièce d'or, Diamant, Animaux
 - Franchir 6000 pts déclenche un **dernier tour** : chaque autre joueur rejoue
@@ -38,9 +45,9 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
 
 ## Interprétations à valider (zones grises du PDF)
 
-1. **Bateau Pirate + 4 têtes au 1er lancer** : le PDF dit « perd immédiatement
-   son tour ». Implémenté : le malus de la carte s'applique aussi (quota de
-   sabres raté). À confirmer avec la FAQ officielle si tu veux du 100% canon.
+1. **Coffre plein et carte Tête de Mort** : le bonus se juge sur les 8 dés
+   uniquement. 8 pièces donnent donc le coffre plein même si la carte du tour
+   apporte une tête de mort (elle n'est pas un dé). À confirmer.
 2. **Composition du deck (35 cartes)** : répartition standard Gigamic dans
    `deck.ts`, non détaillée dans le PDF. Corroborée par les notes de l'ancien
    repo (`main` d'origine) qui listent exactement la même répartition (4 diamant,

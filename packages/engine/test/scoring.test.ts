@@ -47,19 +47,33 @@ describe('combinaisons', () => {
 })
 
 describe('coffre au trésor plein', () => {
-  it('+500 quand les 8 dés marquent', () => {
-    const bd = scoreTurn(
-      dice(['coin', 'coin', 'coin', 'coin', 'sabre', 'sabre', 'sabre', 'coin']),
-      guardian,
-    )
-    // 5 pièces (500) + 3 sabres (100) + 5x100 trésor + 500 coffre = 1600
+  it('+500 quand les 8 dés affichent le MÊME symbole', () => {
+    const bd = scoreTurn(dice(Array(8).fill('coin')), guardian)
+    // 8 identiques (4000) + 8x100 trésor + 500 coffre = 5300
     expect(bd.fullChest).toBe(true)
-    expect(bd.total).toBe(1600)
+    expect(bd.total).toBe(5300)
   })
 
-  it('pas de bonus si un dé ne marque pas', () => {
+  it('pas de bonus si les symboles sont mélangés, même si tout marque', () => {
+    // 5 pièces + 3 diamants : tout marque, mais ce sont deux symboles différents
     const bd = scoreTurn(
-      dice(['coin', 'coin', 'coin', 'coin', 'sabre', 'sabre', 'sabre', 'monkey']),
+      dice(['coin', 'coin', 'coin', 'coin', 'coin', 'diamond', 'diamond', 'diamond']),
+      guardian,
+    )
+    expect(bd.fullChest).toBe(false)
+  })
+
+  it('8 animaux avec la carte Animaux : singes + perroquets = un seul symbole', () => {
+    const bd = scoreTurn(
+      dice(['monkey', 'parrot', 'monkey', 'parrot', 'monkey', 'monkey', 'parrot', 'parrot']),
+      { type: 'animals' },
+    )
+    expect(bd.fullChest).toBe(true)
+  })
+
+  it('les mêmes 8 animaux SANS la carte Animaux : deux symboles → pas de bonus', () => {
+    const bd = scoreTurn(
+      dice(['monkey', 'parrot', 'monkey', 'parrot', 'monkey', 'monkey', 'parrot', 'parrot']),
       guardian,
     )
     expect(bd.fullChest).toBe(false)
@@ -73,12 +87,11 @@ describe('coffre au trésor plein', () => {
     expect(bd.fullChest).toBe(false)
   })
 
-  it('la carte Tête de Mort bloque le bonus (dé virtuel non marquant)', () => {
-    const bd = scoreTurn(
-      dice(Array(8).fill('coin')),
-      { type: 'skulls', count: 1 },
-    )
-    expect(bd.fullChest).toBe(false)
+  it('la carte Tête de Mort ne bloque plus le bonus : seuls les 8 DÉS comptent', () => {
+    // ⚠️ Interprétation : le coffre plein se juge sur les dés, pas sur la carte.
+    // 8 pièces restent 8 pièces même si la carte apporte une tête de mort.
+    const bd = scoreTurn(dice(Array(8).fill('coin')), { type: 'skulls', count: 1 })
+    expect(bd.fullChest).toBe(true)
   })
 })
 
@@ -124,13 +137,47 @@ describe('cartes Pirate', () => {
     expect(bd.total).toBe(800)
   })
 
-  it('Bateau Pirate raté : score = -valeur, peu importe les dés', () => {
+  it('Bateau Pirate raté : aucun point du tout (le défi est obligatoire)', () => {
+    // Scénario de l'utilisateur : défi 4 sabres, 1 seul sabre → même les pièces
+    // accumulées ne rapportent rien. Aucune pénalité pour autant.
     const bd = scoreTurn(
       dice(['sabre', 'coin', 'coin', 'coin', 'coin', 'coin', 'coin', 'coin']),
       { type: 'ship', sabres: 4, value: 1000 },
     )
     expect(bd.shipResult).toBe('failed')
-    expect(bd.total).toBe(-1000)
+    expect(bd.total).toBe(0)
+  })
+
+  it('Bateau Pirate réussi : dés + prime du défi', () => {
+    // Scénario de l'utilisateur : défi 4 sabres, 5 sabres obtenus
+    // → combo de 5 sabres (500) + prime (1000) = 1500
+    const bd = scoreTurn(
+      dice(['sabre', 'sabre', 'sabre', 'sabre', 'sabre', 'monkey', 'parrot', 'monkey']),
+      { type: 'ship', sabres: 4, value: 1000 },
+    )
+    expect(bd.shipResult).toBe('success')
+    expect(bd.total).toBe(1500)
+  })
+
+  it('tour perdu sur 3 têtes : la prime du bateau reste acquise si le quota est atteint', () => {
+    // Scénario de l'utilisateur : bateau 3 sabres, 3 têtes ET 3 sabres au total
+    const bd = scoreTurn(
+      dice(['skull', 'sabre', 'skull', 'skull', 'sabre', 'sabre', 'coin', 'monkey']),
+      { type: 'ship', sabres: 3, value: 500 },
+      { shipOnly: true },
+    )
+    expect(bd.shipResult).toBe('success')
+    expect(bd.total).toBe(500) // les dés ne marquent pas, la prime si
+  })
+
+  it('tour perdu sur 3 têtes sans le quota : zéro, mais aucune pénalité', () => {
+    const bd = scoreTurn(
+      dice(['skull', 'sabre', 'skull', 'skull', 'coin', 'coin', 'coin', 'monkey']),
+      { type: 'ship', sabres: 3, value: 500 },
+      { shipOnly: true },
+    )
+    expect(bd.shipResult).toBe('failed')
+    expect(bd.total).toBe(0)
   })
 })
 

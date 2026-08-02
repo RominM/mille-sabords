@@ -76,25 +76,11 @@ export function chooseRerollSet(turn: TurnState): number[] | null {
     return face === 'coin' || face === 'diamond' || (counts.get(groupKey(face, merge)) ?? 0) >= 3
   }
 
-  let candidates = eligible.filter(d => !scores(d.face!))
+  const candidates = eligible.filter(d => !scores(d.face!))
   if (candidates.length < 2) return null
 
-  // Il faut toujours réserver au moins un dé. Si tous les dés seraient relancés,
-  // on garde celui dont le groupe est le plus grand (meilleure amorce de combo).
-  if (candidates.length >= turn.dice.length) {
-    let keep = candidates[0]!
-    let best = -1
-    for (const d of candidates) {
-      const size = counts.get(groupKey(d.face!, merge)) ?? 0
-      if (size > best) {
-        best = size
-        keep = d
-      }
-    }
-    candidates = candidates.filter(d => d.id !== keep.id)
-    if (candidates.length < 2) return null
-  }
-
+  // Relancer TOUS les dés non marquants est autorisé (et optimal quand rien ne
+  // marque) : inutile de garder un dé au hasard.
   return candidates.map(d => d.id)
 }
 

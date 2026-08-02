@@ -23,7 +23,7 @@ const canClick = computed(() => props.clickable && !props.die.locked && props.di
       'is-clickable': canClick,
       'is-selected': selected,
       'is-locked': die.locked,
-      'is-banked': die.banked,
+      'is-banked': die.banked
     }"
     :disabled="die.locked"
     type="button"
@@ -44,6 +44,7 @@ const canClick = computed(() => props.clickable && !props.die.locked && props.di
   background: none;
   border-radius: 12%;
   transition: transform 0.12s ease;
+  cursor: not-allowed;
 }
 .die-view__img {
   width: 100%;
@@ -52,7 +53,7 @@ const canClick = computed(() => props.clickable && !props.die.locked && props.di
   border-radius: 12%;
 }
 .die-view.is-clickable {
-  cursor: pointer;
+  cursor: inherit;
 }
 .die-view.is-clickable:hover {
   transform: translateY(-6%) scale(1.04);

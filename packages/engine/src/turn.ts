@@ -76,9 +76,10 @@ function endThreeSkulls(state: TurnState): void {
     breakdown = scoreTurn(state.dice, state.card, { bankedOnly: true })
     score = breakdown.total
   } else if (state.card.type === 'ship') {
-    // Bateau Pirate raté : zéro point ET retrait de la valeur de la carte
-    breakdown = scoreTurn(state.dice, state.card)
-    score = breakdown.total // = -value (doublé si… impossible, une seule carte)
+    // Bateau Pirate : les dés ne marquent pas, mais la prime reste acquise si le
+    // quota de sabres a été atteint — les sabres du lancer fatal comptent aussi.
+    breakdown = scoreTurn(state.dice, state.card, { shipOnly: true })
+    score = breakdown.total
   }
 
   state.phase = 'ended'
@@ -139,7 +140,11 @@ function resolveReroll(state: TurnState): void {
 function resolveIslandRoll(state: TurnState, newSkulls: number): void {
   lockSkulls(state.dice)
   const remaining = state.dice.filter(d => d.face !== 'skull').length
-  if (newSkulls === 0 || remaining === 0) {
+  // L'île s'arrête si aucun nouveau crâne n'est sorti, OU s'il ne reste plus
+  // assez de dés pour relancer (il en faut au moins deux). Sans cette seconde
+  // condition, le joueur se retrouverait bloqué : plus de lancer possible et
+  // aucune autre action disponible.
+  if (newSkulls === 0 || remaining < 2) {
     endIsland(state)
     return
   }
@@ -213,8 +218,8 @@ export function applyAction(
         throw new IllegalActionError("Reprends d'abord les dés de l'Île au Trésor (unbank)")
       if (selected.length < 2)
         throw new IllegalActionError('Une relance se fait avec au moins deux dés')
-      if (selected.length >= state.dice.length)
-        throw new IllegalActionError('Au moins un dé doit être réservé')
+      // Rien n'oblige à réserver un dé : relancer tous les dés relançables est
+      // permis (les têtes de mort restent verrouillées de toute façon).
 
       const faces = roll(selected.length)
       selected.forEach((d, i) => (d.face = faces[i]!))

@@ -35,6 +35,9 @@ export function useGame() {
   const botThinking = ref(false)
   const turnActor = ref('')
   const transient = ref('')
+  /** Vrai pendant le jet de dés : les boutons d'action sont alors inactifs. */
+  const rolling = ref(false)
+  const ROLL_MS = 450
 
   // ── Timer de tour (affichage) ───────────────────────────────────────────────
   // Décompte visuel montré sur la carte du joueur actif. Il n'applique PAS
@@ -91,7 +94,8 @@ export function useGame() {
   }
 
   function afterAction(): void {
-    selected.value = new Set()
+    // On NE vide PAS la sélection : les dés gardés le restent d'une relance à
+    // l'autre (on ne relance que ceux laissés au centre).
     if (game!.state.turn!.phase === 'ended') {
       mode.value = 'turnEnd'
       stopTimer()
@@ -113,14 +117,18 @@ export function useGame() {
     }
   }
 
-  /** Dés sélectionnés relançables (hors têtes verrouillées et dés réservés). */
+  /**
+   * Dés qui partiront à la relance = ceux que le joueur n'a PAS gardés.
+   * La sélection (`selected`) désigne les dés à GARDER ; les têtes de mort sont
+   * verrouillées par le moteur donc gardées d'office, et les dés réservés
+   * (Île au Trésor) ne repartent jamais.
+   */
   function eligibleReroll(): number[] {
     const t = game?.state.turn
     if (!t) return []
-    return [...selected.value].filter(id => {
-      const d = t.dice[id]!
-      return !d.locked && !d.banked
-    })
+    return t.dice
+      .filter(d => d.face !== null && !d.locked && !d.banked && !selected.value.has(d.id))
+      .map(d => d.id)
   }
 
   function toggleDie(id: number): void {
@@ -137,6 +145,22 @@ export function useGame() {
   const roll = () => human(() => game!.act({ type: 'roll' }))
   const reroll = () => human(() => game!.act({ type: 'reroll', diceIds: eligibleReroll() }))
   const stop = () => human(() => game!.act({ type: 'stop' }))
+
+  /**
+   * Action du bouton principal : il reste le même tout au long du tour.
+   * Premier lancer / Île de la Tête-de-Mort → lancer ; sinon relancer les dés
+   * non gardés.
+   */
+  const rollOrReroll = () => {
+    if (rolling.value || botThinking.value) return
+    const phase = game?.state.turn?.phase
+    if (phase !== 'first-roll' && phase !== 'island-roll' && phase !== 'decision') return
+    rolling.value = true
+    if (phase === 'decision') reroll()
+    else roll()
+    // Laisse le temps au jet d'être perçu (et plus tard, à l'animation 3D).
+    setTimeout(() => (rolling.value = false), ROLL_MS)
+  }
   const bank = () =>
     human(() =>
       game!.act({
@@ -185,6 +209,7 @@ export function useGame() {
     difficulty,
     selected,
     botThinking,
+    rolling,
     turnActor,
     transient,
     turn,
@@ -196,6 +221,7 @@ export function useGame() {
     newGame,
     roll,
     reroll,
+    rollOrReroll,
     stop,
     bank,
     unbank,

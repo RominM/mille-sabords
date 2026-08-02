@@ -34,6 +34,13 @@ export interface ScoreOptions {
    * pas d'évaluation Bateau Pirate côté sabres réussis.
    */
   bankedOnly?: boolean
+  /**
+   * Tour perdu sur la 3e tête de mort avec une carte Bateau Pirate :
+   * les dés ne marquent plus, MAIS la prime du bateau reste acquise si le quota
+   * de sabres a été atteint — les sabres sont comptés en même temps que les
+   * têtes de mort du lancer fatal.
+   */
+  shipOnly?: boolean
 }
 
 /**
@@ -49,6 +56,21 @@ export function scoreTurn(
   const realFaces = scoringDice
     .map(d => d.face)
     .filter((f): f is DieFace => f !== null)
+
+  // Tour perdu (3 têtes) avec un Bateau Pirate : les dés ne marquent pas, mais
+  // la prime reste due si le quota de sabres a été atteint.
+  if (opts.shipOnly) {
+    const sabres = realFaces.filter(f => f === 'sabre').length
+    const success = card.type === 'ship' && sabres >= card.sabres
+    return {
+      combos: [],
+      treasures: 0,
+      fullChest: false,
+      shipResult: card.type === 'ship' ? (success ? 'success' : 'failed') : null,
+      doubled: false,
+      total: success && card.type === 'ship' ? card.value : 0,
+    }
+  }
   const faces = opts.bankedOnly
     ? realFaces // les faces virtuelles de carte ne sont pas "réservables"
     : [...realFaces, ...virtualFaces(card)]
@@ -72,23 +94,26 @@ export function scoreTurn(
   const treasures =
     100 * ((counts.get('coin') ?? 0) + (counts.get('diamond') ?? 0))
 
-  // Coffre au trésor plein : TOUS les dés (virtuels inclus) marquent → +500.
-  // Un dé marque s'il est pièce/diamant ou membre d'une combinaison ≥ 3.
-  // Une tête de mort (dé ou carte) rend donc le bonus impossible.
+  // Coffre au trésor plein (+500) : les 8 dés doivent afficher le MÊME symbole
+  // (8 pièces, 8 diamants, 8 sabres, 8 animaux avec la carte Animaux…).
+  // Un mélange — par exemple 5 pièces + 3 diamants — ne donne PAS le bonus,
+  // même si tous les dés marquent.
+  const chestKey = (f: DieFace): DieFace | 'animals' =>
+    merge && (f === 'monkey' || f === 'parrot') ? 'animals' : f
+  const first = realFaces[0]
   const fullChest =
     !opts.bankedOnly &&
-    faces.length > 0 &&
-    faces.every(f => {
-      if (f === 'skull') return false
-      if (f === 'coin' || f === 'diamond') return true
-      const key = merge && (f === 'monkey' || f === 'parrot') ? 'animals' : f
-      return (counts.get(key) ?? 0) >= 3
-    })
+    realFaces.length === dice.length &&
+    dice.length > 0 &&
+    first !== undefined &&
+    realFaces.every(f => f !== 'skull' && chestKey(f) === chestKey(first))
 
   let total =
     combos.reduce((s, c) => s + c.points, 0) + treasures + (fullChest ? 500 : 0)
 
-  // Bateau Pirate : quota de sabres à atteindre, sinon malus
+  // Bateau Pirate : le défi est OBLIGATOIRE pour marquer.
+  // Réussi  → les dés comptent normalement + la prime de la carte.
+  // Raté    → aucun point du tout (même les dés), mais aucune pénalité non plus.
   let shipResult: ScoreBreakdown['shipResult'] = null
   if (card.type === 'ship') {
     const sabres = realFaces.filter(f => f === 'sabre').length
@@ -97,7 +122,7 @@ export function scoreTurn(
       total += card.value
     } else {
       shipResult = 'failed'
-      total = -card.value // zéro point + retrait de la valeur de la carte
+      total = 0
     }
   }
 

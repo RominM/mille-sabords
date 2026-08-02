@@ -40,7 +40,7 @@ describe('déroulement du tour', () => {
     expect(t.outcome).toMatchObject({ reason: 'three-skulls', score: 0 })
   })
 
-  it('validation des relances : min 2 dés, au moins 1 réservé, pas de tête', () => {
+  it('validation des relances : min 2 dés, pas de tête de mort', () => {
     let t = createTurn({ type: 'animals' })
     t = applyAction(t, { type: 'roll' }, roller([K, S, S, M, M, P, C, D]))
 
@@ -50,13 +50,19 @@ describe('déroulement du tour', () => {
     expect(() =>
       applyAction(t, { type: 'reroll', diceIds: [0, 1] }, roller([S, S])),
     ).toThrow(IllegalActionError) // tête de mort dans la sélection
-    expect(() =>
-      applyAction(
-        t,
-        { type: 'reroll', diceIds: [0, 1, 2, 3, 4, 5, 6, 7] },
-        roller([S, S, S, S, S, S, S, S]),
-      ),
-    ).toThrow(IllegalActionError) // tout relancer interdit
+  })
+
+  it('relancer TOUS les dés relançables est permis', () => {
+    // Aucune tête : les 8 dés peuvent repartir d'un coup.
+    let t = createTurn({ type: 'animals' })
+    t = applyAction(t, { type: 'roll' }, roller([S, S, M, M, P, C, D, S]))
+    t = applyAction(
+      t,
+      { type: 'reroll', diceIds: [0, 1, 2, 3, 4, 5, 6, 7] },
+      roller([C, C, C, D, D, M, P, S]),
+    )
+    expect(t.phase).toBe('decision')
+    expect(t.dice[0]!.face).toBe(C)
   })
 
   it('arrêt volontaire : points comptés', () => {
@@ -112,11 +118,28 @@ describe('Île de la Tête-de-Mort', () => {
     expect(t.outcome!.opponentPenalty).toBe(800)
   })
 
-  it("Bateau Pirate : jamais d'île, tour perdu + malus de la carte", () => {
+  it("Bateau Pirate : jamais d'île, tour perdu mais aucune pénalité", () => {
     let t = createTurn({ type: 'ship', sabres: 3, value: 500 })
     t = applyAction(t, { type: 'roll' }, roller([K, K, K, K, S, S, M, P]))
     expect(t.phase).toBe('ended')
-    expect(t.outcome!.score).toBe(-500)
+    expect(t.outcome!.score).toBe(0) // 2 sabres < 3 : prime perdue, rien de retiré
+  })
+
+  it('Bateau Pirate : quota atteint malgré la 3e tête → prime encaissée', () => {
+    // Scénario de l'utilisateur : bateau 3 sabres.
+    // 1er lancer : 1 tête + 1 sabre → on garde. Relance : 2 têtes + 2 sabres.
+    let t = createTurn({ type: 'ship', sabres: 3, value: 500 })
+    t = applyAction(t, { type: 'roll' }, roller([K, S, M, P, C, D, M, P]))
+    expect(t.phase).toBe('decision')
+    // On relance tout sauf la tête (verrouillée) et le sabre gardé
+    t = applyAction(
+      t,
+      { type: 'reroll', diceIds: [2, 3, 4, 5, 6, 7] },
+      roller([K, K, S, S, M, P]),
+    )
+    expect(t.phase).toBe('ended')
+    expect(t.outcome!.reason).toBe('three-skulls')
+    expect(t.outcome!.score).toBe(500) // 3 sabres réunis → prime acquise
   })
 })
 
@@ -208,7 +231,25 @@ describe('partie complète (Game)', () => {
     game.act({ type: 'roll' }, fixedRoll([K, K, K, K, S, S, M, P]))
     expect(game.state.turn!.phase).toBe('island-roll')
     game.timeout()
-    expect(game.state.players[1]!.score).toBe(-400)
+    // Le score ne descend jamais sous zéro : le malus de 400 le plafonne à 0.
+    expect(game.state.players[1]!.score).toBe(0)
     expect(game.state.players[0]!.score).toBe(0)
+  })
+
+  it('un malus ne fait jamais passer un score sous zéro', () => {
+    const game = new Game(
+      [
+        { id: 'a', name: 'Romin' },
+        { id: 'b', name: 'Bot', bot: true },
+      ],
+      { rng: () => 0.5, now: () => 0 },
+    )
+    game.state.players[1]!.score = 300
+    const turn = game.startTurn()
+    if (turn.card.type === 'ship' || turn.card.type === 'skulls') return
+    game.act({ type: 'roll' }, fixedRoll([K, K, K, K, S, S, M, P]))
+    game.act({ type: 'roll' }, fixedRoll([S, M, P, C]))
+    // 5 têtes × 100 = 500 de malus sur un score de 300 → plancher à 0
+    expect(game.state.players[1]!.score).toBe(0)
   })
 })

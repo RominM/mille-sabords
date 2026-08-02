@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BotDifficulty, DieFace } from '@ms/engine'
 import layoutUrl from '~/assets/images/ui/layout-game.png'
+import stopSeal from '~/assets/images/ui/wax-seal-stop.png'
 
 const {
   WINNING_SCORE,
@@ -9,6 +10,7 @@ const {
   mode,
   difficulty,
   selected,
+  rolling,
   turnActor,
   transient,
   turn,
@@ -20,6 +22,7 @@ const {
   newGame,
   roll,
   reroll,
+  rollOrReroll,
   stop,
   bank,
   unbank,
@@ -50,6 +53,12 @@ const skulls = computed(() => {
   return t.dice.filter((d) => d.face === 'skull').length + (t.card.type === 'skulls' ? t.card.count : 0)
 })
 const isBotTurn = computed(() => !!currentPlayer.value?.bot)
+/** Les cachets restent affichés en permanence ; ils sont grisés hors de notre tour. */
+const myTurn = computed(() => !isBotTurn.value && !rolling.value && turn.value?.phase !== 'ended')
+const canRoll = computed(
+  () => myTurn.value && ['first-roll', 'island-roll', 'decision'].includes(turn.value?.phase ?? '')
+)
+const canStop = computed(() => myTurn.value && turn.value?.phase === 'decision')
 const clickable = computed(() => !isBotTurn.value && turn.value?.phase === 'decision')
 const isTreasure = computed(() => turn.value?.card.type === 'treasure-island')
 const rerollCount = computed(() => eligibleReroll().length)
@@ -61,11 +70,20 @@ const bankCount = computed(
 )
 const unbankCount = computed(() => [...selected.value].filter((id) => turn.value!.dice[id]!.banked).length)
 
-// Dés en jeu (au centre) vs dés sélectionnés (dans les slots du bas).
+/**
+ * Centre = dés encore en jeu (ils repartiront à la relance).
+ * Slots du bas = dés GARDÉS : ceux choisis par le joueur, plus les têtes de mort
+ * (verrouillées, donc gardées d'office) et les dés réservés de l'Île au Trésor.
+ */
+const isKept = (d: { id: number; locked: boolean; banked: boolean }) =>
+  d.locked || d.banked || selected.value.has(d.id)
+
 const centerDice = computed(() =>
-  turn.value ? turn.value.dice.filter((d) => d.face !== null && !selected.value.has(d.id)) : []
+  turn.value ? turn.value.dice.filter((d) => d.face !== null && !isKept(d)) : []
 )
-const slotDice = computed(() => (turn.value ? turn.value.dice.filter((d) => selected.value.has(d.id)) : []))
+const slotDice = computed(() =>
+  turn.value ? turn.value.dice.filter((d) => d.face !== null && isKept(d)) : []
+)
 
 const outcome = computed(() => {
   const o = turn.value?.outcome
@@ -134,34 +152,32 @@ const outcome = computed(() => {
         </div>
       </div>
 
-      <!-- Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte -->
+      <!-- Zone d'action : les DEUX cachets sont toujours présents, simplement
+           grisés quand l'action n'est pas possible (jet en cours, tour de l'IA). -->
       <div v-if="turn" class="zone-action">
-        <template v-if="isBotTurn">
-          <span class="bot-banner">Le Corsaire réfléchit…</span>
-        </template>
-        <template v-else-if="turn.phase === 'first-roll' || turn.phase === 'island-roll'">
-          <WaxSeal label="Lancer" @click="roll" />
-        </template>
-        <template v-else-if="turn.phase === 'decision'">
-          <button class="btn" :disabled="rerollCount < 2" @click="reroll">
-            Relancer ({{ rerollCount }})
-          </button>
-          <template v-if="isTreasure">
-            <button class="btn btn--ghost" :disabled="!bankCount" @click="bank">
-              Réserver ({{ bankCount }})
-            </button>
-            <button class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">
-              Reprendre ({{ unbankCount }})
-            </button>
-          </template>
-          <button class="btn btn--ghost" @click="stop">S’arrêter</button>
-        </template>
+        <div class="zone-action__roll">
+          <WaxSeal label="Lancer" :disabled="!canRoll" @click="rollOrReroll" />
+        </div>
+        <div class="zone-action__stop">
+          <WaxSeal label="S’arrêter" :image="stopSeal" :disabled="!canStop" @click="stop" />
+        </div>
+        <span v-if="isBotTurn" class="bot-banner">Le Corsaire réfléchit…</span>
+      </div>
+
+      <!-- Île au Trésor : réserver / reprendre des dés -->
+      <div v-if="turn && !isBotTurn && turn.phase === 'decision' && isTreasure" class="zone-side">
+        <button class="btn btn--ghost" :disabled="!bankCount" @click="bank">
+          Réserver ({{ bankCount }})
+        </button>
+        <button class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">
+          Reprendre ({{ unbankCount }})
+        </button>
       </div>
 
       <!-- Indice : sous les slots -->
       <p v-if="turn && !isBotTurn && turn.phase === 'decision'" class="zone-hint">
         <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
-        <span v-else>Clique un dé pour le réserver (min 2, garde-en un), puis relance — ou arrête-toi.</span>
+        <span v-else>Sélectionne les dés que tu veux GARDER, puis relance les autres — ou arrête-toi.</span>
       </p>
       <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
         Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.
@@ -312,25 +328,58 @@ const outcome = computed(() => {
 }
 
 // Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte
+// Zone d'action élargie : « Lancer » calé à gauche, « S'arrêter » à droite.
+// Tailles en cqw → elles suivent le plateau au redimensionnement.
 .zone-action {
   position: absolute;
-  right: 22%;
-  bottom: 25%;
-  width: 100px;
-  height: 100px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  right: 17%;
+  bottom: 19%;
+  width: 13cqw;
+  height: 12cqw;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.8cqw;
+  justify-content: space-between;
+}
+.zone-action__roll {
+  flex: 0 0 auto;
+  width: 8cqw;
+  height: 8cqw;
+  margin: 0 auto 0 0;
+}
+// Le cachet « S'arrêter » est volontairement plus petit que « Lancer ».
+.zone-action__stop {
+  flex: 0 0 auto;
+  width: 5.4cqw;
+  height: 5.4cqw;
+  margin: 0 0 0 auto;
 }
 .zone-action .btn {
   font-size: 1.5cqw;
   padding: 0.5cqw 1.2cqw;
 }
+
+// Actions secondaires (s'arrêter / Île au Trésor), sous le cachet
+.zone-side {
+  position: absolute;
+  right: 20%;
+  top: 73%;
+  width: 11%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6cqw;
+  align-items: center;
+  justify-content: center;
+}
+.zone-side .btn {
+  font-size: 1.3cqw;
+  padding: 0.4cqw 1cqw;
+}
+// Le cachet remplit la boîte que lui donne .zone-action__roll / __stop
 .zone-action :deep(.wax) {
-  // width: 11cqw;
-  // height: 11cqw;
+  width: 100%;
+  height: 100%;
 }
 .bot-banner {
   display: flex;
@@ -347,12 +396,14 @@ const outcome = computed(() => {
 
 .zone-hint {
   position: absolute;
-  left: 24%;
-  top: 87.5%;
+  bottom: 50px;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 47%;
   text-align: center;
   color: var(--parchment, #ede0c8);
-  font-size: 1.5cqw;
+  font-size: 1.3cqw;
+  font-weight: 300;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
 .danger-txt {
