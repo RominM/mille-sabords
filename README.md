@@ -31,7 +31,9 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
   (5 pièces + 3 diamants) ne donne pas le bonus, même si tous les dés marquent.
 - 3e tête de mort = tour perdu, têtes maudites non relançables
 - Relances : min 2 dés (relancer TOUS les dés relançables est permis)
-- Île de la Tête-de-Mort (4+ têtes au 1er lancer, malus -100/tête aux adversaires)
+- Île de la Tête-de-Mort (4+ têtes au 1er lancer, malus -100/tête aux adversaires).
+  Elle se termine dès qu'aucune nouvelle tête ne sort **ou** qu'il reste moins de
+  2 dés relançables — sans quoi le joueur serait bloqué sans action possible.
 - **Un score ne descend jamais sous zéro** : un malus fait au pire retomber à 0
 - **Bateau Pirate** : le défi est obligatoire pour marquer. Réussi → les dés
   comptent + la prime. Raté → **0 point** (même les dés), mais aucune pénalité.
