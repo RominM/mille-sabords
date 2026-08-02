@@ -22,14 +22,14 @@
   color: var(--text);
   clip-path: var(--panel-clip);
 }
-.panel::before {
-  content: '';
-  position: absolute;
-  inset: -1px; // déborde de 1px → bordure dorée visible sur tout le contour
-  z-index: -1;
-  background: var(--border);
-  clip-path: var(--panel-clip);
-}
+// .panel::before {
+//   content: '';
+//   position: absolute;
+//   inset: -1px; // déborde de 1px → bordure dorée visible sur tout le contour
+//   z-index: -1;
+//   background: var(--border);
+//   clip-path: var(--panel-clip);
+// }
 .panel--flat {
   clip-path: none;
 }

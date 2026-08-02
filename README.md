@@ -52,6 +52,10 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
 1. **Coffre plein et carte Tête de Mort** : validé — le bonus se juge sur les 8
    dés uniquement, donc 8 pièces donnent le coffre plein même si la carte du tour
    apporte une tête de mort (elle n'est pas un dé).
+   **Île de la Tête-de-Mort** : 4 têtes au premier lancer y envoient quelle que
+   soit la carte du tour, Bateau Pirate compris (l'exception précédente a été
+   supprimée). Le joueur actif marque alors 0 — la prime du Bateau n'est pas
+   évaluée dans ce cas.
 2. **Composition du deck (35 cartes)** : répartition standard Gigamic dans
    `deck.ts`, non détaillée dans le PDF. Corroborée par les notes de l'ancien
    repo (`main` d'origine) qui listent exactement la même répartition (4 diamant,

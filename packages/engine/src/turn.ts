@@ -110,14 +110,9 @@ function resolveFirstRoll(state: TurnState): void {
   lockSkulls(state.dice)
   const skulls = totalSkulls(state)
 
+  // 4 têtes de mort ou plus au premier lancer → Île de la Tête-de-Mort,
+  // quelle que soit la carte du tour (Bateau Pirate compris).
   if (skulls >= 4) {
-    if (state.card.type === 'ship') {
-      // Un Bateau Pirate ne va jamais sur l'île : tour immédiatement perdu.
-      // ⚠️ Interprétation : le quota de sabres est raté → le malus s'applique
-      // (cohérent avec la règle du Bateau ; le PDF dit seulement "perd son tour").
-      endThreeSkulls(state)
-      return
-    }
     state.phase = 'island-roll'
     return
   }

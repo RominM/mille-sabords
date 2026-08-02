@@ -23,7 +23,7 @@
 .skull-eyes {
   position: fixed;
   inset: 0;
-  z-index: 30; // au-dessus des overlays de fin de tour
+  z-index: 1; // au-dessus des overlays de fin de tour
   display: grid;
   place-items: center;
   pointer-events: none;

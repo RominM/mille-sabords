@@ -118,11 +118,17 @@ describe('Île de la Tête-de-Mort', () => {
     expect(t.outcome!.opponentPenalty).toBe(800)
   })
 
-  it("Bateau Pirate : jamais d'île, tour perdu mais aucune pénalité", () => {
+  it("4 têtes envoient sur l'île MÊME avec un Bateau Pirate", () => {
+    // La carte du tour ne change rien : 4 têtes au premier lancer = l'Île.
     let t = createTurn({ type: 'ship', sabres: 3, value: 500 })
     t = applyAction(t, { type: 'roll' }, roller([K, K, K, K, S, S, M, P]))
+    expect(t.phase).toBe('island-roll')
+
+    // On y reste tant que de nouvelles têtes sortent, puis le malus tombe.
+    t = applyAction(t, { type: 'roll' }, roller([S, M, P, C]))
     expect(t.phase).toBe('ended')
-    expect(t.outcome!.score).toBe(0) // 2 sabres < 3 : prime perdue, rien de retiré
+    expect(t.outcome!.reason).toBe('skull-island')
+    expect(t.outcome!.opponentPenalty).toBe(400) // 4 têtes × 100
   })
 
   it('Bateau Pirate : quota atteint malgré la 3e tête → prime encaissée', () => {

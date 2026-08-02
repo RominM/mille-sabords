@@ -8,7 +8,7 @@
       </p>
 
       <hr class="rope home__rope" />
-
+<Modal/>
       <nav class="home__menu">
         <NuxtLink to="/solo" class="btn home__link">Jouer en solo</NuxtLink>
         <NuxtLink to="/lobby" class="btn btn--ghost home__link">Multijoueur</NuxtLink>

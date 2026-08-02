@@ -2,6 +2,7 @@
 import type { BotDifficulty, DieFace } from '@ms/engine'
 import layoutUrl from '~/assets/images/ui/layout-game.png'
 import stopSeal from '~/assets/images/ui/wax-seal-stop.png'
+import darkLaught from './assets/sounds/soundscrate-evil-chuckle-02.mp3'
 
 const {
   WINNING_SCORE,
@@ -235,7 +236,10 @@ const outcome = computed(() => {
   </div>
 
   <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
-  <SkullEyes v-if="isDefeat" />
+  <div v-if="isDefeat">
+    <SkullEyes />
+    <audio autoplay :src="darkLaught" />
+  </div>
 </template>
 
 <style scoped lang="scss">
