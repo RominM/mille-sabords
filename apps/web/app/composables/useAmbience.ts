@@ -1,9 +1,12 @@
 /**
  * Musique d'ambiance : une piste joue en continu, choisie selon l'écran.
  *
- * Jamais de silence — on enchaîne d'une piste à l'autre avec un court fondu, et
- * la lecture reprend d'elle-même si le navigateur a bloqué le démarrage
- * automatique (politique d'autoplay : il faut une première interaction).
+ * Jamais de silence — on enchaîne d'une piste à l'autre avec un court fondu.
+ *
+ * ⚠️ Les navigateurs interdisent de démarrer un son avant que l'utilisateur ait
+ * interagi avec la page (politique d'autoplay). On tente donc la lecture tout de
+ * suite, et si elle est refusée on la relance au tout premier clic ou appui
+ * clavier — en remontant bien le volume, sinon la piste tourne en silence.
  */
 import lobbyMusic from '~/assets/sounds/SoundsCrate-Dark_Waters.mp3'
 import gamingMusic from '~/assets/sounds/music-in-game.mp3'
@@ -17,6 +20,8 @@ const trackForPath = (path: string): string => (path.startsWith('/solo') ? gamin
 export const useAmbience = () => {
   const route = useRoute()
   const enabled = useState('ambience-enabled', () => true)
+  /** Vrai tant que le navigateur bloque le son (utile pour un indice à l'écran). */
+  const blocked = useState('ambience-blocked', () => false)
 
   let audio: HTMLAudioElement | null = null
   let fadeTimer: ReturnType<typeof setInterval> | null = null
@@ -46,45 +51,59 @@ export const useAmbience = () => {
     }, 40)
   }
 
-  /**
-   * Le navigateur refuse le son tant que l'utilisateur n'a pas interagi :
-   * on réessaie alors au premier clic ou à la première touche.
-   */
+  /** Lance la lecture ET remonte le volume. Renvoie false si le navigateur refuse. */
+  const start = async (): Promise<boolean> => {
+    if (!audio) return false
+    try {
+      await audio.play()
+      fadeTo(VOLUME)
+      blocked.value = false
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** Réessaie au premier geste de l'utilisateur, une seule fois. */
   const unlockOnFirstGesture = () => {
     if (unlockBound || !import.meta.client) return
     unlockBound = true
+    blocked.value = true
     const retry = () => {
-      audio?.play().catch(() => {})
       window.removeEventListener('pointerdown', retry)
       window.removeEventListener('keydown', retry)
       unlockBound = false
+      void start() // ← remonte bien le volume, contrairement à un simple play()
     }
-    window.addEventListener('pointerdown', retry, { once: true })
-    window.addEventListener('keydown', retry, { once: true })
+    window.addEventListener('pointerdown', retry)
+    window.addEventListener('keydown', retry)
   }
 
-  const play = (src: string) => {
+  const play = async (src: string) => {
     if (!audio) return
     audio.src = src
     audio.volume = 0
-    audio.play().then(() => fadeTo(VOLUME)).catch(unlockOnFirstGesture)
+    if (!(await start())) unlockOnFirstGesture()
   }
 
   /** Change de piste avec un fondu, sans jamais couper le son brutalement. */
   const switchTo = (src: string) => {
     if (!audio || !enabled.value) return
-    const current = audio.src
-    // `audio.src` est absolu : on compare sur la fin du chemin
-    if (current && current.endsWith(src.split('/').pop() ?? src)) return
-    if (audio.paused || audio.volume === 0) return play(src)
-    fadeTo(0, () => play(src))
+    const file = src.split('/').pop() ?? src
+    if (audio.src && audio.src.endsWith(file) && !audio.paused) return
+    if (audio.paused || audio.volume === 0) return void play(src)
+    fadeTo(0, () => void play(src))
   }
 
   onMounted(() => {
+    // Élément attaché au document : plus simple à inspecter et à contrôler.
     audio = new Audio()
     audio.loop = true
     audio.volume = 0
     audio.preload = 'auto'
+    audio.dataset.ambience = 'true'
+    audio.style.display = 'none'
+    document.body.appendChild(audio)
     switchTo(trackForPath(route.path))
   })
 
@@ -96,6 +115,7 @@ export const useAmbience = () => {
   onBeforeUnmount(() => {
     stopFade()
     audio?.pause()
+    audio?.remove()
     audio = null
   })
 
@@ -107,5 +127,5 @@ export const useAmbience = () => {
     else fadeTo(0, () => audio?.pause())
   }
 
-  return { enabled, toggle }
+  return { enabled, blocked, toggle }
 }
