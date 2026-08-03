@@ -1,5 +1,6 @@
 <template>
   <button
+    v-click-sound="canClick"
     class="die-view"
     :class="{
       'die-view--empty': die.face === null,

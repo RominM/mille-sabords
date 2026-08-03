@@ -39,11 +39,13 @@ export const useAmbience = () => {
     if (!audio) return
     stopFade()
     const step = (target - audio.volume) / Math.max(1, Math.round(FADE_MS / 40))
+
     fadeTimer = setInterval(() => {
       if (!audio) return stopFade()
       const next = audio.volume + step
       const arrived = step >= 0 ? next >= target : next <= target
       audio.volume = Math.min(1, Math.max(0, arrived ? target : next))
+
       if (arrived) {
         stopFade()
         done?.()
@@ -109,7 +111,7 @@ export const useAmbience = () => {
 
   watch(
     () => route.path,
-    path => switchTo(trackForPath(path))
+    (path) => switchTo(trackForPath(path))
   )
 
   onBeforeUnmount(() => {

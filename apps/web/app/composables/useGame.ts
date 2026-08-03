@@ -15,12 +15,12 @@ import {
   WINNING_SCORE,
   type BotDifficulty,
   type GameState,
-  type TurnState,
+  type TurnState
 } from '@ms/engine'
 
 export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export function useGame() {
   let game: Game | null = null // autorité (état muté en place)
@@ -69,14 +69,14 @@ export function useGame() {
   const currentIndex = computed(() => snapshot.value?.currentPlayerIndex ?? 0)
   const currentPlayer = computed(() => players.value[currentIndex.value] ?? null)
   const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
-  const winner = computed(() => players.value.find(p => p.id === snapshot.value?.winnerId) ?? null)
+  const winner = computed(() => players.value.find((p) => p.id === snapshot.value?.winnerId) ?? null)
 
   // ── Cycle de jeu ────────────────────────────────────────────────────────────
 
   /** Équipage par défaut si la partie est lancée sans passer par le lobby. */
   const DEFAULT_ROSTER: TableSeat[] = [
     { id: 'you', name: 'Toi', bot: false },
-    { id: 'bot', name: 'Le Corsaire', bot: true },
+    { id: 'bot', name: 'Le Corsaire', bot: true }
   ]
 
   /** Mémorisé pour que « Rejouer » relance la même table. */
@@ -85,7 +85,7 @@ export function useGame() {
   function newGame(diff: BotDifficulty, roster?: TableSeat[]): void {
     difficulty.value = diff
     if (roster?.length) currentRoster = roster
-    game = new Game(currentRoster.map(s => ({ id: s.id, name: s.name, bot: s.bot })))
+    game = new Game(currentRoster.map((s) => ({ id: s.id, name: s.name, bot: s.bot })))
     startTurn()
   }
 
@@ -134,8 +134,8 @@ export function useGame() {
     const t = game?.state.turn
     if (!t) return []
     return t.dice
-      .filter(d => d.face !== null && !d.locked && !d.banked && !selected.value.has(d.id))
-      .map(d => d.id)
+      .filter((d) => d.face !== null && !d.locked && !d.banked && !selected.value.has(d.id))
+      .map((d) => d.id)
   }
 
   function toggleDie(id: number): void {
@@ -172,15 +172,18 @@ export function useGame() {
     human(() =>
       game!.act({
         type: 'bank',
-        diceIds: [...selected.value].filter(id => {
+        diceIds: [...selected.value].filter((id) => {
           const d = game!.state.turn!.dice[id]!
           return !d.banked && d.face !== 'skull'
-        }),
-      }),
+        })
+      })
     )
   const unbank = () =>
     human(() =>
-      game!.act({ type: 'unbank', diceIds: [...selected.value].filter(id => game!.state.turn!.dice[id]!.banked) }),
+      game!.act({
+        type: 'unbank',
+        diceIds: [...selected.value].filter((id) => game!.state.turn!.dice[id]!.banked)
+      })
     )
 
   function continueGame(): void {
@@ -234,6 +237,6 @@ export function useGame() {
     unbank,
     toggleDie,
     continueGame,
-    eligibleReroll,
+    eligibleReroll
   }
 }

@@ -2,7 +2,7 @@
 import type { BotDifficulty, DieFace } from '@ms/engine'
 import layoutUrl from '~/assets/images/ui/layout-game.webp'
 import stopSeal from '~/assets/images/ui/wax-seal-stop.webp'
-import darkLaught from './assets/sounds/soundscrate-evil-chuckle-02.mp3'
+import darkLaugh from '~/assets/sounds/soundscrate-evil-chuckle-02.mp3'
 
 const {
   WINNING_SCORE,
@@ -47,6 +47,7 @@ const diffs: { value: BotDifficulty; label: string }[] = [
   { value: 'hard', label: 'Difficile' }
 ]
 const pendingDifficulty = ref<BotDifficulty>('medium')
+const darkLaughAudio = ref<HTMLAudioElement | null>(null)
 
 /**
  * Table composée dans le lobby : si elle existe, on démarre directement avec cet
@@ -130,6 +131,19 @@ const outcome = computed(() => {
   }
   return { title, lines, score: o.score, cls: o.score < 0 ? 'neg' : o.score > 0 ? 'pos' : '' }
 })
+
+watch(isDefeat, async (value) => {
+  if (value) {
+    await nextTick()
+
+    const audio = darkLaughAudio.value
+    if (!audio) return
+
+    audio.volume = 0.3
+    audio.currentTime = 0
+    await audio.play()
+  }
+})
 </script>
 
 <template>
@@ -186,10 +200,10 @@ const outcome = computed(() => {
 
       <!-- Île au Trésor : réserver / reprendre des dés -->
       <div v-if="turn && !isBotTurn && turn.phase === 'decision' && isTreasure" class="zone-side">
-        <button class="btn btn--ghost" :disabled="!bankCount" @click="bank">
+        <button v-click-sound class="btn btn--ghost" :disabled="!bankCount" @click="bank">
           Réserver ({{ bankCount }})
         </button>
-        <button class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">
+        <button v-click-sound class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">
           Reprendre ({{ unbankCount }})
         </button>
       </div>
@@ -214,6 +228,7 @@ const outcome = computed(() => {
         <button
           v-for="d in diffs"
           :key="d.value"
+          v-click-sound
           class="btn"
           :class="{ 'btn--ghost': pendingDifficulty !== d.value }"
           @click="pendingDifficulty = d.value"
@@ -234,7 +249,7 @@ const outcome = computed(() => {
           <strong>{{ turnActor }} : {{ outcome.score >= 0 ? '+' : '' }}{{ outcome.score }} pts</strong>
         </span>
       </div>
-      <button class="btn" @click="continueGame">
+      <button v-click-sound class="btn" @click="continueGame">
         {{ gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer' }}
       </button>
     </div>
@@ -253,7 +268,7 @@ const outcome = computed(() => {
   <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
   <div v-if="isDefeat">
     <SkullEyes />
-    <audio autoplay :src="darkLaught" />
+    <audio ref="darkLaughAudio" autoplay :src="darkLaugh" />
   </div>
 </template>
 

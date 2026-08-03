@@ -5,8 +5,13 @@
       <div class="modal-dialog__content">
         <header class="modal-dialog__content--header">
           <h2 class="modal-dialog__content--header__title">{{ title }}</h2>
-          <button v-if="showCross" class="modal-dialog__content--header__cross" @click="emit('close')">
-            <img src="./../assets/images/ui/cross-bones.png" />
+          <button
+            v-if="showCross"
+            v-click-sound
+            class="modal-dialog__content--header__cross"
+            @click="emit('close')"
+          >
+            <img src="./../assets/images/ui/cross-bones.webp" />
           </button>
         </header>
         <div class="modal-dialog__content__slot">

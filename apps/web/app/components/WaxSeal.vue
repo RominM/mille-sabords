@@ -1,5 +1,12 @@
 <template>
-  <button class="wax" type="button" :aria-label="label" :disabled="disabled" @click="$emit('click')">
+  <button
+    v-click-sound
+    class="wax"
+    type="button"
+    :aria-label="label"
+    :disabled="disabled"
+    @click="$emit('click')"
+  >
     <img :src="sealUrl" alt="" class="wax__img" />
   </button>
 </template>

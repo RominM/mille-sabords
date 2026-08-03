@@ -25,7 +25,7 @@
           />
         </label>
 
-        <button class="btn" type="button" :disabled="!canJoin" @click="addSelf">
+        <button v-click-sound class="btn" type="button" :disabled="!canJoin" @click="addSelf">
           Rejoindre
         </button>
 
@@ -35,6 +35,7 @@
             <button
               v-for="d in DIFFICULTIES"
               :key="d.value"
+              v-click-sound
               class="btn"
               :class="{ 'btn--ghost': difficulty !== d.value }"
               type="button"
@@ -58,6 +59,7 @@
             >{{ seat.ready ? 'Paré' : 'En attente' }}</span>
             <button
               v-if="!seat.bot"
+              v-click-sound
               class="btn btn--ghost lobby__seat-action"
               type="button"
               @click="toggleReady(i)"
@@ -66,6 +68,7 @@
             </button>
             <button
               v-else
+              v-click-sound
               class="btn btn--ghost lobby__seat-action"
               type="button"
               @click="removeSeat(i)"
@@ -75,7 +78,7 @@
           </template>
           <template v-else>
             <span class="lobby__seat-empty">Siège libre</span>
-            <button class="btn btn--ghost lobby__seat-action" type="button" @click="addBot">
+            <button v-click-sound class="btn btn--ghost lobby__seat-action" type="button" @click="addBot">
               Ajouter une IA
             </button>
           </template>
@@ -85,8 +88,8 @@
       <p class="lobby__hint">{{ hint }}</p>
 
       <footer class="lobby__footer">
-        <NuxtLink to="/" class="btn btn--ghost">Retour</NuxtLink>
-        <button class="btn" type="button" :disabled="!canStart" @click="startGame">
+        <NuxtLink v-click-sound to="/" class="btn btn--ghost">Retour</NuxtLink>
+        <button v-click-sound class="btn" type="button" :disabled="!canStart" @click="startGame">
           Lever l'ancre
         </button>
       </footer>

@@ -9,9 +9,9 @@
       <hr class="rope home__rope" />
       <Modal>
         <nav class="home__menu">
-          <NuxtLink to="/solo" class="btn home__link">Jouer en solo</NuxtLink>
-          <NuxtLink to="/lobby" class="btn btn--ghost home__link">Multijoueur</NuxtLink>
-          <button class="btn btn--ghost home__link" type="button" @click="toggleRules">
+          <NuxtLink v-click-sound to="/solo" class="btn home__link">Jouer en solo</NuxtLink>
+          <NuxtLink v-click-sound to="/lobby" class="btn btn--ghost home__link">Multijoueur</NuxtLink>
+          <button v-click-sound class="btn btn--ghost home__link" type="button" @click="toggleRules">
             {{ showRules ? 'Masquer les règles' : 'Les règles' }}
           </button>
         </nav>
