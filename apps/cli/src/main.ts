@@ -1,5 +1,5 @@
 /**
- * CLI de test Mille Sabords.
+ * CLI de test Reckless Fathoms.
  *
  * Objectif : jouer une partie complète au clavier pour valider les règles
  * contre la boîte physique AVANT d'investir dans le front. Tous les sièges
@@ -28,7 +28,7 @@ import {
   type DieFace,
   type RollFn,
   type TurnAction,
-} from '@ms/engine'
+} from '@rf/engine'
 
 import { faceKeyLegend, parseFace } from './faces.ts'
 import {
@@ -104,7 +104,7 @@ async function askInt(q: string, def: number, min: number, max: number): Promise
 }
 
 async function setup(): Promise<{ game: Game; config: Config }> {
-  console.log(bold('\n🏴‍☠️  MILLE SABORDS — CLI de test des règles\n'))
+  console.log(bold('\n🏴‍☠️  RECKLESS FATHOMS — CLI de test des règles\n'))
   console.log(dim('Tous les joueurs sont pilotés au clavier (hotseat). Tape « help » en jeu.\n'))
 
   const count = await askInt('Nombre de joueurs (2-5)', 2, 2, 5)

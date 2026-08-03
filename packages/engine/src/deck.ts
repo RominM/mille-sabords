@@ -2,10 +2,9 @@ import type { DieFace, PirateCard, RollFn } from './types'
 import { FACES } from './types'
 
 /**
- * Composition officielle des 35 cartes Pirate.
- * ⚠️ À VÉRIFIER contre ton exemplaire physique : la répartition exacte
- * n'est pas détaillée dans le PDF de règles (seul le total de 35 l'est).
- * Répartition standard de l'édition Gigamic :
+ * Composition du deck de 35 cartes Pirate retenue pour le jeu.
+ * ⚠️ La règle écrite ne donne que le total (35) : la répartition ci-dessous est
+ * celle que nous avons arrêtée, à confirmer si le barème évolue.
  */
 export function buildDeck(): PirateCard[] {
   const deck: PirateCard[] = []

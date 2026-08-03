@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BotDifficulty, DieFace } from '@ms/engine'
+import type { BotDifficulty, DieFace } from '@rf/engine'
 import layoutUrl from '~/assets/images/ui/layout-game.webp'
 import stopSeal from '~/assets/images/ui/wax-seal-stop.webp'
 import darkLaugh from '~/assets/sounds/soundscrate-evil-chuckle-02.mp3'
@@ -222,7 +222,7 @@ watch(isDefeat, async (value) => {
   <!-- Overlays ─────────────────────────────────────────────────────────────── -->
   <div v-if="mode === 'start'" class="overlay">
     <div class="panel">
-      <h2>Mille Sabords</h2>
+      <h2>Reckless Fathoms</h2>
       <p class="card-effect">Affronte Le Corsaire (l’IA) en solo. Premier à {{ WINNING_SCORE }} points.</p>
       <div class="diff-choices">
         <button

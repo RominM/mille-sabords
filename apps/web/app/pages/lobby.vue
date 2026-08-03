@@ -109,7 +109,7 @@
  * Elle sera branchée sur le serveur WebSocket autoritaire en phase 4 — la forme
  * de l'état (sièges, « paré », capitaine) est déjà celle qu'il diffusera.
  */
-import type { BotDifficulty } from '@ms/engine'
+import type { BotDifficulty } from '@rf/engine'
 
 const MAX_SEATS = 5
 const MIN_PLAYERS = 2

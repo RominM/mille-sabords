@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Die, DieFace } from '@ms/engine'
+import type { Die, DieFace } from '@rf/engine'
 import sabre from '~/assets/images/dice/die-face_sabre.webp'
 import skull from '~/assets/images/dice/die-face_skull.webp'
 import monkey from '~/assets/images/dice/die-face_monkey.webp'

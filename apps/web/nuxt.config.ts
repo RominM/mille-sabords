@@ -19,7 +19,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Mille Sabords',
+      title: 'Reckless Fathoms',
       htmlAttrs: { lang: 'fr' },
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
       link: [

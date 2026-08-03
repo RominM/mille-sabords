@@ -1,15 +1,15 @@
 {
-  "name": "mille-sabords",
+  "name": "reckless-fathoms",
   "private": true,
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
-    "test": "npm run test -w @ms/engine",
-    "play": "npm start -w @ms/cli",
-    "web": "npm run dev -w @ms/web",
-    "design": "npm run dev -w @ms/web"
+    "test": "npm run test -w @rf/engine",
+    "play": "npm start -w @rf/cli",
+    "web": "npm run dev -w @rf/web",
+    "design": "npm run dev -w @rf/web"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

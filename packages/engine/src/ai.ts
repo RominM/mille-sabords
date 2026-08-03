@@ -1,5 +1,5 @@
 /**
- * IA de Mille Sabords — pas de ML : décision par espérance de gain.
+ * IA de Reckless Fathoms — pas de ML : décision par espérance de gain.
  *
  * À chaque décision, l'IA compare « s'arrêter » et « relancer les dés non
  * marquants ». Pour évaluer une relance, elle énumère TOUS les tirages

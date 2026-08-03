@@ -9,8 +9,8 @@ import type {
   ScoreBreakdown,
   TurnOutcome,
   TurnState,
-} from '@ms/engine'
-import { WINNING_SCORE } from '@ms/engine'
+} from '@rf/engine'
+import { WINNING_SCORE } from '@rf/engine'
 import { FACE_INFO } from './faces.ts'
 
 // ─── Couleurs ANSI (désactivables) ───────────────────────────────────────────

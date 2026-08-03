@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { WINNING_SCORE } from '@ms/engine'
+import { WINNING_SCORE } from '@rf/engine'
 
 const RULES: string[] = [
   `Le premier à ${WINNING_SCORE} points déclenche le dernier tour — le meilleur score l'emporte.`,

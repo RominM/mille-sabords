@@ -6,7 +6,7 @@
  * En multijoueur, cet objet viendra du serveur au lieu d'être construit
  * localement — la forme ne changera pas.
  */
-import type { BotDifficulty } from '@ms/engine'
+import type { BotDifficulty } from '@rf/engine'
 
 export interface TableSeat {
   id: string

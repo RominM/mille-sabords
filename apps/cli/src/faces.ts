@@ -1,9 +1,9 @@
 /**
  * Affichage terminal des faces de dé + parsing des saisies clavier.
  * Aucune logique de jeu ici : uniquement de la présentation et de la lecture
- * d'entrée. Les règles restent 100% dans @ms/engine.
+ * d'entrée. Les règles restent 100% dans @rf/engine.
  */
-import type { DieFace } from '@ms/engine'
+import type { DieFace } from '@rf/engine'
 
 export interface FaceInfo {
   /** Emoji d'affichage */

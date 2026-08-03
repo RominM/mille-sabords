@@ -56,7 +56,7 @@ export class Game {
     opts: GameOptions = {},
   ) {
     if (players.length < 2 || players.length > 5)
-      throw new Error('Mille Sabords se joue de 2 à 5 joueurs')
+      throw new Error('Reckless Fathoms se joue de 2 à 5 joueurs')
     this.rng = opts.rng ?? Math.random
     this.now = opts.now ?? Date.now
     this.state = {

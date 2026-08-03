@@ -6,7 +6,7 @@
  * imports dans le code — le tout sans rien changer à ton flux de travail :
  *
  *   1. tu déposes tes images (PNG/JPG) dans app/assets/images/…
- *   2. tu lances `npm run assets -w @ms/web`
+ *   2. tu lances `npm run assets -w @rf/web`
  *
  * Les fichiers déjà en WebP sont ignorés : le script est réexécutable sans
  * risque (idempotent). Utilise `--dry` pour voir ce qu'il ferait sans écrire.

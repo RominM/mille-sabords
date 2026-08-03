@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Player } from '@ms/engine'
+import type { Player } from '@rf/engine'
 import slotFrame from '~/assets/images/ui/gamer-slot.webp'
 import botAvatar from '~/assets/images/character/chara_bot.webp'
 import pirateAvatar from '~/assets/images/character/chara_pirate.webp'

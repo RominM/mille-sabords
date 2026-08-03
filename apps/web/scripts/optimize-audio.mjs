@@ -6,7 +6,7 @@
  * images, et même flux de travail :
  *
  *   1. tu déposes tes sons dans app/assets/sounds/…
- *   2. tu lances `npm run assets -w @ms/web`
+ *   2. tu lances `npm run assets -w @rf/web`
  *
  * Les MP3/OGG déjà présents sont ignorés : le script est réexécutable sans
  * risque (idempotent). Utilise `--dry` pour voir ce qu'il ferait sans écrire.

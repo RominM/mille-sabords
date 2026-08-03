@@ -1,5 +1,5 @@
 /**
- * Composable de jeu : enveloppe le moteur @ms/engine dans de la réactivité Vue.
+ * Composable de jeu : enveloppe le moteur @rf/engine dans de la réactivité Vue.
  *
  * Le moteur mute son état EN PLACE (même objet). Vue met en cache les `computed`
  * par identité : lire directement `game.state` ne déclencherait jamais de rendu.
@@ -16,7 +16,7 @@ import {
   type BotDifficulty,
   type GameState,
   type TurnState
-} from '@ms/engine'
+} from '@rf/engine'
 
 export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
 

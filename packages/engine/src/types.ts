@@ -1,5 +1,5 @@
 /**
- * Types du moteur Mille Sabords.
+ * Types du moteur Reckless Fathoms.
  * Le moteur est 100% pur (aucune dépendance framework) : il sera partagé
  * entre le front (mode solo vs IA) et le serveur autoritaire (multijoueur).
  */

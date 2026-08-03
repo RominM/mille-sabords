@@ -1,4 +1,4 @@
-# Mille Sabords — jeu en ligne
+# Reckless Fathoms — jeu en ligne
 
 Implémentation complète du jeu de dés (2-5 joueurs), jouable contre l'IA et en multijoueur temps réel avec lobby.
 
@@ -56,11 +56,11 @@ PRNG seedable (`mulberry32`) pour rejouer une partie en debug.
    soit la carte du tour, Bateau Pirate compris (l'exception précédente a été
    supprimée). Le joueur actif marque alors 0 — la prime du Bateau n'est pas
    évaluée dans ce cas.
-2. **Composition du deck (35 cartes)** : répartition standard Gigamic dans
-   `deck.ts`, non détaillée dans le PDF. Corroborée par les notes de l'ancien
-   repo (`main` d'origine) qui listent exactement la même répartition (4 diamant,
-   4 pièce, 4 trésor, 4 animaux, 4 pirate, 4 gardienne, 2/2/2 bateaux, 3 tête×1,
-   2 tête×2 = 35). Reste à confirmer contre ta boîte pour du 100% canon.
+2. **Composition du deck (35 cartes)** : la répartition retenue vit dans
+   `deck.ts` (4 diamant, 4 pièce, 4 trésor, 4 animaux, 4 pirate, 4 gardienne,
+   2/2/2 bateaux, 3 tête×1, 2 tête×2 = 35). Elle est corroborée par les notes de
+   l'ancien repo (`main` d'origine), qui listent exactement la même chose. Seul
+   le total de 35 est imposé par la règle écrite : le détail reste ajustable.
 3. **9 dés identiques** (8 dés + carte Pièce/Diamant) : plafonné au barème de 8
    (4000 pts).
 
@@ -79,7 +79,7 @@ aucune règle : elle appelle `Game`/`applyAction` et affiche l'état renvoyé (t
 action illégale s'affiche telle quelle).
 
 ```bash
-npm run play    # ou : npm start -w @ms/cli
+npm run play    # ou : npm start -w @rf/cli
 ```
 
 Deux atouts pour la validation :
@@ -142,8 +142,8 @@ Les visuels sont livrés en **WebP** et dimensionnés pour leur taille d'afficha
 réelle. Après avoir déposé de nouveaux PNG/JPG dans `app/assets/images/` :
 
 ```bash
-npm run assets -w @ms/web          # convertit, redimensionne, met à jour les imports
-npm run assets -w @ms/web -- --dry # simulation : affiche les gains sans rien écrire
+npm run assets -w @rf/web          # convertit, redimensionne, met à jour les imports
+npm run assets -w @rf/web -- --dry # simulation : affiche les gains sans rien écrire
 ```
 
 Le script est réexécutable sans risque (les WebP déjà présents sont ignorés) et

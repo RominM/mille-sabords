@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PirateCard } from '@ms/engine'
+import type { PirateCard } from '@rf/engine'
 import treasure from '~/assets/images/cards/tresur_card.webp'
 import pirate from '~/assets/images/cards/pirate_card.webp'
 import skullsCard from '~/assets/images/cards/tow-skulls_card.webp'

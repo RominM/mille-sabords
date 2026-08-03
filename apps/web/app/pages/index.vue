@@ -1,7 +1,7 @@
 <template>
   <main class="home">
     <div class="home__panel panel">
-      <h1 class="home__title">Mille Sabords</h1>
+      <h1 class="home__title">Reckless Fathoms</h1>
       <p class="home__tagline">
         Huit dés, une carte, et l'appât du gain. Arrête-toi à temps — la troisième tête de mort emporte tout.
       </p>
@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { WINNING_SCORE } from '@ms/engine'
+import { WINNING_SCORE } from '@rf/engine'
 
 const RULES: string[] = [
   `Le premier à ${WINNING_SCORE} points déclenche le dernier tour — le meilleur score l'emporte.`,
