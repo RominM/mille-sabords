@@ -11,7 +11,6 @@
 import lobbyMusic from '~/assets/sounds/SoundsCrate-Dark_Waters.mp3'
 import gamingMusic from '~/assets/sounds/music-in-game.mp3'
 
-const VOLUME = 0.45
 const FADE_MS = 420
 
 /** Piste associée à chaque écran. Toute route inconnue retombe sur le lobby. */
@@ -20,7 +19,7 @@ const trackForPath = (path: string): string => (path.startsWith('/game') ? gamin
 export const useAmbience = () => {
   const route = useRoute()
   // État partagé avec l'écran de paramètres (cf. useSoundSettings).
-  const { musicEnabled: enabled } = useSoundSettings()
+  const { musicEnabled: enabled, musicVolume, effectiveVolume } = useSoundSettings()
   /** Vrai tant que le navigateur bloque le son (utile pour un indice à l'écran). */
   const blocked = useState('ambience-blocked', () => false)
 
@@ -59,7 +58,7 @@ export const useAmbience = () => {
     if (!audio) return false
     try {
       await audio.play()
-      fadeTo(VOLUME)
+      fadeTo(effectiveVolume.value)
       blocked.value = false
       return true
     } catch {
@@ -122,6 +121,13 @@ export const useAmbience = () => {
     if (!audio) return
     if (on) switchTo(trackForPath(route.path))
     else fadeTo(0, () => audio?.pause())
+  })
+
+  // Le curseur de volume doit répondre immédiatement : pas de fondu ici, sinon
+  // le réglage traîne derrière la main. On n'écrase pas un fondu en cours.
+  watch(musicVolume, () => {
+    if (!audio || fadeTimer !== null || !enabled.value) return
+    audio.volume = effectiveVolume.value
   })
 
   onBeforeUnmount(() => {

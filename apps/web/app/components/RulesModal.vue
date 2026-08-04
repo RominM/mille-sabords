@@ -1,31 +1,20 @@
 <template>
   <Modal show-cross title="Règles du jeu" @close="emit('close')">
     <ul class="rules__list">
-      <li v-for="rule in RULES" :key="rule" class="rules__item">{{ rule }}</li>
+      <li v-for="rule in rules" :key="rule" class="rules__item">{{ rule }}</li>
     </ul>
   </Modal>
 </template>
 
 <script setup lang="ts">
 /**
- * Résumé des règles montré au joueur. Source unique, partagée par l'accueil et
- * le plateau — le barème qui fait foi reste celui du moteur, ceci n'en est
- * qu'une lecture.
+ * Règles en surcouche, pour le plateau : en pleine partie on ne peut pas
+ * quitter l'écran. Sur l'accueil, les mêmes règles s'affichent dans le panneau
+ * de droite, sans modale.
  */
-import { WINNING_SCORE } from '@rf/engine'
-
-// `close` est simplement relayé depuis la Modal : le parent décide de l'affichage.
 const emit = defineEmits<{ close: [] }>()
 
-const RULES: string[] = [
-  `Le premier à ${WINNING_SCORE} points déclenche le dernier tour — le meilleur score l'emporte.`,
-  'Trois têtes de mort et le tour est perdu : les têtes sont maudites, impossible de les relancer.',
-  'Une relance se fait avec au moins deux dés ; garde ceux qui rapportent.',
-  'Trois symboles identiques ou plus rapportent des points (100 pour 3, jusqu’à 4000 pour 8).',
-  'Chaque pièce d’or et chaque diamant valent 100 points de plus.',
-  'Les 8 dés sur la même valeur : coffre au trésor plein, +500 points.',
-  'Quatre têtes de mort au premier lancer, et te voilà sur l’Île de la Tête-de-Mort : tes adversaires trinquent.'
-]
+const { rules } = useRules()
 </script>
 
 <style scoped lang="scss">
