@@ -197,7 +197,7 @@ function startGame(): void {
       bot: seat.bot
     }))
   }
-  router.push('/solo')
+  router.push('/game?mode=multi')
 }
 </script>
 

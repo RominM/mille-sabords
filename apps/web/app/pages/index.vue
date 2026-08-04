@@ -1,5 +1,5 @@
 <template>
-  <main class="home">
+  <main class="home" :style="{ backgroundImage: `url(${backgroundUrl})` }">
     <div class="home__panel panel">
       <h1 class="home__title">Reckless Fathoms</h1>
       <p class="home__tagline">
@@ -8,8 +8,11 @@
 
       <hr class="rope home__rope" />
       <nav class="home__menu">
-        <NuxtLink v-click-sound to="/solo" class="btn home__link">Jouer en solo</NuxtLink>
+        <NuxtLink v-click-sound to="/game?mode=solo" class="btn home__link">Jouer en solo</NuxtLink>
         <NuxtLink v-click-sound to="/lobby" class="btn btn--ghost home__link">Multijoueur</NuxtLink>
+        <button v-click-sound class="btn btn--ghost home__link" type="button" @click="openSettings">
+          Paramètres
+        </button>
         <button v-click-sound class="btn btn--ghost home__link" type="button" @click="openRules">
           Les règles
         </button>
@@ -17,15 +20,23 @@
     </div>
 
     <RulesModal v-if="showRules" @close="showRules = false" />
+    <SettingsModal v-if="showSettings" @close="showSettings = false" />
   </main>
 </template>
 
 <script setup lang="ts">
-// Le texte des règles vit dans RulesModal : l'accueil n'a plus qu'à l'ouvrir.
+import backgroundUrl from '~/assets/images/ui/captain-quartier.webp'
+
+// Le contenu des modales vit dans leurs composants : l'accueil ne fait qu'ouvrir.
 const showRules = ref(false)
+const showSettings = ref(false)
 
 function openRules(): void {
   showRules.value = true
+}
+
+function openSettings(): void {
+  showSettings.value = true
 }
 </script>
 
@@ -35,6 +46,9 @@ function openRules(): void {
   place-items: center;
   min-height: 100dvh;
   padding: var(--space-4);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 
   &__panel {
     display: flex;

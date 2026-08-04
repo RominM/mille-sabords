@@ -157,7 +157,10 @@ réglée par dossier dans `scripts/optimize-images.mjs` (dés 320 px, avatars
 npm run web    # → http://localhost:5173
 ```
 
-Pages : `/` (accueil), `/lobby` (salle d'attente), `/solo` (plateau de jeu).
+Pages : `/` (accueil), `/lobby` (salle d'attente), `/game` (plateau de jeu).
+
+Le plateau est le même quel que soit le mode : `?mode=solo` ou `?mode=multi`.
+La query laisse la place à un `?room=CODE` pour la reprise de partie.
 
 ## Roadmap
 

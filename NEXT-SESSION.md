@@ -175,6 +175,14 @@ Deux points jamais tranchés — à confirmer avant de coder :
 - [ ] **Multijoueur** : `apps/server` WebSocket autoritaire réutilisant
       `applyAction`, salles avec code, synchronisation, reconnexion, puis
       branchement du lobby (la forme de `useTableSetup` est déjà prévue pour).
+- [ ] **Reprise de partie après crash / rechargement**. Aujourd'hui l'équipage
+      transite par `useTableSetup`, un état en mémoire : un F5 sur `/game` le
+      perd, et le joueur est renvoyé au lobby. Il faut que le serveur fasse
+      autorité sur la salle et qu'un joueur puisse réintégrer sa place via
+      `/game?mode=multi&room=CODE` — d'où le choix de la query plutôt que d'un
+      segment de route. Suppose : identité de joueur persistée (localStorage),
+      siège conservé côté serveur pendant un délai de grâce, et rediffusion de
+      l'état complet à la reconnexion.
 - [ ] Déploiement : front statique + serveur (Railway/Fly.io).
 - [ ] Qualité : tests e2e Playwright, CI GitHub Actions, ESLint/Prettier.
 

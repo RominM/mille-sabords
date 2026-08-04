@@ -50,6 +50,18 @@ const pendingDifficulty = ref<BotDifficulty>('medium')
 const darkLaughAudio = ref<HTMLAudioElement | null>(null)
 const showRules = ref(false)
 
+const route = useRoute()
+const router = useRouter()
+
+/**
+ * Le plateau est le même en solo et en multi : seule la provenance de l'équipage
+ * change. Le mode passe donc par l'URL (`/game?mode=solo|multi`).
+ *
+ * En query plutôt qu'en segment de route : la reprise d'une partie interrompue
+ * ajoutera un `?room=CODE` sans avoir à retoucher le chemin.
+ */
+const isSolo = computed(() => route.query.mode !== 'multi')
+
 /**
  * Table composée dans le lobby : si elle existe, on démarre directement avec cet
  * équipage et l'écran de choix est sauté. Sinon on retombe sur le solo par
@@ -59,10 +71,15 @@ const tableSetup = useTableSetup()
 
 onMounted(function startFromLobby() {
   const setup = tableSetup.value
-  if (!setup?.roster.length) return
-  pendingDifficulty.value = setup.difficulty
-  newGame(setup.difficulty, setup.roster)
-  tableSetup.value = null // consommée : « Rejouer » réutilisera le même équipage
+  if (setup?.roster.length) {
+    pendingDifficulty.value = setup.difficulty
+    newGame(setup.difficulty, setup.roster)
+    tableSetup.value = null // consommée : « Rejouer » réutilisera le même équipage
+    return
+  }
+  // En multi la table vient du lobby : sans elle (accès direct à l'URL,
+  // rechargement de page), il n'y a rien à jouer — on renvoie composer l'équipage.
+  if (!isSolo.value) router.push('/lobby')
 })
 
 const skulls = computed(() => {
@@ -224,7 +241,8 @@ watch(isDefeat, async (value) => {
   </div>
 
   <!-- Overlays ─────────────────────────────────────────────────────────────── -->
-  <div v-if="mode === 'start'" class="overlay">
+  <!-- Choix de la difficulté : propre au solo, en multi l'équipage vient du lobby -->
+  <div v-if="mode === 'start' && isSolo" class="overlay">
     <div class="panel">
       <h2>Reckless Fathoms</h2>
       <p class="card-effect">Affronte Le Corsaire (l’IA) en solo. Premier à {{ WINNING_SCORE }} points.</p>

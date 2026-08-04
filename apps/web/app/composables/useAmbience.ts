@@ -15,11 +15,12 @@ const VOLUME = 0.45
 const FADE_MS = 420
 
 /** Piste associée à chaque écran. Toute route inconnue retombe sur le lobby. */
-const trackForPath = (path: string): string => (path.startsWith('/solo') ? gamingMusic : lobbyMusic)
+const trackForPath = (path: string): string => (path.startsWith('/game') ? gamingMusic : lobbyMusic)
 
 export const useAmbience = () => {
   const route = useRoute()
-  const enabled = useState('ambience-enabled', () => true)
+  // État partagé avec l'écran de paramètres (cf. useSoundSettings).
+  const { musicEnabled: enabled } = useSoundSettings()
   /** Vrai tant que le navigateur bloque le son (utile pour un indice à l'écran). */
   const blocked = useState('ambience-blocked', () => false)
 
@@ -114,6 +115,15 @@ export const useAmbience = () => {
     (path) => switchTo(trackForPath(path))
   )
 
+  // La coupure peut être demandée depuis n'importe où (écran de paramètres) :
+  // on réagit au changement d'état, plutôt que de tout faire dans un `toggle`
+  // local que seul cet écran-ci pourrait appeler.
+  watch(enabled, (on) => {
+    if (!audio) return
+    if (on) switchTo(trackForPath(route.path))
+    else fadeTo(0, () => audio?.pause())
+  })
+
   onBeforeUnmount(() => {
     stopFade()
     audio?.pause()
@@ -121,13 +131,5 @@ export const useAmbience = () => {
     audio = null
   })
 
-  /** Coupe ou remet la musique (pour un futur bouton mute). */
-  const toggle = () => {
-    enabled.value = !enabled.value
-    if (!audio) return
-    if (enabled.value) switchTo(trackForPath(route.path))
-    else fadeTo(0, () => audio?.pause())
-  }
-
-  return { enabled, blocked, toggle }
+  return { enabled, blocked }
 }
