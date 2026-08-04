@@ -1,13 +1,21 @@
 <template>
-  <Modal class="rules-modal" show-cross title="Règles du jeu">
-    <ul class="home__rules-list">
-      <li v-for="rule in RULES" :key="rule">{{ rule }}</li>
+  <Modal show-cross title="Règles du jeu" @close="emit('close')">
+    <ul class="rules__list">
+      <li v-for="rule in RULES" :key="rule" class="rules__item">{{ rule }}</li>
     </ul>
   </Modal>
 </template>
 
 <script setup lang="ts">
+/**
+ * Résumé des règles montré au joueur. Source unique, partagée par l'accueil et
+ * le plateau — le barème qui fait foi reste celui du moteur, ceci n'en est
+ * qu'une lecture.
+ */
 import { WINNING_SCORE } from '@rf/engine'
+
+// `close` est simplement relayé depuis la Modal : le parent décide de l'affichage.
+const emit = defineEmits<{ close: [] }>()
 
 const RULES: string[] = [
   `Le premier à ${WINNING_SCORE} points déclenche le dernier tour — le meilleur score l'emporte.`,
@@ -21,7 +29,21 @@ const RULES: string[] = [
 </script>
 
 <style scoped lang="scss">
-.rules-modal {
-  color: #000;
+.rules {
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding-left: var(--space-4);
+    text-align: left;
+  }
+
+  // Le parchemin est clair : le texte du design system y serait illisible.
+  &__item {
+    color: #2a1c0e;
+    font-family: var(--font-body);
+    font-size: var(--fs-body-s);
+  }
 }
 </style>

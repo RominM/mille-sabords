@@ -48,6 +48,7 @@ const diffs: { value: BotDifficulty; label: string }[] = [
 ]
 const pendingDifficulty = ref<BotDifficulty>('medium')
 const darkLaughAudio = ref<HTMLAudioElement | null>(null)
+const showRules = ref(false)
 
 /**
  * Table composée dans le lobby : si elle existe, on démarre directement avec cet
@@ -149,6 +150,9 @@ watch(isDefeat, async (value) => {
 <template>
   <div v-if="mode !== 'start'" class="stage">
     <div class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
+      <!-- Rappel des règles, calé dans le creux entre le crâne et la lanterne gauche -->
+      <button v-click-sound class="rules-link" type="button" @click="showRules = true">Règles</button>
+
       <!-- Joueurs : colonne de 5 slots à gauche -->
       <div class="zone-players">
         <PlayerSlot
@@ -265,6 +269,8 @@ watch(isDefeat, async (value) => {
     </div>
   </div>
 
+  <RulesModal v-if="showRules" @close="showRules = false" />
+
   <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
   <div v-if="isDefeat">
     <SkullEyes />
@@ -298,14 +304,29 @@ watch(isDefeat, async (value) => {
   container-type: size;
   overflow: hidden;
 }
-.sg-link {
+// Le coin haut-droit est occupé par la carte dessinée sur le fond : on se cale
+// dans le creux libre entre le crâne et la lanterne de gauche. Tailles en cqw
+// pour suivre le plateau au redimensionnement.
+.rules-link {
   position: absolute;
-  top: 1.5%;
-  right: 2%;
+  top: 2.5%;
+  left: 13.5%;
   z-index: 2;
-  font-family: var(--font-mono);
-  font-size: 1cqw;
-  color: var(--text-dim);
+  padding: 0.3cqw 0.9cqw;
+  border: 0;
+  border-radius: 0.3cqw;
+  background: rgba(24, 14, 8, 0.55);
+  color: var(--parchment, #ede0c8);
+  font-family: var(--font-body);
+  font-size: 1.1cqw;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+
+  &:hover {
+    transform: scale(1.06);
+    color: var(--accent);
+  }
 }
 
 // Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.webp
