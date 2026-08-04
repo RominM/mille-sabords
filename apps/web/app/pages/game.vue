@@ -29,7 +29,8 @@ const {
   unbank,
   toggleDie,
   continueGame,
-  eligibleReroll
+  eligibleReroll,
+  avatarOf
 } = useGame()
 
 const FACE: Record<DieFace, string> = {
@@ -180,6 +181,7 @@ watch(isDefeat, async (value) => {
           v-for="i in 5"
           :key="i"
           :player="players[i - 1] ?? null"
+          :avatar="players[i - 1] ? avatarOf(players[i - 1]!.id) : undefined"
           :current="gamePhase === 'playing' && i - 1 === currentIndex"
           :seconds="gamePhase === 'playing' && i - 1 === currentIndex ? secondsLeft : undefined"
           :total-seconds="TURN_SECONDS"

@@ -4,8 +4,6 @@
       <!-- Zone 1 : la navigation -->
       <HomeMenu :entries="TABS" :current="activeTab" @select="activeTab = $event as TabId" />
 
-      <!-- Zone 2 : conteneur unique. Chaque contenu décide de sa propre mise en
-           page — on ne lui impose pas de sous-découpage fixe. -->
       <section class="home__panel panel" role="tabpanel">
         <GamePitch
           v-if="activeTab === 'play' || activeTab === 'multi'"
@@ -17,6 +15,8 @@
         <SoundSettings v-else />
       </section>
     </div>
+
+    <SoloSetupModal v-if="showSoloSetup" @close="showSoloSetup = false" />
   </main>
 </template>
 
@@ -41,15 +41,18 @@ const pitch = computed(() =>
     : { title: 'Contre le Corsaire', text: 'Créer une partie rapide contre le corsaire.' }
 )
 
+const router = useRouter()
+const showSoloSetup = ref(false)
+
 /**
- * Point de branchement de la navigation à venir : « Embarquer » mènera au choix
- * de difficulté (solo) ou au formulaire d'équipage (multi). Volontairement non
- * branché sur le routeur tant que ces écrans n'existent pas — les envoyer
- * directement sur `/game` sauterait une étape du parcours.
+ * Les deux modes divergent ici : le multi va composer son équipage au lobby,
+ * le solo se règle sur place — nom, portrait, niveau de l'IA — puis part
+ * directement sur le plateau. Aucun des deux ne saute vers `/game` sans que la
+ * table ait été composée.
  */
 function onEmbark(mode: TabId): void {
-  // TODO(navigation) : router.push() une fois les écrans intermédiaires créés.
-  console.info(`[accueil] Embarquer — mode « ${mode} » (navigation à brancher)`)
+  if (mode === 'multi') router.push('/lobby')
+  else showSoloSetup.value = true
 }
 </script>
 
@@ -73,15 +76,10 @@ function onEmbark(mode: TabId): void {
     width: min(900px, 100%);
   }
 
-  // Hauteur FIXE, et non un `min-height` : la navigation réagit au survol, donc
-  // un panneau plus haut que les autres décalerait la mise en page centrée et
-  // ferait glisser les boutons sous le curseur. Le contenu défile si besoin
-  // plutôt que de pousser les murs.
   &__panel {
     display: grid; // une seule cellule : le contenu s'y place comme il veut
-    height: 23rem;
+    min-height: 22rem;
     padding: var(--space-5);
-    overflow: auto;
   }
 }
 </style>

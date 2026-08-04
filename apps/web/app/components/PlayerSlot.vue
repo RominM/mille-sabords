@@ -7,7 +7,7 @@
       :class="{ 'pslot--waiting': !current, 'pslot--current': current }"
     >
       <img :src="slotFrame" alt="" class="pslot__frame" />
-      <img :src="avatar" alt="" class="pslot__avatar" />
+      <img :src="avatarUrl" alt="" class="pslot__avatar" />
       <span class="pslot__name">{{ player.name }}</span>
       <span class="pslot__score" :class="scoreClass">{{ scoreText }}</span>
       <PlayerTimer
@@ -28,12 +28,16 @@ import pirateAvatar from '~/assets/images/character/chara_pirate.webp'
 
 const props = defineProps<{
   player: Player | null
+  /** Portrait choisi par le joueur ; sinon on retombe sur celui de son camp. */
+  avatar?: string
   current?: boolean
   seconds?: number
   totalSeconds?: number
 }>()
 
-const avatar = computed(() => (props.player?.bot ? botAvatar : pirateAvatar))
+const avatarUrl = computed(
+  () => props.avatar ?? (props.player?.bot ? botAvatar : pirateAvatar)
+)
 
 const scoreText = computed(() => String(props.player?.score ?? 0))
 

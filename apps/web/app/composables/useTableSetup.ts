@@ -12,6 +12,12 @@ export interface TableSeat {
   id: string
   name: string
   bot: boolean
+  /**
+   * Portrait choisi par le joueur. Purement décoratif, donc il s'arrête ici :
+   * le moteur ne reçoit que `id`, `name` et `bot` — une règle du jeu ne doit
+   * jamais dépendre d'un avatar.
+   */
+  avatar?: string
 }
 
 export interface TableSetup {

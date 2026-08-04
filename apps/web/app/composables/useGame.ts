@@ -82,6 +82,11 @@ export function useGame() {
   /** Mémorisé pour que « Rejouer » relance la même table. */
   let currentRoster: TableSeat[] = DEFAULT_ROSTER
 
+  /** Portrait choisi à la composition de la table, ou rien si le défaut suffit. */
+  function avatarOf(playerId: string): string | undefined {
+    return currentRoster.find((s) => s.id === playerId)?.avatar
+  }
+
   function newGame(diff: BotDifficulty, roster?: TableSeat[]): void {
     difficulty.value = diff
     if (roster?.length) currentRoster = roster
@@ -237,6 +242,7 @@ export function useGame() {
     unbank,
     toggleDie,
     continueGame,
-    eligibleReroll
+    eligibleReroll,
+    avatarOf
   }
 }
