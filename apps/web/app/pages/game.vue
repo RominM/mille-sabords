@@ -62,6 +62,8 @@ const router = useRouter()
  */
 const isSolo = computed(() => route.query.mode !== 'multi')
 
+const { sfxGain } = useSoundSettings()
+
 /**
  * Table composée dans le lobby : si elle existe, on démarre directement avec cet
  * équipage et l'écran de choix est sauté. Sinon on retombe sur le solo par
@@ -151,16 +153,18 @@ const outcome = computed(() => {
 })
 
 watch(isDefeat, async (value) => {
-  if (value) {
-    await nextTick()
+  if (!value) return
+  // Le rire fait partie des bruitages : il suit le réglage « Ambiance ».
+  if (sfxGain.value <= 0) return
+  await nextTick()
 
-    const audio = darkLaughAudio.value
-    if (!audio) return
+  const audio = darkLaughAudio.value
+  if (!audio) return
 
-    audio.volume = 0.3
-    audio.currentTime = 0
-    await audio.play()
-  }
+  // Volontairement plus discret que les bruitages d'interface.
+  audio.volume = sfxGain.value * 0.6
+  audio.currentTime = 0
+  await audio.play()
 })
 </script>
 
@@ -292,7 +296,9 @@ watch(isDefeat, async (value) => {
   <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
   <div v-if="isDefeat">
     <SkullEyes />
-    <audio ref="darkLaughAudio" autoplay :src="darkLaugh" />
+    <!-- Pas d'`autoplay` : la lecture passe par le watcher, qui applique le
+         réglage « Ambiance ». L'attribut jouerait le son même réglage coupé. -->
+    <audio ref="darkLaughAudio" :src="darkLaugh" />
   </div>
 </template>
 

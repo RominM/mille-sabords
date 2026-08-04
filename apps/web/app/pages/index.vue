@@ -3,15 +3,23 @@
     <div class="home__layout">
       <!-- Zone 1 : la navigation. Un seul onglet actif à la fois. -->
       <nav class="home-nav" role="tablist" aria-label="Menu principal">
+        <!--
+          Le survol suffit à changer de vue. `v-hover-sound` et non
+          `v-click-sound` : les deux sur le même bouton feraient sonner deux fois.
+          `focus` garde la navigation au clavier fonctionnelle, `click` sert aux
+          écrans tactiles, où le survol n'existe pas.
+        -->
         <button
           v-for="tab in TABS"
           :key="tab.id"
-          v-click-sound
+          v-hover-sound
           class="home-nav__item"
           :class="{ 'home-nav__item--active': tab.id === activeTab }"
           type="button"
           role="tab"
           :aria-selected="tab.id === activeTab"
+          @mouseenter="activeTab = tab.id"
+          @focus="activeTab = tab.id"
           @click="activeTab = tab.id"
         >
           {{ tab.label }}
@@ -40,24 +48,33 @@
         <div v-else class="sheet">
           <h2 class="sheet__title">Paramètres</h2>
           <div class="settings">
-            <label class="settings__row" for="setting-volume">
-              <span class="settings__label">Volume de la musique</span>
-              <input
-                id="setting-volume"
-                v-model.number="musicVolume"
-                class="settings__range"
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-              />
-              <output class="settings__value">{{ musicVolume }} %</output>
-            </label>
+            <fieldset v-for="group in soundGroups" :key="group.id" class="settings__group">
+              <legend class="settings__legend">{{ group.title }}</legend>
+              <p class="settings__hint">{{ group.hint }}</p>
 
-            <label class="settings__row" for="setting-music">
-              <span class="settings__label">Musique d’ambiance</span>
-              <input id="setting-music" v-model="musicEnabled" class="settings__check" type="checkbox" />
-            </label>
+              <div class="settings__row">
+                <input
+                  :id="`setting-${group.id}-on`"
+                  v-model="group.enabled.value"
+                  class="settings__check"
+                  type="checkbox"
+                />
+                <label class="settings__label" :for="`setting-${group.id}-on`">Activé</label>
+
+                <input
+                  :id="`setting-${group.id}-vol`"
+                  v-model.number="group.volume.value"
+                  class="settings__range"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  :disabled="!group.enabled.value"
+                  :aria-label="`Volume — ${group.title}`"
+                />
+                <output class="settings__value">{{ group.volume.value }} %</output>
+              </div>
+            </fieldset>
           </div>
         </div>
       </section>
@@ -80,7 +97,29 @@ const TABS: { id: TabId; label: string }[] = [
 const activeTab = ref<TabId>('play')
 
 const { rules } = useRules()
-const { musicEnabled, musicVolume } = useSoundSettings()
+const { musicEnabled, musicVolume, sfxEnabled, sfxVolume } = useSoundSettings()
+
+/**
+ * Les deux familles de son se règlent à l'identique : on décrit les refs plutôt
+ * que de dupliquer le bloc de contrôles. `markRaw` n'est pas nécessaire, mais
+ * les refs sont passées telles quelles — d'où les `.value` dans le template.
+ */
+const soundGroups = [
+  {
+    id: 'music',
+    title: 'Musique',
+    hint: 'Les musiques de fond, selon l’écran.',
+    enabled: musicEnabled,
+    volume: musicVolume
+  },
+  {
+    id: 'sfx',
+    title: 'Ambiance',
+    hint: 'Les bruitages : clic, survol, dés, rire de défaite…',
+    enabled: sfxEnabled,
+    volume: sfxVolume
+  }
+]
 
 /** Les deux modes partagent la même forme de panneau : titre, accroche, action. */
 const pitch = computed(() =>
@@ -230,18 +269,39 @@ function onEmbark(mode: TabId): void {
   flex-direction: column;
   gap: var(--space-4);
 
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0; // le fieldset n'est là que pour grouper sémantiquement
+  }
+
+  &__legend {
+    padding: 0;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: var(--fs-body-l);
+  }
+
+  &__hint {
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: var(--fs-body-s);
+  }
+
   &__row {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    cursor: pointer;
   }
 
   &__label {
-    flex: 0 0 12rem;
     color: var(--text);
     font-family: var(--font-body);
-    font-size: var(--fs-body-m);
+    font-size: var(--fs-body-s);
+    cursor: pointer;
   }
 
   &__value {
@@ -305,6 +365,12 @@ function onEmbark(mode: TabId): void {
     &:focus-visible {
       outline: 2px solid var(--focus);
       outline-offset: 4px;
+    }
+
+    // Famille coupée : le curseur reste lisible mais visiblement inopérant.
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
   }
 }

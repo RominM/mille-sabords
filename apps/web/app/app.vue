@@ -12,5 +12,5 @@ const { loaded, total, progress, ready, preload } = useAssetPreloader({ minDurat
 onMounted(preload)
 
 // Musique continue, choisie selon l'écran (lobby / partie) — jamais de silence.
-useAmbience()
+useBackgroundMusic()
 </script>

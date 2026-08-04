@@ -1,27 +1,32 @@
 /**
- * Réglages sonores partagés par toute l'application.
+ * Réglages sonores partagés par toute l'application. Deux familles distinctes :
  *
- * Volontairement séparé de `useAmbience` : ce dernier crée son élément `Audio`
- * dans `onMounted`, donc l'appeler depuis un écran de paramètres ferait jouer
- * une SECONDE piste par-dessus la première. Ici il n'y a que de l'état, on peut
- * l'appeler de partout ; `useAmbience` observe ces valeurs et réagit.
+ *   musique   — la piste de fond, une seule à la fois (cf. useBackgroundMusic)
+ *   ambiance  — les bruitages : clic, survol, dés, rire de défaite…
+ *
+ * Volontairement séparé de `useBackgroundMusic` : ce dernier crée son élément
+ * `Audio` dans `onMounted`, donc l'appeler depuis un écran de réglages ferait
+ * jouer une SECONDE piste par-dessus la première. Ici il n'y a que de l'état, on
+ * peut l'appeler de partout ; les consommateurs observent et réagissent.
  */
 
-/** Volume de la musique, en pourcentage — l'`Audio` attend un 0..1. */
+/** Volumes par défaut, en pourcentage — les `Audio` attendent un 0..1. */
 export const MUSIC_VOLUME_DEFAULT = 45
+export const SFX_VOLUME_DEFAULT = 50
+
+/** Ramène un pourcentage en 0..1, ou à zéro si la famille est coupée. */
+const toGain = (percent: number, on: boolean): number =>
+  on ? Math.min(1, Math.max(0, percent / 100)) : 0
 
 export const useSoundSettings = () => {
-  const musicEnabled = useState('ambience-enabled', () => true)
-  const musicVolume = useState('ambience-volume', () => MUSIC_VOLUME_DEFAULT)
+  const musicEnabled = useState('music-enabled', () => true)
+  const musicVolume = useState('music-volume', () => MUSIC_VOLUME_DEFAULT)
+  const sfxEnabled = useState('sfx-enabled', () => true)
+  const sfxVolume = useState('sfx-volume', () => SFX_VOLUME_DEFAULT)
 
-  const toggleMusic = () => {
-    musicEnabled.value = !musicEnabled.value
-  }
+  /** Volumes réellement appliqués : coupée, une famille tombe à zéro. */
+  const musicGain = computed(() => toGain(musicVolume.value, musicEnabled.value))
+  const sfxGain = computed(() => toGain(sfxVolume.value, sfxEnabled.value))
 
-  /** Volume réellement appliqué à la piste : coupée, elle tombe à zéro. */
-  const effectiveVolume = computed(() =>
-    musicEnabled.value ? Math.min(1, Math.max(0, musicVolume.value / 100)) : 0
-  )
-
-  return { musicEnabled, musicVolume, effectiveVolume, toggleMusic }
+  return { musicEnabled, musicVolume, musicGain, sfxEnabled, sfxVolume, sfxGain }
 }

@@ -1,5 +1,9 @@
 /**
- * Musique d'ambiance : une piste joue en continu, choisie selon l'écran.
+ * Musique de fond : une piste joue en continu, choisie selon l'écran.
+ *
+ * À ne pas confondre avec l'« ambiance » au sens des réglages, qui désigne les
+ * BRUITAGES (clic, survol, dés, rire de défaite) — ceux-là passent par les
+ * directives `v-click-sound` / `v-hover-sound`.
  *
  * Jamais de silence — on enchaîne d'une piste à l'autre avec un court fondu.
  *
@@ -16,12 +20,12 @@ const FADE_MS = 420
 /** Piste associée à chaque écran. Toute route inconnue retombe sur le lobby. */
 const trackForPath = (path: string): string => (path.startsWith('/game') ? gamingMusic : lobbyMusic)
 
-export const useAmbience = () => {
+export const useBackgroundMusic = () => {
   const route = useRoute()
-  // État partagé avec l'écran de paramètres (cf. useSoundSettings).
-  const { musicEnabled: enabled, musicVolume, effectiveVolume } = useSoundSettings()
+  // État partagé avec l'écran de réglages (cf. useSoundSettings).
+  const { musicEnabled: enabled, musicVolume, musicGain } = useSoundSettings()
   /** Vrai tant que le navigateur bloque le son (utile pour un indice à l'écran). */
-  const blocked = useState('ambience-blocked', () => false)
+  const blocked = useState('music-blocked', () => false)
 
   let audio: HTMLAudioElement | null = null
   let fadeTimer: ReturnType<typeof setInterval> | null = null
@@ -58,7 +62,7 @@ export const useAmbience = () => {
     if (!audio) return false
     try {
       await audio.play()
-      fadeTo(effectiveVolume.value)
+      fadeTo(musicGain.value)
       blocked.value = false
       return true
     } catch {
@@ -127,7 +131,7 @@ export const useAmbience = () => {
   // le réglage traîne derrière la main. On n'écrase pas un fondu en cours.
   watch(musicVolume, () => {
     if (!audio || fadeTimer !== null || !enabled.value) return
-    audio.volume = effectiveVolume.value
+    audio.volume = musicGain.value
   })
 
   onBeforeUnmount(() => {
