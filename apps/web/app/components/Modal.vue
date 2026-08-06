@@ -4,12 +4,12 @@
       <div class="modal-dialog" role="dialog" aria-modal="true">
         <img class="modal-dialog__img" src="./../assets/images/ui/parchemin.webp" alt="" />
         <div class="modal-dialog__content">
-          <header class="modal-dialog__content--header">
-            <h2 class="modal-dialog__content--header__title">{{ title }}</h2>
+          <header class="modal-dialog__header">
+            <h2 class="modal-dialog__title">{{ title }}</h2>
             <button
               v-if="showCross"
               v-click-sound
-              class="modal-dialog__content--header__cross"
+              class="modal-dialog__cross"
               type="button"
               aria-label="Fermer"
               @click="emit('close')"
@@ -17,7 +17,7 @@
               <img src="./../assets/images/ui/cross-bones.webp" alt="" />
             </button>
           </header>
-          <div class="modal-dialog__content__slot">
+          <div class="modal-dialog__slot">
             <slot />
           </div>
         </div>
@@ -65,61 +65,84 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
   overflow: hidden;
 }
 
+// Le parchemin est un dessin : on verrouille le ratio du conteneur sur celui du
+// fichier (1536x1024). Les zones placées en % ci-dessous tombent alors pile sur
+// la partie plate, entre les deux rouleaux.
 .modal-dialog {
   position: relative;
-  display: flex;
-  margin: auto;
-  width: 90%;
-  height: 90%;
+  height: min(92dvh, 820px);
+  aspect-ratio: 1536 / 1024;
+  max-width: 96vw;
 
   &__img {
-    max-width: 100%;
+    width: 100%;
     height: 100%;
-    max-height: 90dvh;
-    margin: auto;
-    object-fit: cover;
+    // Le conteneur a exactement le ratio du fichier : rien n'est rogné.
+    object-fit: contain;
   }
 
+  // Surface d'écriture mesurée dans parchemin.webp : la partie plate va de 26 %
+  // à 75 % en largeur et de 16,4 % à 84,5 % en hauteur — au-delà, les rouleaux
+  // s'enroulent et le texte deviendrait illisible.
   &__content {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 430px;
-    max-height: 440px;
-    padding: 0 25px;
-    overflow: hidden;
+    left: 26%;
+    top: 16.4%;
+    width: 49%;
+    height: 68.1%;
     z-index: 99;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
 
-    &--header {
-      &__title {
-        width: fit-content;
-        margin: auto;
-        color: #000;
-      }
+  // Le titre appartient à la mise en page, il ne défile pas avec le contenu.
+  &__header {
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-      &__cross {
-        position: absolute;
-        top: 0;
-        right: 20px;
-        width: 40px;
-        padding: 0;
-        border: 0;
-        background: none;
-        cursor: pointer;
-        z-index: 999;
-        transition: 0.3s;
+  &__title {
+    // La réserve latérale empêche le titre de passer sous la croix, quelle que
+    // soit sa longueur.
+    padding: 0 3.5rem;
+    color: #2a1c0e;
+    font-size: var(--fs-display-l);
+    line-height: 1.1;
+    text-align: center;
+  }
 
-        &:hover {
-          transform: scale(1.1);
-        }
-      }
+  &__cross {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    width: 2.75rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-50%) scale(1.1);
     }
 
-    &__slot {
-      height: 370px;
-      overflow: auto;
+    img {
+      width: 100%;
+      display: block;
     }
+  }
+
+  // Le contenu occupe tout le reste. `min-height: 0` sans quoi un enfant trop
+  // haut pousserait le conteneur au lieu de défiler dans sa boîte.
+  &__slot {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
   }
 }
 </style>

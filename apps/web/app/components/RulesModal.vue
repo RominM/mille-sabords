@@ -22,7 +22,7 @@ const { rules } = useRules()
   &__list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
     margin: 0;
     padding-left: var(--space-4);
     text-align: left;
@@ -32,7 +32,8 @@ const { rules } = useRules()
   &__item {
     color: #2a1c0e;
     font-family: var(--font-body);
-    font-size: var(--fs-body-s);
+    font-size: 1.1rem;
+    line-height: 1.4;
   }
 }
 </style>

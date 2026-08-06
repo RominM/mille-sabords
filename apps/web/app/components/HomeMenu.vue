@@ -54,10 +54,12 @@ function select(id: string): void {
     background: transparent;
     color: var(--text-dim);
     font-family: var(--font-display);
-    font-size: var(--fs-display-m);
+    font-size: 2.4rem;
     line-height: 1.1;
+    // Le fond de l'accueil est très chargé : sans ombre portée, le texte clair
+    // se perd dans les zones lumineuses de l'image.
+    text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
     text-align: left;
-    cursor: pointer;
     transition:
       color 0.15s ease,
       border-color 0.15s ease;

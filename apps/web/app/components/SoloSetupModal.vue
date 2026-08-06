@@ -120,7 +120,7 @@ $ink: #2a1c0e;
 .solo-setup {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
   text-align: left;
 
   &__field {
@@ -136,19 +136,19 @@ $ink: #2a1c0e;
     padding: 0;
     color: $ink;
     font-family: var(--font-body);
-    font-size: var(--fs-body-s);
+    font-size: 1.15rem;
     font-weight: 600;
   }
 
   &__input {
     width: 100%;
-    padding: var(--space-2);
+    padding: var(--space-3);
     border: 1px solid rgba(42, 28, 14, 0.45);
     border-radius: var(--radius-btn);
     background: rgba(255, 250, 235, 0.55);
     color: $ink;
     font-family: var(--font-body);
-    font-size: var(--fs-body-m);
+    font-size: 1.25rem;
 
     &:focus-visible {
       outline: 2px solid var(--focus);
@@ -156,15 +156,19 @@ $ink: #2a1c0e;
     }
   }
 
+  // Les portraits ne se replient pas : ils défilent horizontalement plutôt que
+  // de rétrécir, pour rester lisibles.
   &__avatars {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    padding-bottom: var(--space-1);
+    overflow-x: auto;
   }
 
   &__avatar {
-    width: 3.5rem;
-    height: 3.5rem;
+    flex: 0 0 auto;
+    width: 5.5rem;
+    height: 5.5rem;
     padding: 0;
     border: 2px solid transparent;
     border-radius: var(--radius-btn);
@@ -194,23 +198,26 @@ $ink: #2a1c0e;
   &__diffs {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   &__diff {
-    font-size: var(--fs-body-s);
+    padding: var(--space-2) var(--space-4);
+    font-size: 1.1rem;
   }
 
   &__hint {
     color: $ink;
     font-family: var(--font-body);
-    font-size: var(--fs-body-s);
+    font-size: 1rem;
     opacity: 0.75;
   }
 
   &__submit {
     align-self: center;
     margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    font-size: 1.25rem;
   }
 }
 </style>

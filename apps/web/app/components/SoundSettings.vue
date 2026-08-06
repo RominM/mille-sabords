@@ -38,7 +38,7 @@ const { musicEnabled, musicVolume, sfxEnabled, sfxVolume } = useSoundSettings()
   &__title {
     color: var(--accent);
     font-family: var(--font-display);
-    font-size: var(--fs-display-m);
+    font-size: 2.6rem;
   }
 }
 </style>

@@ -19,21 +19,24 @@ const { rules } = useRules()
 .rules-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  // Écart resserré : c'est le panneau le plus chargé, et il doit tenir dans la
+  // planche sans déclencher de barre de défilement.
+  gap: var(--space-3);
   align-content: start;
 
   &__title {
     color: var(--accent);
     font-family: var(--font-display);
-    font-size: var(--fs-display-m);
+    font-size: 2.6rem;
   }
 
   &__list {
     margin: 0;
     padding-left: var(--space-4);
-    color: var(--text-dim);
+    color: var(--text);
     font-family: var(--font-body);
-    font-size: var(--fs-body-s);
+    font-size: 1.2rem;
+    line-height: 1.45;
   }
 
   // Deux colonnes seulement si la liste est longue — et une seule dès que le
@@ -44,8 +47,8 @@ const { rules } = useRules()
   // 14rem plutôt que 18rem, sinon le panneau (~596px utiles) reste sur une
   // seule colonne alors qu'il a la place pour deux.
   &__list--dual {
-    columns: 14rem 2;
-    column-gap: var(--space-4);
+    columns: 20rem 2;
+    column-gap: var(--space-5);
   }
 
   &__item {

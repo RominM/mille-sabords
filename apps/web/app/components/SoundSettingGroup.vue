@@ -55,13 +55,13 @@ const volume = defineModel<number>('volume', { required: true })
     padding: 0;
     color: var(--accent);
     font-family: var(--font-display);
-    font-size: var(--fs-body-l);
+    font-size: 1.75rem;
   }
 
   &__hint {
     color: var(--text-dim);
     font-family: var(--font-body);
-    font-size: var(--fs-body-s);
+    font-size: 1.05rem;
   }
 
   &__row {
@@ -73,21 +73,21 @@ const volume = defineModel<number>('volume', { required: true })
   &__label {
     color: var(--text);
     font-family: var(--font-body);
-    font-size: var(--fs-body-s);
+    font-size: 1.1rem;
     cursor: pointer;
   }
 
   &__value {
-    min-width: 3.5rem;
+    min-width: 4rem;
     color: var(--text-dim);
     font-family: var(--font-mono);
-    font-size: var(--fs-body-s);
+    font-size: 1.1rem;
     text-align: right;
   }
 
   &__check {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1.4rem;
+    height: 1.4rem;
     accent-color: var(--accent);
     cursor: pointer;
   }

@@ -25,19 +25,26 @@ const emit = defineEmits<{ embark: [] }>()
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   text-align: center;
 
   &__title {
     color: var(--accent);
     font-family: var(--font-display);
-    font-size: var(--fs-display-l);
+    font-size: 3.25rem;
+    line-height: 1.05;
   }
 
   &__text {
-    max-width: 34ch;
-    color: var(--text-dim);
+    max-width: 38ch;
+    color: var(--text);
     font-family: var(--font-body);
+    font-size: 1.4rem;
+  }
+
+  .btn {
+    padding: var(--space-3) var(--space-5);
+    font-size: 1.35rem;
   }
 }
 </style>
