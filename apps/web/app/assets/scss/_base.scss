@@ -70,6 +70,52 @@ button {
   color: var(--on-accent);
 }
 
+// ── Barres de défilement ────────────────────────────────────────────────────
+// Deux syntaxes concurrentes : la standard (`scrollbar-color`, suivie par
+// Firefox et les Chromium récents) et celle de WebKit. Dès que la standard est
+// présente, Chromium ignore les `::-webkit-scrollbar-*` — ceux-ci ne servent
+// donc que de repli pour Safari et les WebKit plus anciens. Les deux sont
+// pilotées par les MÊMES tokens : un contexte n'a qu'à redéclarer les variables
+// pour se décliner (cf. le parchemin des modales, qui passe de l'or à l'encre).
+//
+// La spec donne ces deux propriétés comme héritées, mais les moteurs ne le font
+// pas : posées sur `html` seul, elles restaient à l'or dans la modale (mesuré).
+// D'où le `*`, qui laisse chaque conteneur résoudre les variables de SON
+// contexte — deux propriétés, le coût est négligeable.
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  // Bordure transparente + `background-clip` : le curseur paraît plus fin que
+  // la gouttière sans qu'on réduise sa zone de préhension.
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+// Le carré d'angle, quand les deux barres coexistent : jamais de gris système.
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 // ── Mouvement réduit : on coupe la vibration danger et l'animation des dés,
 // on garde les transitions d'opacité (cf. règle d'accessibilité).
 @media (prefers-reduced-motion: reduce) {

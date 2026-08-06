@@ -106,6 +106,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+
+    // Contexte clair : l'or par défaut serait criard sur le parchemin, et sa
+    // gouttière sombre y ferait une balafre. On reprend l'encre du texte.
+    // Hérité par tout ce qui défile ici, la bande des portraits comprise.
+    --scrollbar-track: rgba(42, 28, 14, 0.12);
+    --scrollbar-thumb: rgba(42, 28, 14, 0.42);
+    --scrollbar-thumb-hover: rgba(42, 28, 14, 0.68);
   }
 
   // Le titre appartient à la mise en page, il ne défile pas avec le contenu.
@@ -136,7 +143,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
     padding: 0;
     border: 0;
     background: none;
-    cursor: pointer;
     transition: transform 0.2s ease;
 
     &:hover {
@@ -158,6 +164,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
   &__slot {
     flex: 1;
     min-height: 0;
+    padding: 0 20px;
     overflow-x: hidden;
     overflow-y: auto;
   }

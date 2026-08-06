@@ -71,6 +71,15 @@
   // ── Formes ────────────────────────────────────────────────────────────────
   --cut: 8px; // coin biseauté des panneaux
   --radius-btn: 4px; // léger arrondi des boutons d'action
+
+  // ── Barres de défilement ──────────────────────────────────────────────────
+  // Valeurs par défaut : celles des surfaces SOMBRES (bois, plateau), où l'or
+  // signale l'élément manipulable comme partout ailleurs. Les contextes clairs
+  // — le parchemin des modales — redéclarent ces variables sur leur conteneur.
+  --scrollbar-size: 10px;
+  --scrollbar-track: rgba(24, 14, 8, 0.45);
+  --scrollbar-thumb: var(--color-doubloon);
+  --scrollbar-thumb-hover: var(--color-doubloon-hi);
 }
 
 // ── API SCSS documentée (échelle typo) — pour la reprise Nuxt ────────────────
