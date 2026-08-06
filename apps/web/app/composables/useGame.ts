@@ -10,6 +10,7 @@
  */
 import {
   decideAction,
+  DECISION_TIMEOUT_MS,
   Game,
   IllegalActionError,
   WINNING_SCORE,
@@ -41,11 +42,15 @@ export function useGame() {
   const rolling = ref(false)
   const ROLL_MS = 450
 
-  // ── Timer de tour (affichage) ───────────────────────────────────────────────
-  // Décompte visuel montré sur la carte du joueur actif. Il n'applique PAS
-  // encore la règle de timeout du moteur (DECISION_TIMEOUT_MS) — ce sera fait
-  // avec la passe sur la logique.
-  const TURN_SECONDS = 60
+  // ── Minuteur de DÉCISION ────────────────────────────────────────────────────
+  // Il ne borne pas le tour mais chaque décision : un joueur peut relancer
+  // autant qu'il veut, le compte repart à zéro à chaque lancer. Ce qu'on limite,
+  // c'est le temps passé à choisir quels dés garder.
+  //
+  // À l'expiration, on applique la règle du moteur : rien de lancé → 0 point et
+  // la main passe ; des dés sur la table → arrêt volontaire, on compte et on
+  // passe. Dans tous les cas la partie avance, même si un joueur s'absente.
+  const TURN_SECONDS = DECISION_TIMEOUT_MS / 1000
   const secondsLeft = ref(TURN_SECONDS)
   let timerId: ReturnType<typeof setInterval> | null = null
 
@@ -55,14 +60,34 @@ export function useGame() {
       timerId = null
     }
   }
+
   function restartTimer(): void {
     stopTimer()
     secondsLeft.value = TURN_SECONDS
+    // L'IA joue seule et sans délibérer : lui opposer un minuteur n'aurait pas
+    // de sens, et pourrait lui couper un tour en cours.
+    if (game?.currentPlayer.bot) return
     timerId = setInterval(() => {
       secondsLeft.value = Math.max(0, secondsLeft.value - 1)
-      if (secondsLeft.value === 0) stopTimer()
+      if (secondsLeft.value > 0) return
+      stopTimer()
+      expireDecision()
     }, 1000)
   }
+
+  function expireDecision(): void {
+    const t = game?.state.turn
+    if (!t || t.phase === 'ended') return
+    game!.timeout()
+    afterAction()
+    // Le joueur est probablement absent : personne ne cliquera « Continuer ».
+    // On laisse le récapitulatif à l'écran le temps d'être lu, puis on enchaîne
+    // de nous-mêmes — c'est tout l'objet du minuteur.
+    setTimeout(() => {
+      if (mode.value === 'turnEnd') continueGame()
+    }, 2500)
+  }
+
   onScopeDispose(stopTimer)
 
   // Lectures réactives (sur l'instantané cloné).
@@ -114,6 +139,9 @@ export function useGame() {
     if (game!.state.turn!.phase === 'ended') {
       mode.value = 'turnEnd'
       stopTimer()
+    } else {
+      // Une nouvelle décision commence : le joueur récupère tout son temps.
+      restartTimer()
     }
     sync()
   }

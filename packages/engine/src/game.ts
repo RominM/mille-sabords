@@ -4,8 +4,12 @@ import type { PirateCard, RollFn, TurnAction, TurnState } from './types'
 
 export const WINNING_SCORE = 6000
 
-/** Timeout par DÉCISION (lancer/relancer/stop), pas par tour complet. */
-export const DECISION_TIMEOUT_MS = 60_000
+/**
+ * Délai par DÉCISION (lancer, relancer, s'arrêter), et non par tour complet :
+ * le compte repart à zéro à chaque lancer. Un joueur peut donc relancer autant
+ * qu'il veut — ce qu'on borne, c'est le temps passé à choisir ses dés.
+ */
+export const DECISION_TIMEOUT_MS = 35_000
 
 export interface Player {
   id: string

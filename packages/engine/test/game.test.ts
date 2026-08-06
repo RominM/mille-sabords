@@ -55,6 +55,53 @@ describe('fin de partie — dernier tour', () => {
     expect(game.state.winnerId).toBe('a') // A garde le meilleur score
   })
 
+  it('carte Pirate sur l’Île : le malus des adversaires est DOUBLÉ', () => {
+    const K = 'skull' as const
+    const game = new Game(
+      [
+        { id: 'a', name: 'A' },
+        { id: 'b', name: 'B' },
+      ],
+      { now: () => 0 },
+    )
+    game.state.deck = [{ type: 'pirate' }]
+    game.startTurn()
+    game.act({ type: 'roll' }, roller([K, K, K, K, S, M, P, S]))
+    expect(game.state.turn!.phase).toBe('island-roll')
+    game.act({ type: 'roll' }, roller([S, M, P, S])) // aucune nouvelle tête → fin
+
+    // 4 têtes × 100 = 400, doublés par la carte Pirate.
+    expect(game.state.turn!.outcome!.opponentPenalty).toBe(800)
+    expect(game.state.players[1]!.score).toBe(-800)
+    expect(game.state.players[0]!.score).toBe(0) // l'actif ne perd rien
+  })
+
+  it('le délai porte sur la DÉCISION : 35 s, réarmées à chaque lancer', () => {
+    let maintenant = 0
+    const game = new Game(
+      [
+        { id: 'a', name: 'A' },
+        { id: 'b', name: 'B' },
+      ],
+      { now: () => maintenant },
+    )
+    game.state.deck = [{ type: 'guardian' }]
+    game.startTurn()
+    expect(game.state.decisionDeadline).toBe(35_000)
+
+    maintenant = 30_000
+    expect(game.isTimedOut()).toBe(false)
+
+    // Un lancer rouvre un délai complet : relancer autant qu'on veut est permis.
+    game.act({ type: 'roll' }, roller([C, C, C, M, P, S, S, M]))
+    expect(game.state.decisionDeadline).toBe(30_000 + 35_000)
+
+    maintenant = 60_000
+    expect(game.isTimedOut()).toBe(false)
+    maintenant = 66_000
+    expect(game.isTimedOut()).toBe(true)
+  })
+
   it('minuteur écoulé après un lancer : équivaut à s’arrêter, la partie avance', () => {
     const game = new Game(
       [
