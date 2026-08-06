@@ -65,31 +65,43 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
   overflow: hidden;
 }
 
-// Le parchemin est un dessin : on verrouille le ratio du conteneur sur celui du
-// fichier (1536x1024). Les zones placées en % ci-dessous tombent alors pile sur
-// la partie plate, entre les deux rouleaux.
+// Le fichier parchemin.webp fait 1536x1024, mais le rouleau DESSINÉ n'en occupe
+// que la partie opaque : x 367..1181, y 32..984, soit 815x953. Caler le
+// conteneur sur le ratio du fichier gaspillait donc près de la moitié de la
+// largeur en transparent, et écrasait la zone de texte.
+//
+// Le conteneur épouse maintenant le rouleau lui-même ; c'est l'IMAGE qui est
+// agrandie et décalée pour que sa partie opaque vienne exactement dessus.
 .modal-dialog {
   position: relative;
-  height: min(92dvh, 820px);
-  aspect-ratio: 1536 / 1024;
-  max-width: 96vw;
+  width: min(92vw, calc(92dvh * 815 / 953), 720px);
+  aspect-ratio: 815 / 953;
 
   &__img {
-    width: 100%;
-    height: 100%;
-    // Le conteneur a exactement le ratio du fichier : rien n'est rogné.
-    object-fit: contain;
+    position: absolute;
+    // Le reset applique `max-width: 100%` à toutes les images : sans cette
+    // neutralisation, elle plafonnerait la largeur ci-dessous et le rouleau
+    // n'occuperait que la moitié du conteneur.
+    max-width: none;
+    // 1536/815 = 188,4 % : largeur du fichier ramenée à celle du rouleau.
+    width: 188.4%;
+    // Décalages = position de la partie opaque dans le fichier, en % du fichier.
+    left: -45%; // -367/1536 x 188,4
+    top: -3.4%; // -32/1024 x 107,4 (hauteur du fichier ramenée au rouleau)
+    height: 107.4%;
+    // Le débordement transparent ne doit pas intercepter le clic de fermeture.
+    pointer-events: none;
   }
 
-  // Surface d'écriture mesurée dans parchemin.webp : la partie plate va de 26 %
-  // à 75 % en largeur et de 16,4 % à 84,5 % en hauteur — au-delà, les rouleaux
-  // s'enroulent et le texte deviendrait illisible.
+  // Surface d'écriture : la partie plate entre les deux rouleaux, exprimée
+  // cette fois en % du ROULEAU. Marge volontaire sur les bords, qui sont
+  // déchirés et irréguliers.
   &__content {
     position: absolute;
-    left: 26%;
-    top: 16.4%;
-    width: 49%;
-    height: 68.1%;
+    left: 8%;
+    top: 15%;
+    width: 84%;
+    height: 72%;
     z-index: 99;
     display: flex;
     flex-direction: column;
@@ -139,10 +151,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
 
   // Le contenu occupe tout le reste. `min-height: 0` sans quoi un enfant trop
   // haut pousserait le conteneur au lieu de défiler dans sa boîte.
+  //
+  // `overflow-x: hidden` volontairement : un défilement horizontal ici ferait
+  // glisser tout le panneau et couperait les libellés à gauche. C'est aux blocs
+  // qui en ont besoin — la bande des portraits — de gérer le leur.
   &__slot {
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 </style>

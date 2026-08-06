@@ -120,7 +120,7 @@ $ink: #2a1c0e;
 .solo-setup {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   text-align: left;
 
   &__field {
@@ -130,6 +130,11 @@ $ink: #2a1c0e;
     margin: 0;
     padding: 0;
     border: 0;
+    // Le navigateur impose `min-inline-size: min-content` aux `fieldset` : sans
+    // cette remise à zéro, celui des portraits refuse de rétrécir sous la
+    // largeur de sa bande, et c'est tout le panneau qui déborde au lieu de la
+    // laisser défiler seule.
+    min-width: 0;
   }
 
   &__label {
@@ -167,8 +172,8 @@ $ink: #2a1c0e;
 
   &__avatar {
     flex: 0 0 auto;
-    width: 5.5rem;
-    height: 5.5rem;
+    width: 5rem;
+    height: 5rem;
     padding: 0;
     border: 2px solid transparent;
     border-radius: var(--radius-btn);
