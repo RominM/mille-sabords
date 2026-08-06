@@ -2,7 +2,10 @@
   <div class="pcard">
     <img :src="image" :alt="name" class="pcard__img" />
     <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}</span>
-    <p class="pcard__name">{{ name }}</p>
+    <!-- L'illustration est la même pour 1 et 2 têtes : sans ce compteur, on ne
+         sait pas ce que la carte apporte, et le badge (qui cumule dés + carte)
+         prête à confusion. -->
+    <p class="pcard__name">{{ name }}<template v-if="card.type === 'skulls'"> ×{{ card.count }}</template></p>
   </div>
 </template>
 

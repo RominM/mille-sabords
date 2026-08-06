@@ -30,8 +30,21 @@ const {
   toggleDie,
   continueGame,
   eligibleReroll,
-  avatarOf
+  avatarOf,
+  guardianDie
 } = useGame()
+
+/**
+ * La Gardienne n'a de sens qu'affichée : sans indication, le joueur ignore
+ * qu'il peut renvoyer une tête de mort — et perd un tour qu'il pouvait sauver.
+ */
+const guardianOffered = computed(
+  () =>
+    turn.value?.guardianAvailable === true &&
+    turn.value?.phase === 'decision' &&
+    !isBotTurn.value &&
+    turn.value.dice.some((d) => d.face === 'skull')
+)
 
 const FACE: Record<DieFace, string> = {
   sabre: '⚔️',
@@ -212,7 +225,7 @@ watch(isDefeat, async (value) => {
             v-if="slotDice[i - 1]"
             :die="slotDice[i - 1]!"
             :clickable="clickable"
-            :selected="true"
+            :selected="slotDice[i - 1]!.id !== guardianDie"
             @click="toggleDie(slotDice[i - 1]!.id)"
           />
         </div>
@@ -243,6 +256,12 @@ watch(isDefeat, async (value) => {
       <!-- Indice : sous les slots -->
       <p v-if="turn && !isBotTurn && turn.phase === 'decision'" class="zone-hint">
         <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
+        <span v-else-if="guardianDie !== null" class="guardian-txt">
+          🗝 Tête de mort confiée à la Gardienne — elle repartira à la relance.
+        </span>
+        <span v-else-if="guardianOffered" class="guardian-txt">
+          🗝 Gardienne : clique une tête de mort pour la relancer, une fois dans le tour.
+        </span>
         <span v-else>Sélectionne les dés que tu veux GARDER, puis relance les autres — ou arrête-toi.</span>
       </p>
       <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
@@ -351,7 +370,6 @@ watch(isDefeat, async (value) => {
   font-family: var(--font-body);
   font-size: 1.1cqw;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
-  cursor: pointer;
   transition: transform 0.12s ease;
 
   &:hover {
@@ -485,6 +503,11 @@ watch(isDefeat, async (value) => {
 }
 .bot-banner::before {
   content: '🤖';
+}
+
+.guardian-txt {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .zone-hint {

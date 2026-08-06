@@ -110,6 +110,7 @@
  * de l'état (sièges, « paré », capitaine) est déjà celle qu'il diffusera.
  */
 import type { BotDifficulty } from '@rf/engine'
+import backgroundUrl from '~/assets/images/ui/captain-quartier.webp'
 
 const MAX_SEATS = 5
 const MIN_PLAYERS = 2
@@ -207,6 +208,11 @@ function startGame(): void {
   place-items: center;
   min-height: 100dvh;
   padding: var(--space-4);
+  // Même décor que l'accueil : on reste dans les quartiers du capitaine.
+  background-image: v-bind('`url(${backgroundUrl})`');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 
   &__panel {
     display: flex;

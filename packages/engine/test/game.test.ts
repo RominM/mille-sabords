@@ -55,6 +55,42 @@ describe('fin de partie — dernier tour', () => {
     expect(game.state.winnerId).toBe('a') // A garde le meilleur score
   })
 
+  it('minuteur écoulé après un lancer : équivaut à s’arrêter, la partie avance', () => {
+    const game = new Game(
+      [
+        { id: 'a', name: 'A' },
+        { id: 'b', name: 'B' },
+      ],
+      { now: () => 0 },
+    )
+    game.state.deck = [{ type: 'guardian' }]
+    game.startTurn()
+    game.act({ type: 'roll' }, roller([C, C, C, M, P, S, S, M])) // 3 pièces = 400
+    expect(game.state.turn!.phase).toBe('decision')
+
+    game.timeout()
+    // Le joueur absent encaisse ce qu'il avait, au lieu d'être puni de zéro.
+    expect(game.state.players[0]!.score).toBe(400)
+    expect(game.state.turn!.outcome!.reason).toBe('stopped')
+    // Et surtout : la main passe, la partie ne se bloque pas.
+    expect(game.currentPlayer.id).toBe('b')
+  })
+
+  it('minuteur écoulé AVANT tout lancer : zéro point, la main passe quand même', () => {
+    const game = new Game(
+      [
+        { id: 'a', name: 'A' },
+        { id: 'b', name: 'B' },
+      ],
+      { now: () => 0 },
+    )
+    game.state.deck = [{ type: 'guardian' }]
+    game.startTurn()
+    game.timeout()
+    expect(game.state.players[0]!.score).toBe(0)
+    expect(game.currentPlayer.id).toBe('b')
+  })
+
   it('« Magie pirate » : 9 symboles identiques terminent la partie sur-le-champ', () => {
     const game = new Game(
       [

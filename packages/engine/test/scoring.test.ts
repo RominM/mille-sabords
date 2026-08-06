@@ -188,16 +188,16 @@ describe('cartes Pirate', () => {
     expect(bd.total).toBe(1500)
   })
 
-  it('tour perdu sur 3 têtes, quota atteint : aucun point, mais pas de pénalité', () => {
-    // La 3e tête annule tous les points du tour, prime comprise. Le défi ayant
-    // été relevé, la valeur de la carte n'est pas retirée pour autant.
+  it('tour perdu sur 3 têtes, quota atteint : la prime du défi reste acquise', () => {
+    // La règle des 3 têtes annule « les combinaisons de DÉS » ; le défi du
+    // bateau se juge sur les sabres et reste donc gagné.
     const bd = scoreTurn(
       dice(['skull', 'sabre', 'skull', 'skull', 'sabre', 'sabre', 'coin', 'monkey']),
       { type: 'ship', sabres: 3, value: 500 },
       { shipOnly: true },
     )
     expect(bd.shipResult).toBe('success')
-    expect(bd.total).toBe(0)
+    expect(bd.total).toBe(500) // les dés ne marquent pas, la prime si
   })
 
   it('tour perdu sur 3 têtes sans le quota : zéro ET la pénalité de la carte', () => {

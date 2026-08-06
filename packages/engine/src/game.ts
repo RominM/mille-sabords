@@ -126,6 +126,15 @@ export class Game {
     const turn = this.state.turn
     if (!turn || turn.phase === 'ended') return
 
+    // Le joueur a déjà lancé : on applique un arrêt volontaire plutôt que de le
+    // sanctionner. Il encaisse ce qu'il a sur la table, et la partie avance —
+    // c'est tout l'objet du minuteur : ne jamais rester bloqué sur un absent.
+    // (Avec trois têtes, `stop` clôt de toute façon le tour comme perdu.)
+    if (turn.phase === 'decision') {
+      this.act({ type: 'stop' })
+      return
+    }
+
     if (turn.phase === 'island-roll') {
       const perSkull = turn.card.type === 'pirate' ? 200 : 100
       const skulls =

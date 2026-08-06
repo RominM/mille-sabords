@@ -149,7 +149,7 @@ describe('Île de la Tête-de-Mort', () => {
     expect(t.outcome!.score).toBe(-500)
   })
 
-  it('Bateau Pirate : quota atteint malgré la 3e tête → aucun point, aucune pénalité', () => {
+  it('Bateau Pirate : quota atteint malgré la 3e tête → prime encaissée', () => {
     // Bateau 3 sabres. 1er lancer : 1 tête + 1 sabre → on garde.
     // Relance : 2 têtes + 2 sabres, soit 3 sabres mais aussi 3 têtes.
     let t = createTurn({ type: 'ship', sabres: 3, value: 500 })
@@ -163,8 +163,60 @@ describe('Île de la Tête-de-Mort', () => {
     )
     expect(t.phase).toBe('ended')
     expect(t.outcome!.reason).toBe('three-skulls')
-    // La 3e tête annule tout, prime comprise ; le défi relevé évite la pénalité.
+    // Les dés ne marquent pas, mais le défi des 3 sabres a bien été relevé.
+    expect(t.outcome!.score).toBe(500)
+  })
+})
+
+describe('Gardienne face aux 3 têtes', () => {
+  it('3 têtes au PREMIER lancer : la Gardienne rend la main au lieu de perdre', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, K, S, S, M, P, C]))
+    expect(t.phase).toBe('decision')
+    expect(t.guardianAvailable).toBe(true)
+  })
+
+  it('sans Gardienne, 3 têtes au premier lancer restent fatales', () => {
+    let t = createTurn({ type: 'animals' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, K, S, S, M, P, C]))
+    expect(t.phase).toBe('ended')
+    expect(t.outcome!.reason).toBe('three-skulls')
+  })
+
+  it('s’arrêter à 3 têtes ne sauve pas : le tour reste perdu', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, K, C, C, C, P, C]))
+    expect(t.phase).toBe('decision')
+    t = applyAction(t, { type: 'stop' }, roller())
+    expect(t.outcome!.reason).toBe('three-skulls')
     expect(t.outcome!.score).toBe(0)
+  })
+
+  it('la Gardienne relance une tête et le tour repart', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, K, S, S, M, P, C]))
+    // La tête 0 est confiée à la Gardienne et repart avec le dé 3.
+    t = applyAction(t, { type: 'reroll', diceIds: [0, 3], guardianDieId: 0 }, roller([C, C]))
+    expect(t.phase).toBe('decision')
+    expect(t.guardianAvailable).toBe(false)
+    expect(t.dice.filter(d => d.face === K)).toHaveLength(2)
+  })
+})
+
+describe('carte Tête de Mort et seuil des 3 têtes', () => {
+  it('carte 2 têtes + 1 tête au lancer = 3 → tour perdu', () => {
+    let t = createTurn({ type: 'skulls', count: 2 })
+    t = applyAction(t, { type: 'roll' }, roller([K, S, S, M, P, C, D, C]))
+    expect(t.phase).toBe('ended')
+    expect(t.outcome!.reason).toBe('three-skulls')
+    expect(t.outcome!.skulls).toBe(3)
+  })
+
+  it('carte 1 tête + 1 tête au lancer = 2 → le tour continue', () => {
+    let t = createTurn({ type: 'skulls', count: 1 })
+    t = applyAction(t, { type: 'roll' }, roller([K, S, S, M, P, C, D, C]))
+    expect(t.phase).toBe('decision')
+    expect(t.outcome).toBeNull()
   })
 })
 

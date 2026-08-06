@@ -69,10 +69,11 @@ export function scoreTurn(
       shipResult: card.type === 'ship' ? (success ? 'success' : 'failed') : null,
       doubled: false,
       instantWin: false,
-      // La 3e tête annule TOUS les points du tour, prime du bateau comprise.
-      // En revanche la pénalité de la carte n'est due que si le quota de sabres
-      // n'a pas été atteint : le défi, lui, a bien été relevé.
-      total: success || card.type !== 'ship' ? 0 : -card.value,
+      // Le défi du bateau se juge sur les sabres, indépendamment des têtes : la
+      // règle des 3 têtes annule « les combinaisons de DÉS », pas la prime de la
+      // carte. Quota atteint → prime encaissée malgré le tour perdu ; quota
+      // manqué → la valeur de la carte est retirée du score.
+      total: card.type !== 'ship' ? 0 : success ? card.value : -card.value,
     }
   }
   const faces = opts.bankedOnly

@@ -56,6 +56,11 @@ export function createTurn(card: PirateCard): TurnState {
 // ─── Fins de tour ────────────────────────────────────────────────────────────
 
 function endStopped(state: TurnState): void {
+  // Un arrêt volontaire ne sauve pas d'une 3e tête. Le cas se présente depuis
+  // que la Gardienne rend la main à 3 têtes : le joueur peut cliquer
+  // « s'arrêter » au lieu de s'en servir — le tour reste perdu.
+  if (totalSkulls(state) >= 3) return endThreeSkulls(state)
+
   const breakdown = scoreTurn(state.dice, state.card)
   state.phase = 'ended'
   state.outcome = {
@@ -122,16 +127,29 @@ function resolveFirstRoll(state: TurnState): void {
     return
   }
   if (skulls >= 3) {
-    endThreeSkulls(state)
+    threeSkullsOrGuardian(state)
     return
   }
   state.phase = 'decision'
 }
 
+/**
+ * La Gardienne est l'exception à la règle des 3 têtes : tant qu'elle n'a pas
+ * servi, le joueur doit pouvoir relancer une tête et se sauver. On lui rend
+ * donc la main au lieu de clore le tour d'office.
+ */
+function threeSkullsOrGuardian(state: TurnState): void {
+  if (state.guardianAvailable) {
+    state.phase = 'decision'
+    return
+  }
+  endThreeSkulls(state)
+}
+
 function resolveReroll(state: TurnState): void {
   lockSkulls(state.dice)
   if (totalSkulls(state) >= 3) {
-    endThreeSkulls(state)
+    threeSkullsOrGuardian(state)
     return
   }
   state.phase = 'decision'

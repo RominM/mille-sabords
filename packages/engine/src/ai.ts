@@ -151,10 +151,14 @@ export function expectedStopAfterReroll(turn: TurnState, rerollIds: number[]): n
   for (const { faces, prob } of faceMultisets(rerollIds.length)) {
     const roller: RollFn = () => faces
     const next = applyAction(turn, { type: 'reroll', diceIds: rerollIds }, roller)
+    // On demande au moteur ce que vaut un ARRÊT, au lieu de rescorer les dés à
+    // côté. La nuance est réelle : avec la Gardienne, une 3e tête laisse la main
+    // au joueur — la partie n'est pas finie, mais s'arrêter là rapporte zéro.
+    // Rescorer les dés surévaluerait cette branche et pousserait à relancer.
     const value =
       next.phase === 'ended'
-        ? next.outcome!.score // 3e tête / Bateau raté : valeur réelle du moteur
-        : scoreTurn(next.dice, next.card).total // survit → on s'arrêterait ici
+        ? next.outcome!.score
+        : applyAction(next, { type: 'stop' }, () => []).outcome!.score
     ev += prob * value
   }
   return ev

@@ -135,7 +135,7 @@ function onEmbark(mode: TabId): void {
     left: 6%;
     top: 39%;
     width: 88%;
-    height: 53.5%;
+    height: 50%;
     display: grid; // une seule cellule : le contenu s'y place comme il veut
     overflow: auto;
   }

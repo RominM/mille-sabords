@@ -32,6 +32,8 @@ export function useGame() {
   const mode = ref<Mode>('start')
   const difficulty = ref<BotDifficulty>('medium')
   const selected = ref<Set<number>>(new Set())
+  /** Tête de mort désignée pour la relance exceptionnelle de la Gardienne. */
+  const guardianDie = ref<number | null>(null)
   const botThinking = ref(false)
   const turnActor = ref('')
   const transient = ref('')
@@ -97,6 +99,7 @@ export function useGame() {
   function startTurn(): void {
     transient.value = ''
     selected.value = new Set()
+    guardianDie.value = null
     game!.startTurn()
     turnActor.value = game!.currentPlayer.name
     mode.value = 'playing'
@@ -145,6 +148,9 @@ export function useGame() {
     const ids = t.dice
       .filter((d) => d.face !== null && !d.locked && !d.banked && !selected.value.has(d.id))
       .map((d) => d.id)
+    // La tête confiée à la Gardienne repart AVEC les autres : le moteur exige
+    // qu'elle fasse partie de la sélection relancée.
+    if (guardianDie.value !== null) ids.push(guardianDie.value)
     if (ids.length < 2 || ids.length >= t.dice.length) return []
     return ids
   }
@@ -154,14 +160,32 @@ export function useGame() {
     const t = game?.state.turn
     if (!t || t.phase !== 'decision') return
     const d = t.dice[id]!
-    if (d.locked || d.face === null) return
+    if (d.face === null) return
+
+    // Une tête de mort est maudite : seule la Gardienne peut la renvoyer, une
+    // fois par tour. Cliquer dessus la désigne (ou la relâche).
+    if (d.locked) {
+      if (!t.guardianAvailable || d.face !== 'skull') return
+      guardianDie.value = guardianDie.value === id ? null : id
+      return
+    }
+
     const s = new Set(selected.value)
     s.has(id) ? s.delete(id) : s.add(id)
     selected.value = s
   }
 
   const roll = () => human(() => game!.act({ type: 'roll' }))
-  const reroll = () => human(() => game!.act({ type: 'reroll', diceIds: eligibleReroll() }))
+  const reroll = () =>
+    human(() => {
+      const g = guardianDie.value
+      game!.act({
+        type: 'reroll',
+        diceIds: eligibleReroll(),
+        ...(g !== null ? { guardianDieId: g } : {})
+      })
+      guardianDie.value = null
+    })
   const stop = () => human(() => game!.act({ type: 'stop' }))
 
   /**
@@ -249,6 +273,7 @@ export function useGame() {
     toggleDie,
     continueGame,
     eligibleReroll,
-    avatarOf
+    avatarOf,
+    guardianDie
   }
 }

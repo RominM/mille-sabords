@@ -74,7 +74,6 @@ const volume = defineModel<number>('volume', { required: true })
     color: var(--text);
     font-family: var(--font-body);
     font-size: 1.1rem;
-    cursor: pointer;
   }
 
   &__value {
@@ -89,7 +88,6 @@ const volume = defineModel<number>('volume', { required: true })
     width: 1.4rem;
     height: 1.4rem;
     accent-color: var(--accent);
-    cursor: pointer;
   }
 
   // Piste en Chêne Vieilli, curseur en Doublon. `appearance: none` impose de
@@ -101,7 +99,6 @@ const volume = defineModel<number>('volume', { required: true })
     height: 1.25rem;
     appearance: none;
     background: transparent;
-    cursor: pointer;
 
     &::-webkit-slider-runnable-track {
       height: 0.4rem;

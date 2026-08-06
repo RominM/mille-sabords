@@ -2,7 +2,7 @@
   <div class="pitch">
     <h2 class="pitch__title">{{ title }}</h2>
     <p class="pitch__text">{{ text }}</p>
-    <button v-click-sound class="btn" type="button" @click="emit('embark')">Embarquer</button>
+    <PlateButton @click="emit('embark')">Embarquer</PlateButton>
   </div>
 </template>
 
@@ -42,9 +42,5 @@ const emit = defineEmits<{ embark: [] }>()
     font-size: 1.4rem;
   }
 
-  .btn {
-    padding: var(--space-3) var(--space-5);
-    font-size: 1.35rem;
-  }
 }
 </style>

@@ -8,7 +8,7 @@
           class="solo-setup__input"
           type="text"
           maxlength="16"
-          placeholder="Barbe-Rousse"
+          placeholder="Saisie ton nom moussaillon"
           autofocus
         />
       </label>
@@ -94,7 +94,7 @@ const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
 const router = useRouter()
 const tableSetup = useTableSetup()
 
-const name = ref('')
+const name = ref('Barbe-Rousse')
 const avatar = ref(AVATARS[0]!.src)
 const difficulty = ref<BotDifficulty>('medium')
 
@@ -178,7 +178,6 @@ $ink: #2a1c0e;
     border: 2px solid transparent;
     border-radius: var(--radius-btn);
     background: rgba(42, 28, 14, 0.08);
-    cursor: pointer;
     transition:
       border-color 0.15s ease,
       transform 0.1s ease;
