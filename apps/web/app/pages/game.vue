@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BotDifficulty, DieFace } from '@rf/engine'
 import layoutUrl from '~/assets/images/ui/layout-game.webp'
+import ctaUrl from '~/assets/images/ui/main-cta.webp'
 import stopSeal from '~/assets/images/ui/wax-seal-stop.webp'
 import darkLaugh from '~/assets/sounds/soundscrate-evil-chuckle-02.mp3'
 
@@ -191,7 +192,15 @@ watch(isDefeat, async (value) => {
   <div v-if="mode !== 'start'" class="stage">
     <div class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
       <!-- Rappel des règles, calé dans le creux entre le crâne et la lanterne gauche -->
-      <button v-click-sound class="rules-link" type="button" @click="showRules = true">Règles</button>
+      <button
+        v-click-sound
+        class="rules-link"
+        type="button"
+        :style="{ backgroundImage: `url(${ctaUrl})` }"
+        @click="showRules = true"
+      >
+        Règles
+      </button>
 
       <!-- Joueurs : colonne de 5 slots à gauche -->
       <div class="zone-players">
@@ -293,30 +302,25 @@ watch(isDefeat, async (value) => {
     </div>
   </div>
 
-  <div v-else-if="mode === 'turnEnd'" class="overlay">
-    <div class="panel">
-      <h2>{{ outcome.title }}</h2>
-      <div class="outcome-lines">
-        <span v-for="(l, i) in outcome.lines" :key="i">{{ l }}</span>
-        <span :class="outcome.cls">
-          <strong>{{ turnActor }} : {{ outcome.score >= 0 ? '+' : '' }}{{ outcome.score }} pts</strong>
-        </span>
-      </div>
-      <button v-click-sound class="btn" @click="continueGame">
-        {{ gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer' }}
-      </button>
-    </div>
-  </div>
+  <!-- Récapitulatif de fin de tour, sur le parchemin comme les autres modales.
+       `turn.outcome` est nul après un minuteur expiré sans le moindre lancer :
+       il n'y a alors rien à détailler, on enchaîne directement. -->
+  <TurnRecap
+    v-if="mode === 'turnEnd' && turn?.outcome"
+    :outcome="turn.outcome"
+    :actor="turnActor"
+    :continue-label="gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer'"
+    @continue="continueGame"
+  />
 
-  <div v-else-if="mode === 'finished'" class="overlay">
-    <div class="panel">
-      <h2>🏆 {{ winner?.name }} l’emporte !</h2>
-      <div class="outcome-lines">
-        <span v-for="p in players" :key="p.id">{{ p.name }} : {{ p.score }} pts</span>
-      </div>
-      <WaxSeal label="Rejouer" @click="newGame(difficulty)" />
-    </div>
-  </div>
+  <GameOverModal
+    v-else-if="mode === 'finished'"
+    :players="players"
+    :winner="winner"
+    :avatar-of="avatarOf"
+    @replay="newGame(difficulty)"
+    @menu="router.push('/')"
+  />
 
   <RulesModal v-if="showRules" @close="showRules = false" />
 
@@ -362,22 +366,22 @@ watch(isDefeat, async (value) => {
 .rules-link {
   position: absolute;
   top: 2.5%;
-  left: 13.5%;
+  right: 13%;
   z-index: 2;
   padding: 0.3cqw 0.9cqw;
   border: 0;
   border-radius: 0.3cqw;
-  background: rgba(24, 14, 8, 0.55);
-  color: var(--parchment, #ede0c8);
+  // background: rgba(24, 14, 8, 0.55);
+  // color: var(--parchment, #ede0c8);
   font-family: var(--font-body);
   font-size: 1.1cqw;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
   transition: transform 0.12s ease;
 
-  &:hover {
-    transform: scale(1.06);
-    color: var(--accent);
-  }
+  // &:hover {
+  //   transform: scale(1.06);
+  //   color: var(--accent);
+  // }
 }
 
 // Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.webp

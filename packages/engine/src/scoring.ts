@@ -65,8 +65,10 @@ export function scoreTurn(
     return {
       combos: [],
       treasures: 0,
+      treasureDetail: [],
       fullChest: false,
       shipResult: card.type === 'ship' ? (success ? 'success' : 'failed') : null,
+      shipValue: card.type === 'ship' ? card.value : 0,
       doubled: false,
       instantWin: false,
       // Le défi du bateau se juge sur les sabres, indépendamment des têtes : la
@@ -95,9 +97,13 @@ export function scoreTurn(
     if (count >= 3) combos.push({ face, count, points: comboPoints(count) })
   }
 
-  // +100 par pièce et par diamant (en plus des combos)
-  const treasures =
-    100 * ((counts.get('coin') ?? 0) + (counts.get('diamond') ?? 0))
+  // +100 par pièce et par diamant (en plus des combos). Le détail est conservé
+  // pour que le récapitulatif de fin de tour puisse être lu ligne à ligne, sans
+  // que l'UI ait à recompter les dés de son côté.
+  const treasureDetail: ScoreBreakdown['treasureDetail'] = (['coin', 'diamond'] as const)
+    .map(face => ({ face, count: counts.get(face) ?? 0, points: 100 * (counts.get(face) ?? 0) }))
+    .filter(t => t.count > 0)
+  const treasures = treasureDetail.reduce((sum, t) => sum + t.points, 0)
 
   // Coffre au trésor plein (+500) : « quand un joueur marque des points avec ses
   // huit dés ». Chaque dé doit donc rapporter quelque chose — soit en faisant
@@ -149,5 +155,15 @@ export function scoreTurn(
   const doubled = card.type === 'pirate'
   if (doubled) total *= 2
 
-  return { combos, treasures, fullChest, shipResult, doubled, instantWin, total }
+  return {
+    combos,
+    treasures,
+    treasureDetail,
+    fullChest,
+    shipResult,
+    shipValue: card.type === 'ship' ? card.value : 0,
+    doubled,
+    instantWin,
+    total,
+  }
 }

@@ -68,10 +68,14 @@ export interface ScoreBreakdown {
   combos: { face: DieFace | 'animals'; count: number; points: number }[]
   /** +100 par pièce et par diamant (cartes virtuelles incluses) */
   treasures: number
+  /** Le même total, détaillé par symbole — pour un récapitulatif lisible. */
+  treasureDetail: { face: 'coin' | 'diamond'; count: number; points: number }[]
   /** +500 si les 8 dés marquent tous des points */
   fullChest: boolean
   /** Bonus ou malus de la carte Bateau Pirate */
   shipResult: 'success' | 'failed' | null
+  /** Valeur en jeu sur la carte Bateau : gagnée si réussi, retirée si raté. */
+  shipValue: number
   /** true si la carte Pirate double le total */
   doubled: boolean
   /**
