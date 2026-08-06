@@ -225,6 +225,7 @@ watch(isDefeat, async (value) => {
             v-if="slotDice[i - 1]"
             :die="slotDice[i - 1]!"
             :clickable="clickable"
+            :rescuable="guardianOffered && slotDice[i - 1]!.face === 'skull'"
             :selected="slotDice[i - 1]!.id !== guardianDie"
             @click="toggleDie(slotDice[i - 1]!.id)"
           />
@@ -319,6 +320,7 @@ watch(isDefeat, async (value) => {
 
   <RulesModal v-if="showRules" @close="showRules = false" />
 
+  <ScalePoints />
   <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
   <div v-if="isDefeat">
     <SkullEyes />

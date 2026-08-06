@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Game } from '../src/game'
+import { DECISION_TIMEOUT_MS, Game } from '../src/game'
 import type { DieFace, RollFn } from '../src/types'
 
 /** Roller de test : file de lancers pré-programmés. */
@@ -76,7 +76,10 @@ describe('fin de partie — dernier tour', () => {
     expect(game.state.players[0]!.score).toBe(0) // l'actif ne perd rien
   })
 
-  it('le délai porte sur la DÉCISION : 35 s, réarmées à chaque lancer', () => {
+  it('le délai porte sur la DÉCISION, et se réarme à chaque lancer', () => {
+    // On lit la constante plutôt que de la recopier : sa valeur est un réglage
+    // de confort, le comportement à figer est le RÉARMEMENT.
+    const D = DECISION_TIMEOUT_MS
     let maintenant = 0
     const game = new Game(
       [
@@ -87,18 +90,22 @@ describe('fin de partie — dernier tour', () => {
     )
     game.state.deck = [{ type: 'guardian' }]
     game.startTurn()
-    expect(game.state.decisionDeadline).toBe(35_000)
+    expect(game.state.decisionDeadline).toBe(D)
 
-    maintenant = 30_000
+    // Juste avant l'échéance, on tient encore.
+    maintenant = D - 1
     expect(game.isTimedOut()).toBe(false)
 
-    // Un lancer rouvre un délai complet : relancer autant qu'on veut est permis.
+    // Un lancer rouvre un délai COMPLET : relancer autant qu'on veut est permis,
+    // seule la délibération est bornée.
     game.act({ type: 'roll' }, roller([C, C, C, M, P, S, S, M]))
-    expect(game.state.decisionDeadline).toBe(30_000 + 35_000)
+    expect(game.state.decisionDeadline).toBe(D - 1 + D)
 
-    maintenant = 60_000
+    // L'ancienne échéance est dépassée, mais le compte est reparti de zéro.
+    maintenant = D + 1
     expect(game.isTimedOut()).toBe(false)
-    maintenant = 66_000
+
+    maintenant = 2 * D + 1
     expect(game.isTimedOut()).toBe(true)
   })
 

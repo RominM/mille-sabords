@@ -9,7 +9,7 @@ export const WINNING_SCORE = 6000
  * le compte repart à zéro à chaque lancer. Un joueur peut donc relancer autant
  * qu'il veut — ce qu'on borne, c'est le temps passé à choisir ses dés.
  */
-export const DECISION_TIMEOUT_MS = 35_000
+export const DECISION_TIMEOUT_MS = 30_000
 
 export interface Player {
   id: string
@@ -62,16 +62,12 @@ export class Game {
   private rng: () => number
   private now: () => number
 
-  constructor(
-    players: { id: string; name: string; bot?: boolean }[],
-    opts: GameOptions = {},
-  ) {
-    if (players.length < 2 || players.length > 5)
-      throw new Error('Reckless Fathoms se joue de 2 à 5 joueurs')
+  constructor(players: { id: string; name: string; bot?: boolean }[], opts: GameOptions = {}) {
+    if (players.length < 2 || players.length > 5) throw new Error('Reckless Fathoms se joue de 2 à 5 joueurs')
     this.rng = opts.rng ?? Math.random
     this.now = opts.now ?? Date.now
     this.state = {
-      players: players.map(p => ({ ...p, bot: p.bot ?? false, score: 0 })),
+      players: players.map((p) => ({ ...p, bot: p.bot ?? false, score: 0 })),
       currentPlayerIndex: 0,
       deck: shuffle(buildDeck(), this.rng),
       discard: [],
@@ -80,7 +76,7 @@ export class Game {
       winnerId: null,
       decisionDeadline: null,
       finalTurnsLeft: null,
-      suddenDeath: false,
+      suddenDeath: false
     }
   }
 
@@ -91,8 +87,7 @@ export class Game {
   /** Révèle la carte Pirate et ouvre le tour du joueur courant. */
   startTurn(): TurnState {
     if (this.state.phase !== 'playing') throw new Error('Partie terminée')
-    if (this.state.turn && this.state.turn.phase !== 'ended')
-      throw new Error('Un tour est déjà en cours')
+    if (this.state.turn && this.state.turn.phase !== 'ended') throw new Error('Un tour est déjà en cours')
 
     if (this.state.deck.length === 0) {
       this.state.deck = shuffle(this.state.discard, this.rng)
@@ -142,7 +137,7 @@ export class Game {
     if (turn.phase === 'island-roll') {
       const perSkull = turn.card.type === 'pirate' ? 200 : 100
       const skulls =
-        turn.dice.filter(d => d.face === 'skull').length +
+        turn.dice.filter((d) => d.face === 'skull').length +
         (turn.card.type === 'skulls' ? turn.card.count : 0)
       this.applyOpponentPenalty(skulls * perSkull)
     }
@@ -152,10 +147,7 @@ export class Game {
   }
 
   isTimedOut(): boolean {
-    return (
-      this.state.decisionDeadline !== null &&
-      this.now() > this.state.decisionDeadline
-    )
+    return this.state.decisionDeadline !== null && this.now() > this.state.decisionDeadline
   }
 
   // ─── Interne ───────────────────────────────────────────────────────────────
@@ -226,7 +218,7 @@ export class Game {
    * en mort subite au lieu de désigner un vainqueur sous les 6000.
    */
   private endFinalRound(card: PirateCard): void {
-    const best = Math.max(...this.state.players.map(p => p.score))
+    const best = Math.max(...this.state.players.map((p) => p.score))
     if (best >= WINNING_SCORE) return this.finish(card)
     this.state.finalTurnsLeft = null
     this.state.suddenDeath = true
@@ -238,16 +230,13 @@ export class Game {
     this.state.discard.push(card)
     this.state.phase = 'finished'
     this.state.decisionDeadline = null
-    const winner = this.state.players.reduce((best, p) =>
-      p.score > best.score ? p : best,
-    )
+    const winner = this.state.players.reduce((best, p) => (p.score > best.score ? p : best))
     this.state.winnerId = winner.id
   }
 
   private rotate(card: PirateCard): void {
     this.state.discard.push(card)
-    this.state.currentPlayerIndex =
-      (this.state.currentPlayerIndex + 1) % this.state.players.length
+    this.state.currentPlayerIndex = (this.state.currentPlayerIndex + 1) % this.state.players.length
     this.state.decisionDeadline = null
   }
 }

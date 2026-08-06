@@ -7,9 +7,10 @@
       'die-view--clickable': canClick,
       'die-view--selected': selected,
       'die-view--locked': die.locked,
-      'die-view--banked': die.banked
+      'die-view--banked': die.banked,
+      'die-view--rescuable': rescuable && die.locked
     }"
-    :disabled="die.locked"
+    :disabled="die.locked && !rescuable"
     type="button"
     :aria-label="die.face ?? 'dé vide'"
     @click="onClick"
@@ -29,11 +30,23 @@ import diamond from '~/assets/images/dice/die-face_diamond.webp'
 
 const FACE_IMG: Record<DieFace, string> = { sabre, skull, monkey, parrot, coin, diamond }
 
-const props = defineProps<{ die: Die; clickable?: boolean; selected?: boolean }>()
+const props = defineProps<{
+  die: Die
+  clickable?: boolean
+  selected?: boolean
+  /** Tête de mort récupérable par la Gardienne : elle redevient cliquable. */
+  rescuable?: boolean
+}>()
 const emit = defineEmits<{ click: [] }>()
 
-/** Un dé n'est cliquable que s'il est lancé, non verrouillé, et la phase le permet. */
-const canClick = computed(() => props.clickable && !props.die.locked && props.die.face !== null)
+/**
+ * Un dé n'est cliquable que s'il est lancé et que la phase le permet. Une tête
+ * de mort est maudite — sauf quand la Gardienne peut la reprendre, seul cas où
+ * un dé verrouillé accepte le clic.
+ */
+const canClick = computed(
+  () => props.clickable && props.die.face !== null && (!props.die.locked || !!props.rescuable)
+)
 
 function onClick(): void {
   if (canClick.value) emit('click')
@@ -79,6 +92,24 @@ function onClick(): void {
     border-radius: 12%;
     outline: 0.35cqw solid var(--danger-edge);
     outline-offset: -0.35cqw;
+  }
+
+  // Tête de mort que la Gardienne peut reprendre : elle doit se distinguer des
+  // autres têtes, sinon le joueur ne devine pas qu'elle est encore jouable.
+  &--rescuable {
+    outline-color: var(--accent);
+    cursor: pointer;
+    animation: rescuable-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes rescuable-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 rgba(232, 196, 104, 0);
+    }
+    50% {
+      box-shadow: 0 0 14px rgba(232, 196, 104, 0.75);
+    }
   }
 
   &--banked {

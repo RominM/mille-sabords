@@ -1,7 +1,9 @@
 <template>
   <div class="pcard">
     <img :src="image" :alt="name" class="pcard__img" />
-    <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}</span>
+    <!-- Sur 3, pas juste un nombre : le joueur doit lire d'un coup d'œil à quelle
+         distance il est du tour perdu, dés ET carte confondus. -->
+    <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}/3</span>
     <!-- L'illustration est la même pour 1 et 2 têtes : sans ce compteur, on ne
          sait pas ce que la carte apporte, et le badge (qui cumule dés + carte)
          prête à confusion. -->
