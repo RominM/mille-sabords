@@ -134,13 +134,19 @@ export function useGame() {
    * La sélection (`selected`) désigne les dés à GARDER ; les têtes de mort sont
    * verrouillées par le moteur donc gardées d'office, et les dés réservés
    * (Île au Trésor) ne repartent jamais.
+   *
+   * Renvoie une liste VIDE quand la relance serait illégale — moins de deux dés,
+   * ou l'intégralité des dés — pour que le bouton se grise au lieu de lever une
+   * erreur du moteur au clic.
    */
   function eligibleReroll(): number[] {
     const t = game?.state.turn
     if (!t) return []
-    return t.dice
+    const ids = t.dice
       .filter((d) => d.face !== null && !d.locked && !d.banked && !selected.value.has(d.id))
       .map((d) => d.id)
+    if (ids.length < 2 || ids.length >= t.dice.length) return []
+    return ids
   }
 
   function toggleDie(id: number): void {

@@ -110,9 +110,14 @@ function resolveFirstRoll(state: TurnState): void {
   lockSkulls(state.dice)
   const skulls = totalSkulls(state)
 
-  // 4 têtes de mort ou plus au premier lancer → Île de la Tête-de-Mort,
-  // quelle que soit la carte du tour (Bateau Pirate compris).
+  // 4 têtes de mort ou plus au premier lancer → Île de la Tête-de-Mort.
+  // Sauf avec un Bateau Pirate : « celui qui découvre un bateau pirate ne peut
+  // pas aller sur l'île » — il perd immédiatement son tour.
   if (skulls >= 4) {
+    if (state.card.type === 'ship') {
+      endThreeSkulls(state)
+      return
+    }
     state.phase = 'island-roll'
     return
   }
@@ -135,11 +140,11 @@ function resolveReroll(state: TurnState): void {
 function resolveIslandRoll(state: TurnState, newSkulls: number): void {
   lockSkulls(state.dice)
   const remaining = state.dice.filter(d => d.face !== 'skull').length
-  // L'île s'arrête si aucun nouveau crâne n'est sorti, OU s'il ne reste plus
-  // assez de dés pour relancer (il en faut au moins deux). Sans cette seconde
-  // condition, le joueur se retrouverait bloqué : plus de lancer possible et
-  // aucune autre action disponible.
-  if (newSkulls === 0 || remaining < 2) {
+  // « Si le joueur n'obtient aucune tête de mort lors d'un lancer, son tour
+  // prend fin. » Sur l'île on relance TOUS les dés restants, le minimum de deux
+  // dés ne s'applique donc pas ; il faut seulement qu'il en reste un à lancer,
+  // sinon le joueur serait bloqué sans action possible.
+  if (newSkulls === 0 || remaining === 0) {
     endIsland(state)
     return
   }
@@ -213,8 +218,11 @@ export function applyAction(
         throw new IllegalActionError("Reprends d'abord les dés de l'Île au Trésor (unbank)")
       if (selected.length < 2)
         throw new IllegalActionError('Une relance se fait avec au moins deux dés')
-      // Rien n'oblige à réserver un dé : relancer tous les dés relançables est
-      // permis (les têtes de mort restent verrouillées de toute façon).
+      // « Il n'est pas possible de relancer l'intégralité de ses dés : le joueur
+      // doit toujours réserver au moins un dé. » La contrainte ne mord que sans
+      // tête de mort — une tête verrouillée est déjà un dé mis de côté.
+      if (selected.length >= state.dice.length)
+        throw new IllegalActionError('Il faut garder au moins un dé')
 
       const faces = roll(selected.length)
       selected.forEach((d, i) => (d.face = faces[i]!))

@@ -52,17 +52,37 @@ describe('déroulement du tour', () => {
     ).toThrow(IllegalActionError) // tête de mort dans la sélection
   })
 
-  it('relancer TOUS les dés relançables est permis', () => {
-    // Aucune tête : les 8 dés peuvent repartir d'un coup.
+  it('relancer les 8 dés est interdit : il faut en garder un', () => {
+    let t = createTurn({ type: 'animals' })
+    t = applyAction(t, { type: 'roll' }, roller([S, S, M, M, P, C, D, S]))
+    expect(() =>
+      applyAction(t, { type: 'reroll', diceIds: [0, 1, 2, 3, 4, 5, 6, 7] }, roller()),
+    ).toThrow(IllegalActionError)
+  })
+
+  it('relancer 7 dés sur 8 est permis', () => {
     let t = createTurn({ type: 'animals' })
     t = applyAction(t, { type: 'roll' }, roller([S, S, M, M, P, C, D, S]))
     t = applyAction(
       t,
-      { type: 'reroll', diceIds: [0, 1, 2, 3, 4, 5, 6, 7] },
-      roller([C, C, C, D, D, M, P, S]),
+      { type: 'reroll', diceIds: [1, 2, 3, 4, 5, 6, 7] },
+      roller([C, C, D, D, M, P, S]),
     )
     expect(t.phase).toBe('decision')
-    expect(t.dice[0]!.face).toBe(C)
+    expect(t.dice[1]!.face).toBe(C)
+  })
+
+  it('une tête verrouillée compte comme le dé réservé', () => {
+    // Avec une tête de mort, relancer les 7 autres est légal : la tête est
+    // déjà mise de côté, le joueur ne relance donc pas « l'intégralité ».
+    let t = createTurn({ type: 'animals' })
+    t = applyAction(t, { type: 'roll' }, roller([K, S, M, M, P, C, D, S]))
+    t = applyAction(
+      t,
+      { type: 'reroll', diceIds: [1, 2, 3, 4, 5, 6, 7] },
+      roller([C, C, D, D, M, P, S]),
+    )
+    expect(t.phase).toBe('decision')
   })
 
   it('arrêt volontaire : points comptés', () => {
@@ -118,22 +138,20 @@ describe('Île de la Tête-de-Mort', () => {
     expect(t.outcome!.opponentPenalty).toBe(800)
   })
 
-  it("4 têtes envoient sur l'île MÊME avec un Bateau Pirate", () => {
-    // La carte du tour ne change rien : 4 têtes au premier lancer = l'Île.
+  it("Bateau Pirate : 4 têtes ne mènent PAS sur l'île, le tour est perdu", () => {
+    // « Celui qui découvre un bateau pirate ne peut pas aller sur l'île. »
     let t = createTurn({ type: 'ship', sabres: 3, value: 500 })
     t = applyAction(t, { type: 'roll' }, roller([K, K, K, K, S, S, M, P]))
-    expect(t.phase).toBe('island-roll')
-
-    // On y reste tant que de nouvelles têtes sortent, puis le malus tombe.
-    t = applyAction(t, { type: 'roll' }, roller([S, M, P, C]))
     expect(t.phase).toBe('ended')
-    expect(t.outcome!.reason).toBe('skull-island')
-    expect(t.outcome!.opponentPenalty).toBe(400) // 4 têtes × 100
+    expect(t.outcome!.reason).toBe('three-skulls')
+    expect(t.outcome!.opponentPenalty).toBe(0)
+    // Quota de 3 sabres non atteint (2 sabres) → la valeur de la carte est retirée.
+    expect(t.outcome!.score).toBe(-500)
   })
 
-  it('Bateau Pirate : quota atteint malgré la 3e tête → prime encaissée', () => {
-    // Scénario de l'utilisateur : bateau 3 sabres.
-    // 1er lancer : 1 tête + 1 sabre → on garde. Relance : 2 têtes + 2 sabres.
+  it('Bateau Pirate : quota atteint malgré la 3e tête → aucun point, aucune pénalité', () => {
+    // Bateau 3 sabres. 1er lancer : 1 tête + 1 sabre → on garde.
+    // Relance : 2 têtes + 2 sabres, soit 3 sabres mais aussi 3 têtes.
     let t = createTurn({ type: 'ship', sabres: 3, value: 500 })
     t = applyAction(t, { type: 'roll' }, roller([K, S, M, P, C, D, M, P]))
     expect(t.phase).toBe('decision')
@@ -145,7 +163,8 @@ describe('Île de la Tête-de-Mort', () => {
     )
     expect(t.phase).toBe('ended')
     expect(t.outcome!.reason).toBe('three-skulls')
-    expect(t.outcome!.score).toBe(500) // 3 sabres réunis → prime acquise
+    // La 3e tête annule tout, prime comprise ; le défi relevé évite la pénalité.
+    expect(t.outcome!.score).toBe(0)
   })
 })
 
@@ -237,8 +256,8 @@ describe('partie complète (Game)', () => {
     game.act({ type: 'roll' }, fixedRoll([K, K, K, K, S, S, M, P]))
     expect(game.state.turn!.phase).toBe('island-roll')
     game.timeout()
-    // Le score ne descend jamais sous zéro : le malus de 400 le plafonne à 0.
-    expect(game.state.players[1]!.score).toBe(0)
+    // La règle ne pose aucun plancher : l'adversaire tombe à -400.
+    expect(game.state.players[1]!.score).toBe(-400)
     expect(game.state.players[0]!.score).toBe(0)
   })
 

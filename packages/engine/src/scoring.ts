@@ -68,7 +68,11 @@ export function scoreTurn(
       fullChest: false,
       shipResult: card.type === 'ship' ? (success ? 'success' : 'failed') : null,
       doubled: false,
-      total: success && card.type === 'ship' ? card.value : 0,
+      instantWin: false,
+      // La 3e tête annule TOUS les points du tour, prime du bateau comprise.
+      // En revanche la pénalité de la carte n'est due que si le quota de sabres
+      // n'a pas été atteint : le défi, lui, a bien été relevé.
+      total: success || card.type !== 'ship' ? 0 : -card.value,
     }
   }
   const faces = opts.bankedOnly
@@ -94,29 +98,39 @@ export function scoreTurn(
   const treasures =
     100 * ((counts.get('coin') ?? 0) + (counts.get('diamond') ?? 0))
 
-  // Coffre au trésor plein (+500) : les 8 DÉS doivent afficher la MÊME valeur
-  // (8 pièces, 8 diamants, 8 sabres…, ou 8 animaux avec la carte Animaux qui
-  // fusionne singes et perroquets). Aucun dé n'est alors inutile.
-  // Un mélange ne donne PAS le bonus, même si tous les dés marquent :
-  // 5 pièces + 3 diamants → pas de coffre plein.
-  // Le jugement porte sur les 8 dés seuls : une carte Tête de Mort ne bloque
-  // donc pas le bonus (8 pièces restent 8 pièces).
+  // Coffre au trésor plein (+500) : « quand un joueur marque des points avec ses
+  // huit dés ». Chaque dé doit donc rapporter quelque chose — soit en faisant
+  // partie d'une combinaison d'au moins 3 symboles, soit en étant une pièce d'or
+  // ou un diamant, qui valent 100 à eux seuls.
+  //
+  // Un mélange est donc valable : 3 sabres + 3 singes + 1 pièce + 1 diamant
+  // donne le bonus. Une seule tête de mort le fait tomber, puisqu'elle ne
+  // rapporte jamais rien.
+  //
+  // Le jugement porte sur les 8 DÉS. Les faces virtuelles d'une carte Pièce ou
+  // Diamant comptent en revanche dans la taille des combinaisons (elles peuvent
+  // faire passer un groupe à 3), et une carte Tête de Mort ne bloque rien : ce
+  // n'est pas un dé lancé.
   const chestKey = (f: DieFace): DieFace | 'animals' =>
     merge && (f === 'monkey' || f === 'parrot') ? 'animals' : f
-  const first = realFaces[0]
+  const scores = (f: DieFace): boolean =>
+    f !== 'skull' && (f === 'coin' || f === 'diamond' || (counts.get(chestKey(f)) ?? 0) >= 3)
   const fullChest =
     !opts.bankedOnly &&
     dice.length > 0 &&
     realFaces.length === dice.length &&
-    first !== undefined &&
-    realFaces.every(f => f !== 'skull' && chestKey(f) === chestKey(first))
+    realFaces.every(scores)
+
+  // « Magie pirate » : 9 symboles identiques emportent la partie sur-le-champ.
+  // Seule une carte Pièce d'or ou Diamant peut faire un 9e symbole.
+  const instantWin = !opts.bankedOnly && [...counts].some(([f, n]) => f !== 'skull' && n >= 9)
 
   let total =
     combos.reduce((s, c) => s + c.points, 0) + treasures + (fullChest ? 500 : 0)
 
   // Bateau Pirate : le défi est OBLIGATOIRE pour marquer.
-  // Réussi  → les dés comptent normalement + la prime de la carte.
-  // Raté    → aucun point du tout (même les dés), mais aucune pénalité non plus.
+  // Réussi → les dés comptent normalement, plus la prime de la carte.
+  // Raté   → aucun point, ET la valeur de la carte est RETIRÉE du score.
   let shipResult: ScoreBreakdown['shipResult'] = null
   if (card.type === 'ship') {
     const sabres = realFaces.filter(f => f === 'sabre').length
@@ -125,13 +139,14 @@ export function scoreTurn(
       total += card.value
     } else {
       shipResult = 'failed'
-      total = 0
+      total = -card.value
     }
   }
 
-  // Carte Pirate : points du tour doublés
+  // Carte Pirate : points du tour doublés. Jamais combinée à un Bateau — une
+  // seule carte est révélée par tour — donc la pénalité n'est pas concernée.
   const doubled = card.type === 'pirate'
   if (doubled) total *= 2
 
-  return { combos, treasures, fullChest, shipResult, doubled, total }
+  return { combos, treasures, fullChest, shipResult, doubled, instantWin, total }
 }

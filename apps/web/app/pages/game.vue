@@ -99,9 +99,14 @@ const isDefeat = computed(function detectDefeat() {
 })
 /** Les cachets restent affichés en permanence ; ils sont grisés hors de notre tour. */
 const myTurn = computed(() => !isBotTurn.value && !rolling.value && turn.value?.phase !== 'ended')
-const canRoll = computed(
-  () => myTurn.value && ['first-roll', 'island-roll', 'decision'].includes(turn.value?.phase ?? '')
-)
+// En phase de décision, le cachet ne s'allume que si la relance est LÉGALE :
+// au moins deux dés à relancer, et au moins un dé gardé.
+const canRoll = computed(() => {
+  if (!myTurn.value) return false
+  const phase = turn.value?.phase ?? ''
+  if (phase === 'first-roll' || phase === 'island-roll') return true
+  return phase === 'decision' && eligibleReroll().length > 0
+})
 const canStop = computed(() => myTurn.value && turn.value?.phase === 'decision')
 const clickable = computed(() => !isBotTurn.value && turn.value?.phase === 'decision')
 const isTreasure = computed(() => turn.value?.card.type === 'treasure-island')

@@ -54,13 +54,31 @@ describe('coffre au trésor plein', () => {
     expect(bd.total).toBe(5300)
   })
 
-  it('symboles mélangés : PAS de bonus même si tous les dés marquent', () => {
-    // 5 pièces (combo) + 3 diamants (combo) : tout marque, mais deux valeurs
+  it('symboles mélangés : bonus accordé dès que TOUS les dés marquent', () => {
+    // 5 pièces (combo) + 3 diamants (combo) : chaque dé rapporte → coffre plein.
     const bd = scoreTurn(
       dice(['coin', 'coin', 'coin', 'coin', 'coin', 'diamond', 'diamond', 'diamond']),
       guardian,
     )
+    expect(bd.fullChest).toBe(true)
+  })
+
+  it('mélange sans combinaison : le dé isolé qui ne marque pas annule le bonus', () => {
+    // 3 sabres (combo) + 4 pièces (chacune 100) + 1 singe seul : le singe ne
+    // rapporte rien, donc les huit dés ne marquent pas tous.
+    const bd = scoreTurn(
+      dice(['sabre', 'sabre', 'sabre', 'coin', 'coin', 'coin', 'coin', 'monkey']),
+      guardian,
+    )
     expect(bd.fullChest).toBe(false)
+  })
+
+  it('pièces et diamants isolés marquent : 8 dés panachés donnent le bonus', () => {
+    const bd = scoreTurn(
+      dice(['sabre', 'sabre', 'sabre', 'coin', 'diamond', 'coin', 'diamond', 'coin']),
+      guardian,
+    )
+    expect(bd.fullChest).toBe(true)
   })
 
   it('8 animaux AVEC la carte Animaux : singes + perroquets = une seule valeur', () => {
@@ -71,9 +89,20 @@ describe('coffre au trésor plein', () => {
     expect(bd.fullChest).toBe(true)
   })
 
-  it('les mêmes 8 animaux SANS la carte Animaux : deux valeurs → pas de bonus', () => {
+  it('les mêmes 8 animaux SANS la carte Animaux : deux combinaisons, bonus quand même', () => {
+    // 4 singes et 4 perroquets forment deux combinaisons de 4 : chaque dé
+    // marque, donc le coffre est plein. Seul le total de points diffère.
     const bd = scoreTurn(
       dice(['monkey', 'parrot', 'monkey', 'parrot', 'monkey', 'monkey', 'parrot', 'parrot']),
+      guardian,
+    )
+    expect(bd.fullChest).toBe(true)
+    expect(bd.total).toBe(200 + 200 + 500)
+  })
+
+  it('deux singes isolés ne marquent pas : pas de bonus', () => {
+    const bd = scoreTurn(
+      dice(['monkey', 'monkey', 'parrot', 'parrot', 'parrot', 'parrot', 'parrot', 'parrot']),
       guardian,
     )
     expect(bd.fullChest).toBe(false)
@@ -137,15 +166,15 @@ describe('cartes Pirate', () => {
     expect(bd.total).toBe(800)
   })
 
-  it('Bateau Pirate raté : aucun point du tout (le défi est obligatoire)', () => {
-    // Scénario de l'utilisateur : défi 4 sabres, 1 seul sabre → même les pièces
-    // accumulées ne rapportent rien. Aucune pénalité pour autant.
+  it('Bateau Pirate raté : zéro point ET la valeur de la carte retirée du score', () => {
+    // Défi 4 sabres, 1 seul sabre : les pièces accumulées ne rapportent rien,
+    // et « on lui retire de son score la valeur indiquée sur la carte ».
     const bd = scoreTurn(
       dice(['sabre', 'coin', 'coin', 'coin', 'coin', 'coin', 'coin', 'coin']),
       { type: 'ship', sabres: 4, value: 1000 },
     )
     expect(bd.shipResult).toBe('failed')
-    expect(bd.total).toBe(0)
+    expect(bd.total).toBe(-1000)
   })
 
   it('Bateau Pirate réussi : dés + prime du défi', () => {
@@ -159,25 +188,43 @@ describe('cartes Pirate', () => {
     expect(bd.total).toBe(1500)
   })
 
-  it('tour perdu sur 3 têtes : la prime du bateau reste acquise si le quota est atteint', () => {
-    // Scénario de l'utilisateur : bateau 3 sabres, 3 têtes ET 3 sabres au total
+  it('tour perdu sur 3 têtes, quota atteint : aucun point, mais pas de pénalité', () => {
+    // La 3e tête annule tous les points du tour, prime comprise. Le défi ayant
+    // été relevé, la valeur de la carte n'est pas retirée pour autant.
     const bd = scoreTurn(
       dice(['skull', 'sabre', 'skull', 'skull', 'sabre', 'sabre', 'coin', 'monkey']),
       { type: 'ship', sabres: 3, value: 500 },
       { shipOnly: true },
     )
     expect(bd.shipResult).toBe('success')
-    expect(bd.total).toBe(500) // les dés ne marquent pas, la prime si
+    expect(bd.total).toBe(0)
   })
 
-  it('tour perdu sur 3 têtes sans le quota : zéro, mais aucune pénalité', () => {
+  it('tour perdu sur 3 têtes sans le quota : zéro ET la pénalité de la carte', () => {
     const bd = scoreTurn(
       dice(['skull', 'sabre', 'skull', 'skull', 'coin', 'coin', 'coin', 'monkey']),
       { type: 'ship', sabres: 3, value: 500 },
       { shipOnly: true },
     )
     expect(bd.shipResult).toBe('failed')
-    expect(bd.total).toBe(0)
+    expect(bd.total).toBe(-500)
+  })
+
+  it('« Magie pirate » : 9 symboles identiques emportent la partie', () => {
+    // 8 pièces aux dés + la carte Pièce d'or = 9 symboles identiques.
+    const bd = scoreTurn(
+      dice(['coin', 'coin', 'coin', 'coin', 'coin', 'coin', 'coin', 'coin']),
+      { type: 'coin' },
+    )
+    expect(bd.instantWin).toBe(true)
+  })
+
+  it('8 symboles identiques sans carte : pas de victoire immédiate', () => {
+    const bd = scoreTurn(
+      dice(['coin', 'coin', 'coin', 'coin', 'coin', 'coin', 'coin', 'coin']),
+      guardian,
+    )
+    expect(bd.instantWin).toBe(false)
   })
 })
 

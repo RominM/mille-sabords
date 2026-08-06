@@ -34,6 +34,13 @@ export interface GameState {
    * score à l'issue de ce dernier tour, pas forcément le déclencheur.
    */
   finalTurnsLeft: number | null
+  /**
+   * « Si après la dernière manche, le joueur qui avait obtenu 6000 points en
+   * reperd, le jeu se poursuit jusqu'à ce que quelqu'un atteigne à nouveau les
+   * 6000 points. » Dans ce régime, le premier à repasser le seuil gagne
+   * immédiatement, sans déclencher de nouvelle manche.
+   */
+  suddenDeath: boolean
 }
 
 export interface GameOptions {
@@ -69,6 +76,7 @@ export class Game {
       winnerId: null,
       decisionDeadline: null,
       finalTurnsLeft: null,
+      suddenDeath: false,
     }
   }
 
@@ -144,25 +152,31 @@ export class Game {
   }
 
   /**
-   * Un score de joueur ne descend JAMAIS sous zéro : les malus (Île de la
-   * Tête-de-Mort, Bateau Pirate raté) font au pire retomber à 0.
+   * La règle ne pose aucun plancher : un score PEUT devenir négatif, que ce
+   * soit par les malus de l'Île de la Tête-de-Mort ou par un Bateau Pirate raté.
    */
-  private static clamp(score: number): number {
-    return Math.max(0, score)
-  }
-
   private applyOpponentPenalty(penalty: number): void {
     if (penalty <= 0) return
     this.state.players.forEach((p, i) => {
-      if (i !== this.state.currentPlayerIndex) p.score = Game.clamp(p.score - penalty)
+      if (i !== this.state.currentPlayerIndex) p.score -= penalty
     })
   }
 
   private settleTurn(): void {
     const turn = this.state.turn!
     const outcome = turn.outcome!
-    this.currentPlayer.score = Game.clamp(this.currentPlayer.score + outcome.score)
+    this.currentPlayer.score += outcome.score
     this.applyOpponentPenalty(outcome.opponentPenalty)
+
+    // « Magie pirate » : 9 symboles identiques emportent la partie sur-le-champ,
+    // sans dernière manche ni comparaison des scores.
+    if (outcome.breakdown?.instantWin) {
+      this.state.discard.push(turn.card)
+      this.state.phase = 'finished'
+      this.state.decisionDeadline = null
+      this.state.winnerId = this.currentPlayer.id
+      return
+    }
     this.concludeTurn(turn.card)
   }
 
@@ -174,16 +188,35 @@ export class Game {
    * - Sinon : rotation normale.
    */
   private concludeTurn(card: PirateCard): void {
+    // Mort subite : le seuil a déjà été franchi puis reperdu. Le premier qui le
+    // repasse gagne sur-le-champ, sans nouvelle dernière manche.
+    if (this.state.suddenDeath) {
+      if (this.currentPlayer.score >= WINNING_SCORE) return this.finish(card)
+      return this.rotate(card)
+    }
     if (this.state.finalTurnsLeft !== null) {
       this.state.finalTurnsLeft -= 1
-      if (this.state.finalTurnsLeft <= 0) return this.finish(card)
+      if (this.state.finalTurnsLeft <= 0) return this.endFinalRound(card)
       return this.rotate(card)
     }
     if (this.currentPlayer.score >= WINNING_SCORE) {
       this.state.finalTurnsLeft = this.state.players.length - 1
-      if (this.state.finalTurnsLeft <= 0) return this.finish(card)
+      if (this.state.finalTurnsLeft <= 0) return this.endFinalRound(card)
       return this.rotate(card)
     }
+    this.rotate(card)
+  }
+
+  /**
+   * Clôture de la dernière manche. Si plus personne n'atteint le seuil — le
+   * déclencheur ayant reperdu ses points entre-temps —, la partie se poursuit
+   * en mort subite au lieu de désigner un vainqueur sous les 6000.
+   */
+  private endFinalRound(card: PirateCard): void {
+    const best = Math.max(...this.state.players.map(p => p.score))
+    if (best >= WINNING_SCORE) return this.finish(card)
+    this.state.finalTurnsLeft = null
+    this.state.suddenDeath = true
     this.rotate(card)
   }
 

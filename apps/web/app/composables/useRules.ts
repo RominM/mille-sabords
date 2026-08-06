@@ -9,11 +9,13 @@ export const useRules = () => {
   const rules: string[] = [
     `Le premier à ${WINNING_SCORE} points déclenche le dernier tour — le meilleur score l'emporte.`,
     'Trois têtes de mort et le tour est perdu : les têtes sont maudites, impossible de les relancer.',
-    'Une relance se fait avec au moins deux dés ; garde ceux qui rapportent.',
+    'Une relance se fait avec au moins deux dés, et tu dois toujours en garder un.',
     'Trois symboles identiques ou plus rapportent des points (100 pour 3, jusqu’à 4000 pour 8).',
     'Chaque pièce d’or et chaque diamant valent 100 points de plus.',
-    'Les 8 dés sur la même valeur : coffre au trésor plein, +500 points.',
-    'Quatre têtes de mort au premier lancer, et te voilà sur l’Île de la Tête-de-Mort : tes adversaires trinquent.'
+    'Coffre au trésor plein : si tes 8 dés rapportent tous des points, +500.',
+    'Quatre têtes de mort au premier lancer, et te voilà sur l’Île de la Tête-de-Mort : chaque adversaire perd 100 points par tête révélée.',
+    'Bateau Pirate : réunis le quota de sabres, sinon tu perds la valeur de la carte.',
+    'Neuf symboles identiques — 8 dés plus une carte Pièce d’or ou Diamant — gagnent la partie sur-le-champ.'
   ]
 
   return { rules }

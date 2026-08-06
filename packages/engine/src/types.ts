@@ -68,12 +68,17 @@ export interface ScoreBreakdown {
   combos: { face: DieFace | 'animals'; count: number; points: number }[]
   /** +100 par pièce et par diamant (cartes virtuelles incluses) */
   treasures: number
-  /** +500 si tous les dés marquent des points */
+  /** +500 si les 8 dés marquent tous des points */
   fullChest: boolean
   /** Bonus ou malus de la carte Bateau Pirate */
   shipResult: 'success' | 'failed' | null
   /** true si la carte Pirate double le total */
   doubled: boolean
+  /**
+   * « Magie pirate » : 9 symboles identiques (8 dés + une carte Pièce d'or ou
+   * Diamant de la même face) font gagner la partie sur-le-champ.
+   */
+  instantWin: boolean
   /** Total final (peut être négatif avec un Bateau Pirate raté) */
   total: number
 }
