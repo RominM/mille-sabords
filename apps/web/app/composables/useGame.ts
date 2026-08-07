@@ -1,22 +1,19 @@
 /**
- * Composable de jeu : enveloppe le moteur @rf/engine dans de la réactivité Vue.
+ * Orchestration d'UI du jeu.
  *
- * Le moteur mute son état EN PLACE (même objet). Vue met en cache les `computed`
- * par identité : lire directement `game.state` ne déclencherait jamais de rendu.
- * On publie donc un instantané CLONÉ (`snapshot`) après chaque action — nouvelle
- * identité à chaque fois → la réactivité se propage. Aucune règle ici, seulement
- * de l'orchestration d'UI ; `game` reste l'autorité (mêmes actions que le futur
- * serveur).
+ * Ce composable ne détient PLUS le moteur : il envoie des commandes à un
+ * transport et lit l'état que celui-ci publie (cf. `useGameTransport`). Tout ce
+ * qui suit est donc de la mise en scène — minuteur, sélection de dés, tempo de
+ * l'IA — et aucune règle. L'autorité est ailleurs, ce qui la rendra
+ * remplaçable par le serveur sans toucher aux composants.
  */
 import {
   applyAction,
   decideAction,
   DECISION_TIMEOUT_MS,
-  Game,
-  IllegalActionError,
   WINNING_SCORE,
   type BotDifficulty,
-  type GameState,
+  type TurnAction,
   type TurnState
 } from '@rf/engine'
 
@@ -25,11 +22,8 @@ export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export function useGame() {
-  let game: Game | null = null // autorité (état muté en place)
-  const snapshot = shallowRef<GameState | null>(null) // copie pour l'affichage
-  const sync = () => {
-    snapshot.value = game ? (structuredClone(game.state) as GameState) : null
-  }
+  const transport = createLocalTransport()
+  const snapshot = transport.state
 
   const mode = ref<Mode>('start')
   const difficulty = ref<BotDifficulty>('medium')
@@ -42,6 +36,14 @@ export function useGame() {
   /** Vrai pendant le jet de dés : les boutons d'action sont alors inactifs. */
   const rolling = ref(false)
   const ROLL_MS = 450
+
+  // Lectures réactives (sur l'état publié par le transport).
+  const turn = computed<TurnState | null>(() => snapshot.value?.turn ?? null)
+  const players = computed(() => snapshot.value?.players ?? [])
+  const currentIndex = computed(() => snapshot.value?.currentPlayerIndex ?? 0)
+  const currentPlayer = computed(() => players.value[currentIndex.value] ?? null)
+  const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
+  const winner = computed(() => players.value.find((p) => p.id === snapshot.value?.winnerId) ?? null)
 
   // ── Minuteur de DÉCISION ────────────────────────────────────────────────────
   // Il ne borne pas le tour mais chaque décision : un joueur peut relancer
@@ -67,7 +69,7 @@ export function useGame() {
     secondsLeft.value = TURN_SECONDS
     // L'IA joue seule et sans délibérer : lui opposer un minuteur n'aurait pas
     // de sens, et pourrait lui couper un tour en cours.
-    if (game?.currentPlayer.bot) return
+    if (currentPlayer.value?.bot) return
     timerId = setInterval(() => {
       secondsLeft.value = Math.max(0, secondsLeft.value - 1)
       if (secondsLeft.value > 0) return
@@ -77,9 +79,9 @@ export function useGame() {
   }
 
   function expireDecision(): void {
-    const t = game?.state.turn
+    const t = turn.value
     if (!t || t.phase === 'ended') return
-    game!.timeout()
+    transport.send({ type: 'timeout' })
     afterAction()
     // Le joueur est probablement absent : personne ne cliquera « Continuer ».
     // On laisse le récapitulatif à l'écran le temps d'être lu, puis on enchaîne
@@ -89,15 +91,10 @@ export function useGame() {
     }, 2500)
   }
 
-  onScopeDispose(stopTimer)
-
-  // Lectures réactives (sur l'instantané cloné).
-  const turn = computed<TurnState | null>(() => snapshot.value?.turn ?? null)
-  const players = computed(() => snapshot.value?.players ?? [])
-  const currentIndex = computed(() => snapshot.value?.currentPlayerIndex ?? 0)
-  const currentPlayer = computed(() => players.value[currentIndex.value] ?? null)
-  const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
-  const winner = computed(() => players.value.find((p) => p.id === snapshot.value?.winnerId) ?? null)
+  onScopeDispose(() => {
+    stopTimer()
+    transport.close()
+  })
 
   /**
    * Ce que le joueur encaisserait s'il s'arrêtait MAINTENANT.
@@ -105,7 +102,7 @@ export function useGame() {
    * On simule un arrêt via le moteur au lieu de rescorer les dés à côté : c'est
    * la seule façon d'être juste sur les cas particuliers — trois têtes qui
    * annulent tout, défi du bateau manqué qui passe le total en négatif, dés
-   * réservés de l'Île au Trésor. `applyAction` est pure, l'instantané n'est
+   * réservés de l'Île au Trésor. `applyAction` est pure, l'état publié n'est
    * donc pas touché.
    */
   const potentialScore = computed<number | null>(() => {
@@ -137,7 +134,10 @@ export function useGame() {
   function newGame(diff: BotDifficulty, roster?: TableSeat[]): void {
     difficulty.value = diff
     if (roster?.length) currentRoster = roster
-    game = new Game(currentRoster.map((s) => ({ id: s.id, name: s.name, bot: s.bot })))
+    transport.send({
+      type: 'open',
+      players: currentRoster.map((s) => ({ id: s.id, name: s.name, bot: s.bot }))
+    })
     startTurn()
   }
 
@@ -145,40 +145,38 @@ export function useGame() {
     transient.value = ''
     selected.value = new Set()
     guardianDie.value = null
-    game!.startTurn()
-    turnActor.value = game!.currentPlayer.name
+    transport.send({ type: 'start-turn' })
+    turnActor.value = currentPlayer.value?.name ?? ''
     mode.value = 'playing'
     restartTimer()
-    sync()
-    if (game!.currentPlayer.bot) void runBot()
+    if (currentPlayer.value?.bot) void runBot()
   }
 
   function afterAction(): void {
     // On NE vide PAS la sélection : les dés gardés le restent d'une relance à
     // l'autre (on ne relance que ceux laissés au centre).
-    if (game!.state.turn!.phase === 'ended') {
+    if (turn.value?.phase === 'ended') {
       mode.value = 'turnEnd'
       stopTimer()
     } else {
       // Une nouvelle décision commence : le joueur récupère tout son temps.
       restartTimer()
     }
-    sync()
   }
 
-  function human(fn: () => void): void {
+  /**
+   * Enveloppe une commande du joueur. Le transport ne lève plus : une règle
+   * refusée revient dans `lastError`, qu'on montre au joueur sans enchaîner sur
+   * la suite du tour.
+   */
+  function human(send: () => void): void {
     if (botThinking.value) return
-    try {
-      fn()
-      transient.value = ''
-      afterAction()
-    } catch (err) {
-      if (err instanceof IllegalActionError) {
-        transient.value = err.message
-        sync()
-      } else throw err
-    }
+    send()
+    transient.value = transport.lastError.value
+    if (!transient.value) afterAction()
   }
+
+  const act = (action: TurnAction) => transport.send({ type: 'act', action })
 
   /**
    * Dés qui partiront à la relance = ceux que le joueur n'a PAS gardés.
@@ -191,7 +189,7 @@ export function useGame() {
    * erreur du moteur au clic.
    */
   function eligibleReroll(): number[] {
-    const t = game?.state.turn
+    const t = turn.value
     if (!t) return []
     const ids = t.dice
       .filter((d) => d.face !== null && !d.locked && !d.banked && !selected.value.has(d.id))
@@ -205,7 +203,7 @@ export function useGame() {
 
   function toggleDie(id: number): void {
     if (botThinking.value) return
-    const t = game?.state.turn
+    const t = turn.value
     if (!t || t.phase !== 'decision') return
     const d = t.dice[id]!
     if (d.face === null) return
@@ -222,7 +220,7 @@ export function useGame() {
     // gestes n'en font qu'un. Le clic fait donc l'aller-retour lui-même, et un
     // second clic le reprend. Deux boutons séparés n'apportaient rien.
     if (t.card.type === 'treasure-island') {
-      human(() => game!.act({ type: d.banked ? 'unbank' : 'bank', diceIds: [id] }))
+      human(() => act({ type: d.banked ? 'unbank' : 'bank', diceIds: [id] }))
       return
     }
 
@@ -231,18 +229,18 @@ export function useGame() {
     selected.value = s
   }
 
-  const roll = () => human(() => game!.act({ type: 'roll' }))
+  const roll = () => human(() => act({ type: 'roll' }))
   const reroll = () =>
     human(() => {
       const g = guardianDie.value
-      game!.act({
+      act({
         type: 'reroll',
         diceIds: eligibleReroll(),
         ...(g !== null ? { guardianDieId: g } : {})
       })
       guardianDie.value = null
     })
-  const stop = () => human(() => game!.act({ type: 'stop' }))
+  const stop = () => human(() => act({ type: 'stop' }))
 
   /**
    * Action du bouton principal : il reste le même tout au long du tour.
@@ -251,7 +249,7 @@ export function useGame() {
    */
   const rollOrReroll = () => {
     if (rolling.value || botThinking.value) return
-    const phase = game?.state.turn?.phase
+    const phase = turn.value?.phase
     if (phase !== 'first-roll' && phase !== 'island-roll' && phase !== 'decision') return
     rolling.value = true
     if (phase === 'decision') reroll()
@@ -259,47 +257,50 @@ export function useGame() {
     // Laisse le temps au jet d'être perçu (et plus tard, à l'animation 3D).
     setTimeout(() => (rolling.value = false), ROLL_MS)
   }
+
   const bank = () =>
     human(() =>
-      game!.act({
+      act({
         type: 'bank',
         diceIds: [...selected.value].filter((id) => {
-          const d = game!.state.turn!.dice[id]!
+          const d = turn.value!.dice[id]!
           return !d.banked && d.face !== 'skull'
         })
       })
     )
+
   const unbank = () =>
     human(() =>
-      game!.act({
+      act({
         type: 'unbank',
-        diceIds: [...selected.value].filter((id) => game!.state.turn!.dice[id]!.banked)
+        diceIds: [...selected.value].filter((id) => turn.value!.dice[id]!.banked)
       })
     )
 
   function continueGame(): void {
-    if (game!.state.phase === 'finished') {
+    if (gamePhase.value === 'finished') {
       mode.value = 'finished'
-      sync()
       return
     }
     startTurn()
   }
 
+  /**
+   * Tempo de l'IA. Elle décide à partir de l'état publié et passe par les mêmes
+   * commandes qu'un joueur : le jour où elle tournera côté serveur, seul
+   * l'endroit d'où partent ces commandes changera.
+   */
   async function runBot(): Promise<void> {
     botThinking.value = true
     await sleep(650)
     let guard = 0
-    while (game!.state.turn && game!.state.turn.phase !== 'ended' && guard++ < 200) {
-      const action = decideAction(game!.state.turn, { difficulty: difficulty.value })
-      game!.act(action)
-      sync()
+    while (turn.value && turn.value.phase !== 'ended' && guard++ < 200) {
+      act(decideAction(turn.value, { difficulty: difficulty.value }))
       await sleep(750)
     }
     botThinking.value = false
     mode.value = 'turnEnd'
     stopTimer()
-    sync()
   }
 
   return {
