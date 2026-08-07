@@ -2,6 +2,8 @@
   <div>
     <NuxtPage />
     <AppLoader v-if="!ready" :loaded="loaded" :total="total" :progress="progress" />
+    <!-- Accueil : plein écran puis « à propos », une fois le décor chargé. -->
+    <StartupPrompts v-else />
   </div>
 </template>
 

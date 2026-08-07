@@ -1,116 +1,114 @@
 <template>
-  <main class="lobby">
-    <div class="lobby__panel panel">
-      <header class="lobby__header">
-        <h1 class="lobby__title">Salle d'équipage</h1>
-        <p class="lobby__code">
-          Code de la partie
-          <strong class="lobby__code-value mono">{{ roomCode }}</strong>
-        </p>
-      </header>
+  <main class="lobby" :style="{ backgroundImage: `url(${backgroundUrl})` }">
+    <div class="lobby__grid">
+      <h1 class="lobby__title">Salle d’équipage</h1>
 
-      <hr class="rope" />
+      <!-- Le code n'est pas relégué : c'est lui qu'on dicte aux camarades. -->
+      <div class="lobby__code">
+        <span class="lobby__code-label">Code de la partie</span>
+        <strong class="lobby__code-value">{{ roomCode }}</strong>
+      </div>
 
-      <!-- Réglages du capitaine -->
-      <section class="lobby__settings">
-        <label class="lobby__field">
-          <span class="lobby__label">Ton nom de pirate</span>
-          <input
-            v-model="pseudo"
-            class="lobby__input"
-            type="text"
-            maxlength="16"
-            placeholder="Barbe-Rousse"
-            @keyup.enter="addSelf"
-          />
-        </label>
-
-        <button v-click-sound class="btn" type="button" :disabled="!canJoin" @click="addSelf">
-          Rejoindre
-        </button>
-
-        <div class="lobby__field">
-          <span class="lobby__label">Niveau des IA</span>
-          <div class="lobby__diffs">
-            <button
-              v-for="d in DIFFICULTIES"
-              :key="d.value"
-              v-click-sound
-              class="btn"
-              :class="{ 'btn--ghost': difficulty !== d.value }"
-              type="button"
-              @click="difficulty = d.value"
-            >
-              {{ d.label }}
-            </button>
-          </div>
+      <!-- Réglage de partie, réservé à l'hôte : il ne concerne pas les invités. -->
+      <div v-if="isHost" class="lobby__ai">
+        <span class="lobby__ai-label">Niveau des IA</span>
+        <div class="lobby__ai-choices">
+          <button
+            v-for="d in DIFFICULTIES"
+            :key="d.value"
+            v-click-sound
+            class="btn lobby__ai-btn"
+            :class="{ 'btn--ghost': difficulty !== d.value }"
+            type="button"
+            :aria-pressed="difficulty === d.value"
+            @click="difficulty = d.value"
+          >
+            {{ d.label }}
+          </button>
         </div>
+      </div>
+
+      <!-- Panneau des sièges, sur la planche du menu -->
+      <section class="lobby__crew" :style="{ backgroundImage: `url(${panelUrl})` }">
+        <ul class="crew">
+          <li v-for="(seat, i) in seats" :key="i" class="crew__row">
+            <template v-if="seat">
+              <img :src="seat.avatar" alt="" class="crew__avatar" />
+              <span class="crew__name">
+                {{ seat.name }}
+                <span v-if="seat.host" class="crew__tag">(hôte)</span>
+                <span v-else-if="seat.bot" class="crew__tag">IA</span>
+              </span>
+              <span class="crew__state" :class="{ 'crew__state--ready': seat.ready }">
+                {{ seat.bot ? 'Paré' : seat.ready ? 'Paré' : 'En attente' }}
+              </span>
+              <button
+                v-if="!seat.bot"
+                v-click-sound
+                class="btn btn--ghost crew__action"
+                type="button"
+                @click="toggleReady(i)"
+              >
+                {{ seat.ready ? 'Annuler' : 'Je suis paré' }}
+              </button>
+              <button
+                v-else
+                v-click-sound
+                class="btn btn--ghost crew__action"
+                type="button"
+                @click="removeSeat(i)"
+              >
+                Retirer
+              </button>
+            </template>
+
+            <template v-else>
+              <!-- Le siège libre est lui-même le bouton : cliquer dessus ouvre
+                   la personnalisation, comme prévu au wireframe. -->
+              <button v-click-sound class="crew__empty" type="button" @click="openSeat(i)">
+                Siège libre — clique pour embarquer
+              </button>
+              <button
+                v-click-sound
+                class="btn btn--ghost crew__action"
+                type="button"
+                @click="addBot(i)"
+              >
+                + Ajouter IA
+              </button>
+            </template>
+          </li>
+        </ul>
       </section>
 
-      <!-- Équipage : 5 sièges, remplis ou vides -->
-      <ul class="lobby__crew">
-        <li v-for="(seat, i) in seats" :key="i" class="lobby__seat">
-          <template v-if="seat">
-            <span class="lobby__seat-name">{{ seat.name }}</span>
-            <span v-if="seat.bot" class="lobby__seat-tag mono">IA</span>
-            <span
-              class="lobby__seat-state"
-              :class="{ 'lobby__seat-state--ready': seat.ready }"
-            >{{ seat.ready ? 'Paré' : 'En attente' }}</span>
-            <button
-              v-if="!seat.bot"
-              v-click-sound
-              class="btn btn--ghost lobby__seat-action"
-              type="button"
-              @click="toggleReady(i)"
-            >
-              {{ seat.ready ? 'Annuler' : 'Je suis paré' }}
-            </button>
-            <button
-              v-else
-              v-click-sound
-              class="btn btn--ghost lobby__seat-action"
-              type="button"
-              @click="removeSeat(i)"
-            >
-              Retirer
-            </button>
-          </template>
-          <template v-else>
-            <span class="lobby__seat-empty">Siège libre</span>
-            <button v-click-sound class="btn btn--ghost lobby__seat-action" type="button" @click="addBot">
-              Ajouter une IA
-            </button>
-          </template>
-        </li>
-      </ul>
+      <NuxtLink v-click-sound to="/" class="lobby__back">← Retour</NuxtLink>
 
       <p class="lobby__hint">{{ hint }}</p>
 
-      <footer class="lobby__footer">
-        <NuxtLink v-click-sound to="/" class="btn btn--ghost">Retour</NuxtLink>
-        <button v-click-sound class="btn" type="button" :disabled="!canStart" @click="startGame">
-          Lever l'ancre
-        </button>
-      </footer>
-
-      <p class="lobby__notice">
-        Le multijoueur en ligne arrive avec le serveur temps réel. Pour l'instant,
-        cette salle prépare une partie locale : ajoute des IA et lance.
-      </p>
+      <div class="lobby__start">
+        <PlateButton :disabled="!canStart" @click="startGame">Lever l’ancre</PlateButton>
+      </div>
     </div>
+
+    <SeatSetupModal
+      v-if="openSeatIndex !== null"
+      @close="openSeatIndex = null"
+      @confirm="takeSeat"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
 /**
- * Salle d'attente. Pour l'instant purement locale : elle compose la table
- * (joueurs humains sur ce poste + IA) avant de lancer la partie.
- * Elle sera branchée sur le serveur WebSocket autoritaire en phase 4 — la forme
- * de l'état (sièges, « paré », capitaine) est déjà celle qu'il diffusera.
+ * Salle d'équipage. Purement locale pour l'instant : elle compose la table
+ * (joueurs sur ce poste + IA) avant de lancer la partie.
+ *
+ * La forme de l'état — sièges, « paré », hôte — est déjà celle que le serveur
+ * WebSocket diffusera : seule la SOURCE changera, pas la structure.
  */
 import type { BotDifficulty } from '@rf/engine'
 import backgroundUrl from '~/assets/images/ui/captain-quartier.webp'
+import panelUrl from '~/assets/images/ui/panel-menu.webp'
 
 const MAX_SEATS = 5
 const MIN_PLAYERS = 2
@@ -123,55 +121,76 @@ const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
 
 interface Seat {
   name: string
+  avatar: string
   bot: boolean
   ready: boolean
+  /** L'hôte règle la partie ; en local, c'est le premier humain assis. */
+  host: boolean
 }
 
 const router = useRouter()
 const tableSetup = useTableSetup()
-const difficulty = ref<BotDifficulty>('medium')
+const { botAvatar } = useAvatars()
 
-const pseudo = ref('')
+const difficulty = ref<BotDifficulty>('medium')
 const seats = ref<(Seat | null)[]>(Array.from({ length: MAX_SEATS }, () => null))
+const openSeatIndex = ref<number | null>(null)
 
 /** Code de partie factice, remplacé par celui du serveur le moment venu. */
 const roomCode = ref(
-  Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('')
+  Array.from(
+    { length: 4 },
+    () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]
+  ).join('')
 )
 
 const filled = computed(() => seats.value.filter((s): s is Seat => s !== null))
-const humans = computed(() => filled.value.filter(s => !s.bot))
-const canJoin = computed(() => pseudo.value.trim().length > 0 && filled.value.length < MAX_SEATS)
+const humans = computed(() => filled.value.filter((s) => !s.bot))
+
+/** En local, l'hôte existe dès qu'un humain s'est assis : c'est lui qui règle. */
+const isHost = computed(() => humans.value.length > 0)
+
 const canStart = computed(
-  () => filled.value.length >= MIN_PLAYERS && humans.value.length > 0 && humans.value.every(s => s.ready)
+  () =>
+    filled.value.length >= MIN_PLAYERS &&
+    humans.value.length > 0 &&
+    humans.value.every((s) => s.ready)
 )
 
 const hint = computed(function buildHint() {
   if (filled.value.length < MIN_PLAYERS) return `Il faut au moins ${MIN_PLAYERS} pirates à bord.`
-  if (humans.value.length === 0) return 'Rejoins la table avant de lever l’ancre.'
-  if (!humans.value.every(s => s.ready)) return 'Tout l’équipage doit se déclarer paré.'
+  if (humans.value.length === 0) return 'Prends un siège avant de lever l’ancre.'
+  if (!humans.value.every((s) => s.ready)) return 'Tout l’équipage doit se déclarer paré.'
   return 'L’équipage est au complet — en route !'
 })
 
-function firstFreeSeat(): number {
-  return seats.value.findIndex(s => s === null)
+function openSeat(index: number): void {
+  openSeatIndex.value = index
 }
 
-function addSelf(): void {
-  const name = pseudo.value.trim()
-  if (!name) return
-  const i = firstFreeSeat()
-  if (i === -1) return
-  seats.value[i] = { name, bot: false, ready: false }
+function takeSeat(pirate: { name: string; avatar: string }): void {
+  const i = openSeatIndex.value
+  if (i === null) return
+  seats.value[i] = {
+    ...pirate,
+    bot: false,
+    ready: false,
+    // Le premier humain assis devient l'hôte.
+    host: humans.value.length === 0
+  }
   seats.value = [...seats.value]
-  pseudo.value = ''
+  openSeatIndex.value = null
 }
 
-function addBot(): void {
-  const i = firstFreeSeat()
-  if (i === -1) return
-  const n = filled.value.filter(s => s.bot).length + 1
-  seats.value[i] = { name: `Corsaire ${n}`, bot: true, ready: true }
+function addBot(index: number): void {
+  const n = filled.value.filter((s) => s.bot).length + 1
+  seats.value[index] = {
+    name: `Corsaire ${n}`,
+    avatar: botAvatar,
+    bot: true,
+    ready: true,
+    host: false
+  }
   seats.value = [...seats.value]
 }
 
@@ -195,7 +214,8 @@ function startGame(): void {
     roster: filled.value.map((seat, i) => ({
       id: `p${i}`,
       name: seat.name,
-      bot: seat.bot
+      bot: seat.bot,
+      avatar: seat.avatar
     }))
   }
   router.push('/game?mode=multi')
@@ -204,138 +224,195 @@ function startGame(): void {
 
 <style scoped lang="scss">
 .lobby {
-  display: grid;
-  place-items: center;
   min-height: 100dvh;
   padding: var(--space-4);
-  // Même décor que l'accueil : on reste dans les quartiers du capitaine.
-  background-image: v-bind('`url(${backgroundUrl})`');
+  display: grid;
+  place-items: center;
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
 
-  &__panel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    width: min(680px, 100%);
-  }
-
-  &__header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-2);
+  // Trame du wireframe : titre à gauche, code au centre, réglage IA à droite,
+  // le panneau des sièges en pleine largeur, puis retour et CTA en pied.
+  &__grid {
+    width: min(1500px, 100%);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-areas:
+      'title code ai'
+      'crew crew crew'
+      'back hint start';
+    align-items: center;
+    gap: var(--space-4);
   }
 
   &__title {
+    grid-area: title;
     color: var(--accent);
-    font-size: var(--fs-display-m);
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
   }
 
+  // L'asset d'étiquette n'existe pas encore : rendu neutre aux tokens, à
+  // remplacer par l'image le moment venu sans toucher à la structure.
   &__code {
+    grid-area: code;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-5);
+    border: 2px solid var(--accent);
+    border-radius: var(--radius-btn);
+    background: rgba(24, 14, 8, 0.65);
+  }
+
+  &__code-label {
     color: var(--text-dim);
-    font-size: var(--fs-body-s);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
   }
 
   &__code-value {
-    margin-left: var(--space-2);
     color: var(--accent);
-    letter-spacing: 0.2em;
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    letter-spacing: 0.28em;
+    // La lettre-espacement décale le texte vers la droite : on compense.
+    text-indent: 0.28em;
   }
 
-  &__settings {
+  &__ai {
+    grid-area: ai;
+    justify-self: end;
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: var(--space-3);
-  }
-
-  &__field {
-    display: flex;
-    flex: 1 1 14rem;
     flex-direction: column;
-    gap: var(--space-1);
+    align-items: flex-end;
+    gap: var(--space-2);
   }
 
-  &__label {
-    color: var(--text-dim);
-    font-size: var(--fs-body-s);
-  }
-
-  &__input {
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-btn);
-    background: var(--surface-2);
+  &__ai-label {
     color: var(--text);
     font-family: var(--font-body);
+    text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
   }
 
-  &__crew {
+  &__ai-choices {
     display: flex;
-    flex-direction: column;
     gap: var(--space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
   }
 
-  &__seat {
+  &__ai-btn {
+    font-size: 0.95rem;
+  }
+
+  // La planche du menu, étirée : le ratio d'origine ne tient pas sur une zone
+  // aussi large, mais c'est une texture — l'étirement ne se lit pas.
+  &__crew {
+    grid-area: crew;
+    padding: var(--space-5) var(--space-6);
+    background-position: center;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  &__back {
+    grid-area: back;
+    justify-self: start;
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    text-decoration: none;
+    text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+
+  &__hint {
+    grid-area: hint;
+    color: var(--text);
+    font-family: var(--font-body);
+    text-align: center;
+    text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
+  }
+
+  &__start {
+    grid-area: start;
+    justify-self: end;
+  }
+}
+
+.crew {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__row {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    min-height: 4.5rem;
     padding: var(--space-2) var(--space-3);
     border: 1px solid rgba(201, 162, 39, 0.35);
     border-radius: var(--radius-btn);
-    background: var(--surface-2);
+    background: rgba(24, 14, 8, 0.35);
   }
 
-  &__seat-name {
+  &__avatar {
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(24, 14, 8, 0.5);
+  }
+
+  &__name {
     flex: 1;
-    font-weight: 600;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.25rem;
   }
 
-  &__seat-tag {
+  &__tag {
     color: var(--text-dim);
-    font-size: var(--fs-body-s);
+    font-size: 0.9rem;
   }
 
-  &__seat-state {
+  &__state {
     color: var(--text-dim);
-    font-size: var(--fs-body-s);
+    font-family: var(--font-body);
 
     &--ready {
       color: var(--success);
     }
   }
 
-  &__seat-empty {
+  // Le siège vide occupe toute la ligne : c'est une cible de clic, pas un label.
+  &__empty {
     flex: 1;
+    padding: var(--space-2);
+    border: 0;
+    background: none;
     color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 1.1rem;
     font-style: italic;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--accent);
+    }
   }
 
-  &__seat-action {
-    font-size: var(--fs-body-s);
-  }
-
-  &__hint {
-    color: var(--text-dim);
-    font-size: var(--fs-body-s);
-  }
-
-  &__footer {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-3);
-  }
-
-  &__notice {
-    color: var(--text-dim);
-    font-size: var(--fs-body-s);
-    opacity: 0.75;
+  &__action {
+    flex: 0 0 auto;
   }
 }
 </style>
