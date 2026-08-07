@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div class="modal-mask" @click.self="emit('close')">
-      <div class="modal-dialog" role="dialog" aria-modal="true">
+      <div class="modal-dialog" :class="`modal-dialog--${size}`" role="dialog" aria-modal="true">
         <img class="modal-dialog__img" src="./../assets/images/ui/parchemin.webp" alt="" />
         <div class="modal-dialog__content">
           <header class="modal-dialog__header">
@@ -40,10 +40,18 @@
  */
 const emit = defineEmits<{ close: [] }>()
 
-withDefaults(defineProps<{ showCross?: boolean; title?: string }>(), {
-  showCross: false,
-  title: ''
-})
+withDefaults(
+  defineProps<{
+    showCross?: boolean
+    title?: string
+    /**
+     * Encombrement du rouleau. `sm` pour un contenu court — un récapitulatif de
+     * fin de tour n'a pas à occuper tout l'écran.
+     */
+    size?: 'sm' | 'md'
+  }>(),
+  { showCross: false, title: '', size: 'md' }
+)
 
 function closeOnEscape(event: KeyboardEvent): void {
   if (event.key === 'Escape') emit('close')
@@ -74,8 +82,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
 // agrandie et décalée pour que sa partie opaque vienne exactement dessus.
 .modal-dialog {
   position: relative;
-  width: min(92vw, calc(92dvh * 815 / 953), 720px);
+  // Deux bornes : la place disponible à l'écran, et un plafond propre à la
+  // taille demandée. La hauteur découle du ratio — d'où le passage par la
+  // largeur, y compris pour la contrainte verticale.
+  --modal-cap: 720px;
+  --modal-vh: 92dvh;
+  width: min(92vw, calc(var(--modal-vh) * 815 / 953), var(--modal-cap));
   aspect-ratio: 815 / 953;
+
+  // Contenu court — un récapitulatif de tour : le rouleau n'a pas à occuper
+  // tout l'écran, et un texte trop étalé se lit moins bien.
+  &--sm {
+    --modal-cap: 460px;
+    --modal-vh: 68dvh;
+    // Le titre suit l'échelle : à 2,5rem il mangerait le tiers du rouleau.
+    --modal-title: 1.6rem;
+    --modal-cross: 2rem;
+  }
 
   &__img {
     position: absolute;
@@ -129,7 +152,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
     // soit sa longueur.
     padding: 0 3.5rem;
     color: #2a1c0e;
-    font-size: var(--fs-display-l);
+    font-size: var(--modal-title, var(--fs-display-l));
     line-height: 1.1;
     text-align: center;
   }
@@ -139,7 +162,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
     top: 50%;
     right: 0;
     transform: translateY(-50%);
-    width: 2.75rem;
+    width: var(--modal-cross, 2.75rem);
     padding: 0;
     border: 0;
     background: none;

@@ -1,5 +1,5 @@
 <template>
-  <Modal :title="title" @close="emit('continue')">
+  <Modal size="sm" :title="title" @close="emit('continue')">
     <div class="recap">
       <p v-if="subtitle" class="recap__subtitle">{{ subtitle }}</p>
 
@@ -21,9 +21,7 @@
         Carte Pirate — points doublés : {{ subtotal }} × 2
       </p>
 
-      <p class="recap__total" :class="`recap__total--${sign}`">
-        {{ signed(outcome.score) }} pts
-      </p>
+      <p class="recap__total" :class="`recap__total--${sign}`">{{ signed(outcome.score) }} pts</p>
 
       <p v-if="outcome.opponentPenalty > 0" class="recap__penalty">
         Chaque adversaire perd {{ outcome.opponentPenalty }} points
@@ -81,7 +79,7 @@ const title = computed(() => {
     case 'skull-island':
       return 'Île de la Tête-de-Mort'
     default:
-      return `Tour de ${props.actor}`
+      return `${props.actor}`
   }
 })
 
@@ -146,9 +144,7 @@ const subtotal = computed(() => lines.value.reduce((sum, l) => sum + l.points, 0
 /** Inutile d'afficher un sous-total quand il n'y a qu'une ligne. */
 const subtotalShown = computed(() => lines.value.length > 1)
 
-const sign = computed(() =>
-  props.outcome.score > 0 ? 'pos' : props.outcome.score < 0 ? 'neg' : 'zero'
-)
+const sign = computed(() => (props.outcome.score > 0 ? 'pos' : props.outcome.score < 0 ? 'neg' : 'zero'))
 </script>
 
 <style scoped lang="scss">
@@ -158,20 +154,20 @@ $ink: #2a1c0e;
 .recap {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   color: $ink;
   font-family: var(--font-body);
   text-align: left;
 
   &__subtitle {
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     opacity: 0.85;
   }
 
   &__lines {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-1);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -181,12 +177,12 @@ $ink: #2a1c0e;
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    font-size: 1.1rem;
+    font-size: 0.95rem;
   }
 
   &__icon {
-    width: 1.9rem;
-    height: 1.9rem;
+    width: 1.4rem;
+    height: 1.4rem;
     object-fit: contain;
   }
 
@@ -208,7 +204,7 @@ $ink: #2a1c0e;
     gap: var(--space-3);
     padding-top: var(--space-2);
     border-top: 1px solid rgba(42, 28, 14, 0.3);
-    font-size: 1.1rem;
+    font-size: 0.95rem;
 
     span {
       font-family: var(--font-mono);
@@ -218,7 +214,7 @@ $ink: #2a1c0e;
 
   &__total {
     font-family: var(--font-display);
-    font-size: 2.6rem;
+    font-size: 1.9rem;
     line-height: 1;
     text-align: center;
 
@@ -233,14 +229,14 @@ $ink: #2a1c0e;
 
   &__penalty,
   &__magic {
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     font-weight: 600;
   }
 
   &__btn {
     align-self: center;
-    padding: var(--space-3) var(--space-5);
-    font-size: 1.2rem;
+    padding: var(--space-2) var(--space-4);
+    font-size: 1rem;
   }
 }
 </style>
