@@ -27,13 +27,12 @@ const {
   reroll,
   rollOrReroll,
   stop,
-  bank,
-  unbank,
   toggleDie,
   continueGame,
   eligibleReroll,
   avatarOf,
-  guardianDie
+  guardianDie,
+  potentialScore
 } = useGame()
 
 /**
@@ -126,13 +125,6 @@ const canStop = computed(() => myTurn.value && turn.value?.phase === 'decision')
 const clickable = computed(() => !isBotTurn.value && turn.value?.phase === 'decision')
 const isTreasure = computed(() => turn.value?.card.type === 'treasure-island')
 const rerollCount = computed(() => eligibleReroll().length)
-const bankCount = computed(
-  () =>
-    [...selected.value].filter(
-      (id) => !turn.value!.dice[id]!.banked && turn.value!.dice[id]!.face !== 'skull'
-    ).length
-)
-const unbankCount = computed(() => [...selected.value].filter((id) => turn.value!.dice[id]!.banked).length)
 
 /**
  * Centre = dés encore en jeu (ils repartiront à la relance).
@@ -217,6 +209,12 @@ watch(isDefeat, async (value) => {
         />
       </div>
 
+      <!-- Points en jeu, juste au-dessus de la carte : le joueur doit pouvoir
+           arbitrer « je relance ou j'encaisse » sans quitter le plateau des yeux. -->
+      <div v-if="potentialScore !== null" class="zone-live">
+        <LiveScore :score="potentialScore" />
+      </div>
+
       <!-- Carte Pirate : cadre à droite -->
       <div v-if="turn" class="zone-card">
         <PirateCard :card="turn.card" :skulls="skulls" />
@@ -255,16 +253,6 @@ watch(isDefeat, async (value) => {
         <span v-if="isBotTurn" class="bot-banner">Le Corsaire réfléchit…</span>
       </div>
 
-      <!-- Île au Trésor : réserver / reprendre des dés -->
-      <div v-if="turn && !isBotTurn && turn.phase === 'decision' && isTreasure" class="zone-side">
-        <button v-click-sound class="btn btn--ghost" :disabled="!bankCount" @click="bank">
-          Réserver ({{ bankCount }})
-        </button>
-        <button v-click-sound class="btn btn--ghost" :disabled="!unbankCount" @click="unbank">
-          Reprendre ({{ unbankCount }})
-        </button>
-      </div>
-
       <!-- Indice : sous les slots -->
       <p v-if="turn && !isBotTurn && turn.phase === 'decision'" class="zone-hint">
         <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
@@ -273,6 +261,9 @@ watch(isDefeat, async (value) => {
         </span>
         <span v-else-if="guardianOffered" class="guardian-txt">
           🗝 Gardienne : clique une tête de mort pour la relancer, une fois dans le tour.
+        </span>
+        <span v-else-if="isTreasure">
+          Île au Trésor : les dés que tu gardes sont réservés sur la carte — reclique pour les reprendre.
         </span>
         <span v-else>Sélectionne les dés que tu veux GARDER, puis relance les autres — ou arrête-toi.</span>
       </p>
@@ -365,15 +356,15 @@ watch(isDefeat, async (value) => {
 // Le coin haut-droit est occupé par la carte dessinée sur le fond : on se cale
 // dans le creux libre entre le crâne et la lanterne de gauche. Tailles en cqw
 // pour suivre le plateau au redimensionnement.
+// Le libellé est posé SUR l'icône : le débordement est assumé, il donne au
+// bouton l'allure d'un cachet plutôt que d'une vignette légendée.
 .rules-link {
   position: absolute;
   top: 2.5%;
   right: 13%;
   z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2cqw;
+  display: grid;
+  place-items: center;
   padding: 0;
   border: 0;
   background: none;
@@ -385,20 +376,22 @@ watch(isDefeat, async (value) => {
   }
 
   &__icon {
-    width: 4cqw;
+    grid-area: 1 / 1;
+    width: 5cqw;
     height: auto;
     filter: drop-shadow(0 2px 4px rgba(24, 14, 8, 0.8));
   }
 
   &__label {
-    color: var(--parchment, #ede0c8);
-    font-family: var(--font-body);
-    font-size: 1.1cqw;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
-  }
-
-  &:hover &__label {
-    color: var(--accent);
+    grid-area: 1 / 1;
+    // Sur un parchemin clair : de l'encre, pas la couleur de texte du jeu.
+    color: #1c1208;
+    font-family: var(--font-display);
+    font-size: 1.5cqw;
+    line-height: 1;
+    white-space: nowrap;
+    // Un halo clair détache les lettres des zones sombres du dessin.
+    text-shadow: 0 0 0.35cqw rgba(237, 224, 200, 0.9);
   }
 }
 
@@ -420,6 +413,16 @@ watch(isDefeat, async (value) => {
   top: 30%;
   width: 13.79%;
   height: 40%;
+}
+
+// Calé sur la colonne de la carte, dans la bande libre entre le bouton Règles
+// (haut) et le cadre de la carte, qui commence à 30 %.
+.zone-live {
+  position: absolute;
+  left: 78.999%;
+  top: 21%;
+  width: 13.79%;
+  z-index: 2;
 }
 
 // Dés en jeu, au centre
@@ -495,22 +498,6 @@ watch(isDefeat, async (value) => {
   padding: 0.5cqw 1.2cqw;
 }
 
-// Actions secondaires (s'arrêter / Île au Trésor), sous le cachet
-.zone-side {
-  position: absolute;
-  right: 20%;
-  top: 73%;
-  width: 11%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6cqw;
-  align-items: center;
-  justify-content: center;
-}
-.zone-side .btn {
-  font-size: 1.3cqw;
-  padding: 0.4cqw 1cqw;
-}
 // Le cachet remplit la boîte que lui donne .zone-action__roll / __stop
 .zone-action :deep(.wax) {
   width: 100%;

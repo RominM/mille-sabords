@@ -9,11 +9,14 @@
          deux crânes même quand la carte n'en apporte qu'un. Tant qu'un visuel
          à un crâne n'existe pas, ce jeton dit ce que la carte vaut RÉELLEMENT,
          et se distingue du badge de droite qui cumule dés et carte. -->
-    <span v-if="card.type === 'skulls'" class="pcard__value">
+    <!-- <span v-if="card.type === 'skulls'" class="pcard__value">
       {{ card.count }} tête<template v-if="card.count > 1">s</template>
-    </span>
+    </span> -->
 
-    <p class="pcard__name">{{ name }}</p>
+    <p class="pcard__name">
+      {{ name }}
+      <span v-if="card.type === 'skulls'"> x {{ card.count }} </span>
+    </p>
   </div>
 </template>
 

@@ -9,6 +9,7 @@
  * serveur).
  */
 import {
+  applyAction,
   decideAction,
   DECISION_TIMEOUT_MS,
   Game,
@@ -97,6 +98,25 @@ export function useGame() {
   const currentPlayer = computed(() => players.value[currentIndex.value] ?? null)
   const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
   const winner = computed(() => players.value.find((p) => p.id === snapshot.value?.winnerId) ?? null)
+
+  /**
+   * Ce que le joueur encaisserait s'il s'arrêtait MAINTENANT.
+   *
+   * On simule un arrêt via le moteur au lieu de rescorer les dés à côté : c'est
+   * la seule façon d'être juste sur les cas particuliers — trois têtes qui
+   * annulent tout, défi du bateau manqué qui passe le total en négatif, dés
+   * réservés de l'Île au Trésor. `applyAction` est pure, l'instantané n'est
+   * donc pas touché.
+   */
+  const potentialScore = computed<number | null>(() => {
+    const t = turn.value
+    if (!t || t.phase !== 'decision') return null
+    try {
+      return applyAction(t, { type: 'stop' }, () => []).outcome?.score ?? null
+    } catch {
+      return null
+    }
+  })
 
   // ── Cycle de jeu ────────────────────────────────────────────────────────────
 
@@ -195,6 +215,14 @@ export function useGame() {
     if (d.locked) {
       if (!t.guardianAvailable || d.face !== 'skull') return
       guardianDie.value = guardianDie.value === id ? null : id
+      return
+    }
+
+    // Île au Trésor : garder un dé, c'est le RÉSERVER sur la carte — les deux
+    // gestes n'en font qu'un. Le clic fait donc l'aller-retour lui-même, et un
+    // second clic le reprend. Deux boutons séparés n'apportaient rien.
+    if (t.card.type === 'treasure-island') {
+      human(() => game!.act({ type: d.banked ? 'unbank' : 'bank', diceIds: [id] }))
       return
     }
 
@@ -302,6 +330,7 @@ export function useGame() {
     continueGame,
     eligibleReroll,
     avatarOf,
-    guardianDie
+    guardianDie,
+    potentialScore
   }
 }
