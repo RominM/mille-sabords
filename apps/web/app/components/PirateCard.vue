@@ -49,7 +49,9 @@ const image = computed<string>(function pickImage() {
       return pirate
     case 'skulls':
       // Une illustration par valeur : l'image dit enfin ce que la carte apporte.
-      return props.card.count === 1 ? oneSkullCard : twoSkullsCard
+      // `c` et non `props.card` : c'est lui que le `switch` a réduit au variant
+      // `skulls`, seul à porter un `count`.
+      return c.count === 1 ? oneSkullCard : twoSkullsCard
     case 'guardian':
       return guardian
     case 'coin':
