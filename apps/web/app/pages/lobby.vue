@@ -3,12 +3,6 @@
     <div class="lobby__grid">
       <h1 class="lobby__title">Salle d’équipage</h1>
 
-      <!-- Le code n'est pas relégué : c'est lui qu'on dicte aux camarades. -->
-      <div class="lobby__code">
-        <span class="lobby__code-label">Code de la partie</span>
-        <strong class="lobby__code-value">{{ roomCode }}</strong>
-      </div>
-
       <!-- Réglage de partie, réservé à l'hôte : il ne concerne pas les invités. -->
       <div v-if="isHost" class="lobby__ai">
         <span class="lobby__ai-label">Niveau des IA</span>
@@ -30,6 +24,14 @@
 
       <!-- Panneau des sièges, sur la planche du menu -->
       <section class="lobby__crew" :style="{ backgroundImage: `url(${panelUrl})` }">
+        <!-- Le cartouche du haut est fait pour porter un titre : on y met le
+             code, qui est justement ce qu'on dicte à ses camarades. Sans lui,
+             cette réserve resterait vide et la planche paraîtrait écrasée. -->
+        <div class="lobby__code">
+          <span class="lobby__code-label">Code de la partie</span>
+          <strong class="lobby__code-value">{{ roomCode }}</strong>
+        </div>
+
         <ul class="crew">
           <li v-for="(seat, i) in seats" :key="i" class="crew__row">
             <template v-if="seat">
@@ -225,7 +227,7 @@ function startGame(): void {
 <style scoped lang="scss">
 .lobby {
   min-height: 100dvh;
-  padding: var(--space-4);
+  padding: var(--space-3);
   display: grid;
   place-items: center;
   background-position: center;
@@ -234,16 +236,22 @@ function startGame(): void {
 
   // Trame du wireframe : titre à gauche, code au centre, réglage IA à droite,
   // le panneau des sièges en pleine largeur, puis retour et CTA en pied.
+  // La planche impose sa hauteur par son ratio : on borne donc la LARGEUR de la
+  // grille pour que l'ensemble tienne à l'écran, plutôt que d'écraser l'image.
   &__grid {
-    width: min(1500px, 100%);
+    // La réserve de 12rem couvre les trois rangées qui entourent la planche —
+    // titre, retour/CTA, indice — plus les gouttières. Mesurée en 1280x720, où
+    // la contrainte de hauteur est la plus serrée.
+    width: min(1340px, 94vw, calc((96dvh - 12rem) * 1708 / 985));
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      'title code ai'
-      'crew crew crew'
-      'back hint start';
+      'title ai'
+      'crew crew'
+      'back start'
+      'hint hint';
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-3) var(--space-4);
   }
 
   &__title {
@@ -254,33 +262,36 @@ function startGame(): void {
     text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
   }
 
-  // L'asset d'étiquette n'existe pas encore : rendu neutre aux tokens, à
-  // remplacer par l'image le moment venu sans toucher à la structure.
+  // Calé sur l'ouverture du cartouche mesurée dans panel-menu.webp :
+  // x 580..1107, y 129..337 sur 1708x985.
   &__code {
-    grid-area: code;
+    position: absolute;
+    left: 34%;
+    top: 13.1%;
+    width: 30.8%;
+    height: 21.1%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-1);
-    padding: var(--space-2) var(--space-5);
-    border: 2px solid var(--accent);
-    border-radius: var(--radius-btn);
-    background: rgba(24, 14, 8, 0.65);
+    justify-content: center;
+    gap: 0.4cqh;
   }
 
   &__code-label {
     color: var(--text-dim);
     font-family: var(--font-body);
-    font-size: 0.9rem;
+    font-size: 1.3cqw;
   }
 
   &__code-value {
     color: var(--accent);
     font-family: var(--font-mono);
-    font-size: 2rem;
-    letter-spacing: 0.28em;
-    // La lettre-espacement décale le texte vers la droite : on compense.
-    text-indent: 0.28em;
+    font-size: 3.4cqw;
+    line-height: 1;
+    letter-spacing: 0.22em;
+    // La lettre-espacement ajoute un blanc APRÈS le dernier caractère : sans ça
+    // le code paraît décalé vers la gauche dans son cadre.
+    text-indent: 0.22em;
   }
 
   &__ai {
@@ -307,11 +318,14 @@ function startGame(): void {
     font-size: 0.95rem;
   }
 
-  // La planche du menu, étirée : le ratio d'origine ne tient pas sur une zone
-  // aussi large, mais c'est une texture — l'étirement ne se lit pas.
+  // Le ratio de la planche est VERROUILLÉ : c'est une pièce dessinée, l'étirer
+  // déformait le laiton du cadre. `container-type` permet de dimensionner le
+  // contenu en proportion d'elle, quelle que soit sa taille à l'écran.
   &__crew {
     grid-area: crew;
-    padding: var(--space-5) var(--space-6);
+    position: relative;
+    aspect-ratio: 1708 / 985;
+    container-type: size;
     background-position: center;
     background-size: 100% 100%;
     background-repeat: no-repeat;
@@ -345,28 +359,37 @@ function startGame(): void {
   }
 }
 
+// Bois utile sous le cartouche, mesuré à x 78..1637 et y 390..915 sur 1708x985.
+// Les tailles sont en unités de conteneur : les sièges suivent la planche.
 .crew {
+  position: absolute;
+  left: 6%;
+  top: 40%;
+  width: 88%;
+  height: 52%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  justify-content: space-between;
+  gap: 1cqh;
   margin: 0;
   padding: 0;
   list-style: none;
 
   &__row {
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    min-height: 4.5rem;
-    padding: var(--space-2) var(--space-3);
+    gap: 2cqw;
+    min-height: 0;
+    padding: 0 1.5cqw;
     border: 1px solid rgba(201, 162, 39, 0.35);
-    border-radius: var(--radius-btn);
+    border-radius: 0.4cqw;
     background: rgba(24, 14, 8, 0.35);
   }
 
   &__avatar {
-    width: 3.4rem;
-    height: 3.4rem;
+    width: 7cqh;
+    height: 7cqh;
     border-radius: 50%;
     object-fit: cover;
     background: rgba(24, 14, 8, 0.5);
@@ -376,17 +399,18 @@ function startGame(): void {
     flex: 1;
     color: var(--text);
     font-family: var(--font-body);
-    font-size: 1.25rem;
+    font-size: 1.5cqw;
   }
 
   &__tag {
     color: var(--text-dim);
-    font-size: 0.9rem;
+    font-size: 1.1cqw;
   }
 
   &__state {
     color: var(--text-dim);
     font-family: var(--font-body);
+    font-size: 1.2cqw;
 
     &--ready {
       color: var(--success);
@@ -401,7 +425,7 @@ function startGame(): void {
     background: none;
     color: var(--text-dim);
     font-family: var(--font-body);
-    font-size: 1.1rem;
+    font-size: 1.4cqw;
     font-style: italic;
     text-align: left;
     cursor: pointer;
@@ -413,6 +437,8 @@ function startGame(): void {
 
   &__action {
     flex: 0 0 auto;
+    padding: 0.6cqh 1.2cqw;
+    font-size: 1.2cqw;
   }
 }
 </style>

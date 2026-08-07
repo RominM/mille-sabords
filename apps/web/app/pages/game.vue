@@ -3,6 +3,7 @@ import type { BotDifficulty, DieFace } from '@rf/engine'
 import layoutUrl from '~/assets/images/ui/layout-game.webp'
 import ctaUrl from '~/assets/images/ui/main-cta.webp'
 import stopSeal from '~/assets/images/ui/wax-seal-stop.webp'
+import rulesIcon from '~/assets/images/ui/icon-rules.webp'
 import darkLaugh from '~/assets/sounds/soundscrate-evil-chuckle-02.mp3'
 
 const {
@@ -196,10 +197,11 @@ watch(isDefeat, async (value) => {
         v-click-sound
         class="rules-link"
         type="button"
-        :style="{ backgroundImage: `url(${ctaUrl})` }"
+        aria-label="Règles"
         @click="showRules = true"
       >
-        Règles
+        <img :src="rulesIcon" alt="" class="rules-link__icon" />
+        <span class="rules-link__label">Règles</span>
       </button>
 
       <!-- Joueurs : colonne de 5 slots à gauche -->
@@ -368,20 +370,36 @@ watch(isDefeat, async (value) => {
   top: 2.5%;
   right: 13%;
   z-index: 2;
-  padding: 0.3cqw 0.9cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2cqw;
+  padding: 0;
   border: 0;
-  border-radius: 0.3cqw;
-  // background: rgba(24, 14, 8, 0.55);
-  // color: var(--parchment, #ede0c8);
-  font-family: var(--font-body);
-  font-size: 1.1cqw;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  background: none;
+  cursor: pointer;
   transition: transform 0.12s ease;
 
-  // &:hover {
-  //   transform: scale(1.06);
-  //   color: var(--accent);
-  // }
+  &:hover {
+    transform: scale(1.06);
+  }
+
+  &__icon {
+    width: 4cqw;
+    height: auto;
+    filter: drop-shadow(0 2px 4px rgba(24, 14, 8, 0.8));
+  }
+
+  &__label {
+    color: var(--parchment, #ede0c8);
+    font-family: var(--font-body);
+    font-size: 1.1cqw;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  }
+
+  &:hover &__label {
+    color: var(--accent);
+  }
 }
 
 // Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.webp

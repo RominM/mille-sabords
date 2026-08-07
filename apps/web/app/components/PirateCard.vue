@@ -4,10 +4,16 @@
     <!-- Sur 3, pas juste un nombre : le joueur doit lire d'un coup d'œil à quelle
          distance il est du tour perdu, dés ET carte confondus. -->
     <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}/3</span>
-    <!-- L'illustration est la même pour 1 et 2 têtes : sans ce compteur, on ne
-         sait pas ce que la carte apporte, et le badge (qui cumule dés + carte)
-         prête à confusion. -->
-    <p class="pcard__name">{{ name }}<template v-if="card.type === 'skulls'"> ×{{ card.count }}</template></p>
+
+    <!-- ⚠ L'illustration `tow-skulls_card` est la SEULE disponible : elle montre
+         deux crânes même quand la carte n'en apporte qu'un. Tant qu'un visuel
+         à un crâne n'existe pas, ce jeton dit ce que la carte vaut RÉELLEMENT,
+         et se distingue du badge de droite qui cumule dés et carte. -->
+    <span v-if="card.type === 'skulls'" class="pcard__value">
+      {{ card.count }} tête<template v-if="card.count > 1">s</template>
+    </span>
+
+    <p class="pcard__name">{{ name }}</p>
   </div>
 </template>
 
@@ -79,6 +85,22 @@ const name = computed(() => NAME[props.card.type])
   }
 
   // Rappel du nombre de têtes de mort en cours (dés + carte)
+  // Valeur propre à la carte, en haut à GAUCHE pour ne pas se confondre avec le
+  // compteur de têtes du tour, en haut à droite.
+  &__value {
+    position: absolute;
+    top: 4%;
+    left: 4%;
+    padding: 0.3cqw 0.8cqw;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: rgba(24, 14, 8, 0.88);
+    color: var(--accent);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.5cqw;
+  }
+
   &__skulls {
     position: absolute;
     top: 4%;
