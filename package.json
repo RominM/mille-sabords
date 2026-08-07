@@ -6,9 +6,10 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "npm run test -w @rf/engine",
+    "test": "npm run test -w @rf/engine && npm run test -w @rf/server",
     "play": "npm start -w @rf/cli",
     "web": "npm run dev -w @rf/web",
+    "server": "npm run dev -w @rf/server",
     "design": "npm run dev -w @rf/web"
   },
   "devDependencies": {
