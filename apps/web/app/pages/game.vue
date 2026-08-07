@@ -198,13 +198,15 @@ watch(isDefeat, async (value) => {
 
       <!-- Joueurs : colonne de 5 slots à gauche -->
       <div class="zone-players">
+        <!-- Un slot par joueur RÉEL, et non cinq cases fixes : la table monte
+             désormais à huit, et la colonne défile plutôt que de déborder. -->
         <PlayerSlot
-          v-for="i in 5"
-          :key="i"
-          :player="players[i - 1] ?? null"
-          :avatar="players[i - 1] ? avatarOf(players[i - 1]!.id) : undefined"
-          :current="gamePhase === 'playing' && i - 1 === currentIndex"
-          :seconds="gamePhase === 'playing' && i - 1 === currentIndex ? secondsLeft : undefined"
+          v-for="(p, i) in players"
+          :key="p.id"
+          :player="p"
+          :avatar="avatarOf(p.id)"
+          :current="gamePhase === 'playing' && i === currentIndex"
+          :seconds="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
           :total-seconds="TURN_SECONDS"
         />
       </div>
@@ -397,12 +399,25 @@ watch(isDefeat, async (value) => {
 
 // Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.webp
 // (mesurée : barreaux entre y 270 et 718 px sur 941, x 99..347 sur 1672).
+// La colonne ne suit plus les cinq barreaux dessinés : elle défile. Les cartes
+// gardent leur taille, seule leur nombre varie — jusqu'à huit.
 .zone-players {
   position: absolute;
   left: 5.8%;
   top: 28.79%;
   width: 14.9%;
   height: 47.6%;
+  overflow-y: auto;
+  // La barre de défilement mangerait la largeur utile d'une carte joueur.
+  scrollbar-width: none;
+
+  // Sans hauteur fixe, les rangées se partageraient la colonne en flex et
+  // s'écraseraient à huit joueurs au lieu de la faire défiler. 9cqh = la part
+  // qu'occupait un barreau quand ils étaient cinq : la carte garde sa taille.
+  :deep(.pslot-row) {
+    flex: 0 0 auto;
+    height: 9cqh;
+  }
   display: flex;
   flex-direction: column;
   gap: 0.74cqh; // = l'écart réel entre deux barreaux

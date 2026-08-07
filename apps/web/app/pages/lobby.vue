@@ -108,11 +108,11 @@
  * La forme de l'état — sièges, « paré », hôte — est déjà celle que le serveur
  * WebSocket diffusera : seule la SOURCE changera, pas la structure.
  */
-import type { BotDifficulty } from '@rf/engine'
+import { MAX_PLAYERS, type BotDifficulty } from '@rf/engine'
 import backgroundUrl from '~/assets/images/ui/captain-quartier.webp'
 import panelUrl from '~/assets/images/ui/panel-menu.webp'
 
-const MAX_SEATS = 5
+const MAX_SEATS = MAX_PLAYERS
 const MIN_PLAYERS = 2
 
 const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
@@ -369,18 +369,22 @@ function startGame(): void {
   height: 52%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 1cqh;
   margin: 0;
   padding: 0;
   list-style: none;
+  // Jusqu'à huit sièges dans une zone qui en tenait cinq : elle défile.
+  overflow-y: auto;
+  scrollbar-width: thin;
 
   &__row {
-    flex: 1;
+    // Hauteur fixe, sinon les sièges se partageraient la zone et s'écraseraient
+    // à huit au lieu de la faire défiler.
+    flex: 0 0 auto;
+    height: 9.4cqh;
     display: flex;
     align-items: center;
     gap: 2cqw;
-    min-height: 0;
     padding: 0 1.5cqw;
     border: 1px solid rgba(201, 162, 39, 0.35);
     border-radius: 0.4cqw;

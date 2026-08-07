@@ -17,6 +17,32 @@ const M = 'monkey' as const
 const P = 'parrot' as const
 const C = 'coin' as const
 
+describe('nombre de joueurs', () => {
+  const table = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `P${i}` }))
+
+  it('accepte jusqu’à 8 joueurs', () => {
+    expect(() => new Game(table(8))).not.toThrow()
+  })
+
+  it('refuse en dessous de 2 et au-dessus de 8', () => {
+    expect(() => new Game(table(1))).toThrow()
+    expect(() => new Game(table(9))).toThrow()
+  })
+
+  it('la rotation fait le tour de la table complète', () => {
+    const game = new Game(table(8), { now: () => 0 })
+    const vus: string[] = []
+    for (let i = 0; i < 8; i++) {
+      game.state.deck = [{ type: 'guardian' }]
+      game.startTurn()
+      vus.push(game.currentPlayer.id)
+      game.timeout()
+    }
+    expect(vus).toEqual(['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'])
+  })
+})
+
 describe('fin de partie — dernier tour', () => {
   it('franchir 6000 déclenche un dernier tour pour chaque autre joueur', () => {
     const game = new Game(

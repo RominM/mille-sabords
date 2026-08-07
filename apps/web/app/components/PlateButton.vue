@@ -66,7 +66,7 @@ function onClick(): void {
     // Le reset plafonne toute image à 100 % : à neutraliser pour agrandir.
     max-width: none;
     width: 130.1%;
-    height: 322.0%;
+    height: 322%;
     left: -15.2%; // -179/1536 x 130,1
     top: -104.1%; // -331/1024 x 322,0
     pointer-events: none;
@@ -77,6 +77,7 @@ function onClick(): void {
     position: relative;
     z-index: 1;
     padding: 0 12%;
+    margin-bottom: 12px;
     color: var(--accent);
     font-family: var(--font-display);
     font-size: 32cqh;

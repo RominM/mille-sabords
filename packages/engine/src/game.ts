@@ -5,6 +5,14 @@ import type { PirateCard, RollFn, TurnAction, TurnState } from './types'
 export const WINNING_SCORE = 6000
 
 /**
+ * La règle éditeur s'arrête à 5 joueurs, mais rien dans la mécanique ne
+ * l'impose : les dés et les cartes circulent à l'identique. On ouvre donc
+ * jusqu'à 8 — écart assumé par rapport à la règle officielle.
+ */
+export const MIN_PLAYERS = 2
+export const MAX_PLAYERS = 8
+
+/**
  * Délai par DÉCISION (lancer, relancer, s'arrêter), et non par tour complet :
  * le compte repart à zéro à chaque lancer. Un joueur peut donc relancer autant
  * qu'il veut — ce qu'on borne, c'est le temps passé à choisir ses dés.
@@ -63,7 +71,8 @@ export class Game {
   private now: () => number
 
   constructor(players: { id: string; name: string; bot?: boolean }[], opts: GameOptions = {}) {
-    if (players.length < 2 || players.length > 5) throw new Error('Reckless Fathoms se joue de 2 à 5 joueurs')
+    if (players.length < MIN_PLAYERS || players.length > MAX_PLAYERS)
+      throw new Error(`Reckless Fathoms se joue de ${MIN_PLAYERS} à ${MAX_PLAYERS} joueurs`)
     this.rng = opts.rng ?? Math.random
     this.now = opts.now ?? Date.now
     this.state = {
