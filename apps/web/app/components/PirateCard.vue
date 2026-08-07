@@ -5,14 +5,6 @@
          distance il est du tour perdu, dés ET carte confondus. -->
     <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}/3</span>
 
-    <!-- ⚠ L'illustration `tow-skulls_card` est la SEULE disponible : elle montre
-         deux crânes même quand la carte n'en apporte qu'un. Tant qu'un visuel
-         à un crâne n'existe pas, ce jeton dit ce que la carte vaut RÉELLEMENT,
-         et se distingue du badge de droite qui cumule dés et carte. -->
-    <!-- <span v-if="card.type === 'skulls'" class="pcard__value">
-      {{ card.count }} tête<template v-if="card.count > 1">s</template>
-    </span> -->
-
     <p class="pcard__name">
       {{ name }}
       <span v-if="card.type === 'skulls'"> x {{ card.count }} </span>
@@ -24,7 +16,8 @@
 import type { PirateCard } from '@rf/engine'
 import treasure from '~/assets/images/cards/tresur_card.webp'
 import pirate from '~/assets/images/cards/pirate_card.webp'
-import skullsCard from '~/assets/images/cards/tow-skulls_card.webp'
+import oneSkullCard from '~/assets/images/cards/skull-card.webp'
+import twoSkullsCard from '~/assets/images/cards/tow-skulls_card.webp'
 import guardian from '~/assets/images/cards/witch_card.webp'
 import goldCoin from '~/assets/images/cards/gold_coin_card.webp'
 import diamond from '~/assets/images/cards/diamond_card.webp'
@@ -55,7 +48,8 @@ const image = computed<string>(function pickImage() {
     case 'pirate':
       return pirate
     case 'skulls':
-      return skullsCard
+      // Une illustration par valeur : l'image dit enfin ce que la carte apporte.
+      return props.card.count === 1 ? oneSkullCard : twoSkullsCard
     case 'guardian':
       return guardian
     case 'coin':
@@ -88,22 +82,6 @@ const name = computed(() => NAME[props.card.type])
   }
 
   // Rappel du nombre de têtes de mort en cours (dés + carte)
-  // Valeur propre à la carte, en haut à GAUCHE pour ne pas se confondre avec le
-  // compteur de têtes du tour, en haut à droite.
-  &__value {
-    position: absolute;
-    top: 4%;
-    left: 4%;
-    padding: 0.3cqw 0.8cqw;
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    background: rgba(24, 14, 8, 0.88);
-    color: var(--accent);
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 1.5cqw;
-  }
-
   &__skulls {
     position: absolute;
     top: 4%;
