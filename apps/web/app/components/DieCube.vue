@@ -1,10 +1,10 @@
 <template>
   <div
     class="die-cube"
-    :class="{ 'die-cube--void': face === null }"
+    :class="{ 'die-cube--void': face === null, 'die-cube--seated': seated }"
     role="img"
     :aria-label="face ?? 'dé'"
-    :style="{ '--die-tilt-x': `${tiltX}deg`, '--die-tilt-y': `${tiltY}deg`, '--die-art': artScale }"
+    :style="styleVars"
   >
     <span ref="groundEl" class="die-cube__ground" aria-hidden="true" />
 
@@ -75,9 +75,18 @@ const props = withDefaults(
     delay?: number
     /** Nombre minimum de tours complets pendant le vol. */
     turns?: number
-    /** Inclinaison au repos : 0 = face bien à plat, sinon vue en trois-quarts. */
+    /**
+     * Inclinaison au repos. Laissées vides, elles sont HÉRITÉES : sur le
+     * plateau, c'est un ancêtre qui pose `--die-tilt-x` / `--die-tilt-y` selon
+     * la place du dé, pour que chaque dé épouse la perspective du décor.
+     */
     tiltX?: number
     tiltY?: number
+    /**
+     * Dé POSÉ dans un logement (les huit cadres du bas) plutôt que jeté sur la
+     * table : son ombre se resserre, comme un objet au contact.
+     */
+    seated?: boolean
     /** Agrandissement de la tuile sur la face (1 = taille naturelle). */
     artScale?: number
     /** Coupe le bruitage de ce dé — une volée n'a pas besoin de huit sons. */
@@ -88,14 +97,27 @@ const props = withDefaults(
     duration: 1100,
     delay: 0,
     turns: 2,
-    tiltX: -14,
-    tiltY: -18,
+    tiltX: undefined,
+    tiltY: undefined,
+    seated: false,
     artScale: 1.57,
     silent: false,
   }
 )
 
 const emit = defineEmits<{ settled: [] }>()
+
+/**
+ * On ne pose une variable que si l'appelant l'a fournie : une valeur en ligne
+ * l'emporterait sur celle héritée du plateau, et tous les dés reprendraient la
+ * même inclinaison.
+ */
+const styleVars = computed(() => {
+  const vars: Record<string, string> = { '--die-art': String(props.artScale) }
+  if (props.tiltX !== undefined) vars['--die-tilt-x'] = `${props.tiltX}deg`
+  if (props.tiltY !== undefined) vars['--die-tilt-y'] = `${props.tiltY}deg`
+  return vars
+})
 
 const cubeEl = ref<HTMLElement | null>(null)
 const hopEl = ref<HTMLElement | null>(null)
@@ -270,6 +292,16 @@ defineExpose({ rollTo })
   // brutalement, déjà posés sur leur face.
   &--void {
     opacity: 0;
+  }
+
+  // Dé posé dans son cadre : l'ombre se resserre sous lui et s'assombrit.
+  // Une ombre large dit « en l'air » ; une ombre courte et dense dit « au
+  // contact », et c'est tout ce qui fait entrer le dé DANS son logement.
+  &--seated .die-cube__ground {
+    width: 62%;
+    height: 11%;
+    bottom: -2%;
+    opacity: 0.72;
   }
 
   // Ombre portée au sol : elle seule donne l'altitude pendant le vol.

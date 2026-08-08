@@ -14,7 +14,14 @@
     :aria-label="die.face ?? 'dé vide'"
     @click="onClick"
   >
-    <DieCube :face="die.face" :roll="roll" :delay="delay" :duration="duration" :silent="silent" />
+    <DieCube
+      :face="die.face"
+      :roll="roll"
+      :delay="delay"
+      :duration="duration"
+      :silent="silent"
+      :seated="seated"
+    />
   </button>
 </template>
 
@@ -42,6 +49,8 @@ const props = defineProps<{
   duration?: number
   /** Un dé silencieux : une volée n'a pas besoin de huit bruitages. */
   silent?: boolean
+  /** Dé rangé dans un des huit cadres du bas, par opposition à jeté sur la table. */
+  seated?: boolean
 }>()
 const emit = defineEmits<{ click: [] }>()
 

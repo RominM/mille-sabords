@@ -121,6 +121,47 @@ function portraitOf(playerId: string): string | undefined {
  */
 const waitingForTable = computed(() => !isSolo && !turn.value)
 
+// ── Perspective des dés ──────────────────────────────────────────────────────
+const plateauEl = ref<HTMLElement | null>(null)
+
+/**
+ * Chaque dé prend l'inclinaison de SA place sur le plateau (cf. `boardTilt`).
+ *
+ * On écrit la variable directement sur le DOM, sans passer par une donnée
+ * réactive : la position d'un dé est une conséquence de la mise en page, or
+ * relire la mise en page pour en refaire un rendu qui la modifierait tournerait
+ * en rond. On lit tout, PUIS on écrit tout, pour ne pas faire recalculer la
+ * mise en page à chaque dé.
+ */
+function applyBoardTilt(): void {
+  const plateau = plateauEl.value
+  if (!plateau) return
+  const board = plateau.getBoundingClientRect()
+  if (!board.width) return
+
+  const cells = [...plateau.querySelectorAll<HTMLElement>('.die-cell')]
+  const tilts = cells.map((cell) => {
+    const box = cell.getBoundingClientRect()
+    return boardTilt(
+      (box.left + box.width / 2 - board.left) / board.width,
+      (box.top + box.height / 2 - board.top) / board.height
+    )
+  })
+  cells.forEach((cell, i) => {
+    cell.style.setProperty('--die-tilt-x', `${tilts[i]!.x}deg`)
+    cell.style.setProperty('--die-tilt-y', `${tilts[i]!.y}deg`)
+  })
+}
+
+// Les dés se déplacent à chaque rendu — un dé gardé quitte le centre pour un
+// cadre —, et le plateau se redimensionne avec la fenêtre.
+onUpdated(applyBoardTilt)
+onMounted(() => {
+  applyBoardTilt()
+  window.addEventListener('resize', applyBoardTilt)
+})
+onBeforeUnmount(() => window.removeEventListener('resize', applyBoardTilt))
+
 const skulls = computed(() => {
   const t = turn.value
   if (!t) return 0
@@ -233,7 +274,7 @@ watch(isDefeat, async (value) => {
   />
 
   <div v-else-if="mode !== 'start'" class="stage">
-    <div class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
+    <div ref="plateauEl" class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
       <!-- Rappel des règles, calé dans le creux entre le crâne et la lanterne gauche -->
       <button
         v-click-sound
@@ -297,6 +338,7 @@ watch(isDefeat, async (value) => {
             :clickable="clickable"
             :rescuable="guardianOffered && slotDice[i - 1]!.face === 'skull'"
             :selected="slotDice[i - 1]!.id !== guardianDie"
+            seated
             @click="toggleDie(slotDice[i - 1]!.id)"
           />
         </div>
@@ -541,10 +583,11 @@ watch(isDefeat, async (value) => {
   display: grid;
   place-items: center;
 }
-// Dés réservés : un cheveu plus petits que leur cadre (91 px = 5,44 cqw), pour
-// que le liseré doré du décor reste visible tout autour.
+// Dés réservés : nettement plus petits que leur cadre (91 px = 5,44 cqw). Le
+// liseré doré du décor doit rester visible tout autour, sinon le dé a l'air
+// posé DEVANT son logement plutôt que dedans.
 .zone-slots .die-cell {
-  --die-size: 4.9cqw;
+  --die-size: 4.4cqw;
   width: 100%;
   height: 100%;
 }

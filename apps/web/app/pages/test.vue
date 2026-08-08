@@ -100,6 +100,47 @@
       </p>
     </section>
 
+    <!-- Réglage de la perspective, SUR le vrai décor : c'est le seul endroit où
+         l'on peut juger si un dé est posé sur la table ou flotte au-dessus. -->
+    <section class="lab__panel">
+      <h2 class="lab__legend">Perspective du plateau</h2>
+      <div ref="boardEl" class="lab__board" :style="{ backgroundImage: `url(${layoutUrl})` }">
+        <div class="lab__board-center">
+          <div v-for="(die, i) in board" :key="i" class="lab__board-cell">
+            <DieCube :face="die.face" :roll="die.roll" :duration="duration" :silent="i > 0" />
+          </div>
+        </div>
+        <div class="lab__board-slots">
+          <div v-for="i in 8" :key="i" class="lab__board-slot">
+            <DieCube :face="slots[i - 1]!.face" :roll="0" seated />
+          </div>
+        </div>
+      </div>
+
+      <div class="lab__knobs">
+        <label class="lab__knob">
+          <span>Convergence au bord (yaw) <b>{{ perspective.yaw }}°</b></span>
+          <input v-model.number="perspective.yaw" type="range" min="0" max="30" step="0.5" />
+        </label>
+        <label class="lab__knob">
+          <span>Plongée en HAUT du plateau <b>{{ perspective.pitchTop }}°</b></span>
+          <input v-model.number="perspective.pitchTop" type="range" min="0" max="25" step="0.5" />
+        </label>
+        <label class="lab__knob">
+          <span>Plongée en BAS du plateau <b>{{ perspective.pitchBottom }}°</b></span>
+          <input v-model.number="perspective.pitchBottom" type="range" min="0" max="25" step="0.5" />
+        </label>
+      </div>
+      <PlateButton @click="rollBoard">Lancer sur le plateau</PlateButton>
+      <p class="lab__hint">
+        Quand ça te va, donne-moi ces trois nombres : ils vont dans
+        <code>BOARD_PERSPECTIVE</code> (<code>app/utils/boardTilt.ts</code>), et le
+        plateau les reprend tels quels. Réglage courant du jeu :
+        {{ BOARD_PERSPECTIVE.yaw }} / {{ BOARD_PERSPECTIVE.pitchTop }} /
+        {{ BOARD_PERSPECTIVE.pitchBottom }}.
+      </p>
+    </section>
+
     <!-- Le vrai test du plateau : huit dés, égrenés, à la taille réelle. -->
     <section class="lab__panel">
       <h2 class="lab__legend">Volée de huit — comme au plateau</h2>
@@ -137,6 +178,7 @@
  * toucher au plateau. Rien ici ne doit être réutilisé tel quel.
  */
 import { FACES, type DieFace } from '@rf/engine'
+import layoutUrl from '~/assets/images/ui/layout-game.webp'
 
 const FACE_LABEL: Record<DieFace, string> = {
   sabre: 'sabre',
@@ -181,6 +223,55 @@ function rollVolley(): void {
     die.roll += 1
   }
 }
+
+// ── Perspective sur le vrai décor ────────────────────────────────────────────
+/** Copie modifiable du réglage du jeu : on tourne les boutons sans rien casser. */
+const perspective = reactive({ ...BOARD_PERSPECTIVE })
+
+const board = reactive(Array.from({ length: 8 }, () => ({ face: draw(), roll: 0 })))
+const slots = reactive(Array.from({ length: 8 }, () => ({ face: draw() })))
+
+function rollBoard(): void {
+  for (const die of board) {
+    die.face = draw()
+    die.roll += 1
+  }
+}
+
+const boardEl = ref<HTMLElement | null>(null)
+
+/**
+ * Même calcul que sur le plateau du jeu — délibérément la MÊME fonction : un
+ * labo qui approximerait le rendu réel ne servirait à rien pour le régler.
+ */
+function applyTilt(): void {
+  const plateau = boardEl.value
+  if (!plateau) return
+  const rect = plateau.getBoundingClientRect()
+  if (!rect.width) return
+
+  const cells = [...plateau.querySelectorAll<HTMLElement>('.lab__board-cell, .lab__board-slot')]
+  const tilts = cells.map((cell) => {
+    const box = cell.getBoundingClientRect()
+    return boardTilt(
+      (box.left + box.width / 2 - rect.left) / rect.width,
+      (box.top + box.height / 2 - rect.top) / rect.height,
+      perspective
+    )
+  })
+  cells.forEach((cell, i) => {
+    cell.style.setProperty('--die-tilt-x', `${tilts[i]!.x}deg`)
+    cell.style.setProperty('--die-tilt-y', `${tilts[i]!.y}deg`)
+  })
+}
+
+watch(perspective, applyTilt, { flush: 'post' })
+onUpdated(applyTilt)
+onMounted(() => {
+  applyTilt()
+  window.addEventListener('resize', applyTilt)
+})
+onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
 </script>
 
 <style scoped lang="scss">
@@ -322,6 +413,61 @@ function rollVolley(): void {
     max-width: 60ch;
     font-size: var(--fs-body-s);
     color: var(--text-dim);
+  }
+
+  // ── Maquette du plateau ──────────────────────────────────────────────────
+  // Mêmes proportions et mêmes zones que `pages/game.vue` : régler la
+  // perspective sur une approximation ne servirait à rien.
+  &__board {
+    position: relative;
+    aspect-ratio: 1672 / 941;
+    width: min(100%, 60rem);
+    margin-bottom: var(--space-4);
+    background-position: center;
+    background-size: 100% 100%;
+    container-type: size;
+  }
+
+  &__board-center {
+    position: absolute;
+    left: 19%;
+    top: 22%;
+    width: 55%;
+    height: 42%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4cqw;
+    align-content: center;
+    justify-content: center;
+  }
+
+  &__board-cell {
+    --die-size: 7cqw;
+
+    width: var(--die-size);
+    height: var(--die-size);
+  }
+
+  // Rangée mesurée sur l'image : cadres x 413..1242, y 652..748 sur 1672×941.
+  &__board-slots {
+    position: absolute;
+    left: 24.7%;
+    top: 69.29%;
+    width: 49.58%;
+    height: 10.2%;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 1.76%;
+    place-items: center;
+  }
+
+  &__board-slot {
+    --die-size: 4.4cqw;
+
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
   }
 
   // Taille volontairement proche de celle du plateau : un cube joli en grand

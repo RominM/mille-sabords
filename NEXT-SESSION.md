@@ -126,18 +126,22 @@ sont égrenés de 35 ms, volent 750 ms, et une tête de mort verrouillée reste 
 centre le temps du vol — sinon la seule face qu'on veut voir tomber serait
 justement celle qui saute dans son cadre.
 
-Le point technique est réglé : l'orientation finale est CALCULÉE, en ajoutant
-des tours entiers (multiples de 360°, sans effet sur l'orientation) à la
-rotation qui présente la face voulue. Le dé roule vraiment et atterrit toujours
-sur le bon symbole, même deux fois de suite sur la même face — mesuré sur la
-matrice de transformation, pas seulement à l'œil.
+Chaque dé prend l'inclinaison de SA place sur le plateau
+(`app/utils/boardTilt.ts`) : le décor est en légère plongée, un dé à gauche est
+donc vu par sa droite, un dé en bas est vu davantage de dessus. Un dé qui
+garderait la même inclinaison partout dessinerait sa propre perspective et
+flotterait au-dessus du bois. Trois nombres — `BOARD_PERSPECTIVE` — réglables
+aux curseurs sur la maquette du labo, qui reprend le vrai décor et les vraies
+zones : c'est là qu'on juge, pas dans le code.
 
-La page laisse régler durée, tours, inclinaison au repos et échelle de la tuile,
-montre le cube à côté de la tuile plate à taille égale, et rejoue une volée de
-huit à la taille du plateau. **En attente du jugement de Romin** : si le rendu
-convainc, on généralise (`DieView` garde son rôle d'état — sélection, verrou,
-réserve — et `DieCube` prend le rendu) ; sinon on bascule sur le brassage de
-tuiles.
+Vérifié à la matrice de transformation, et pas seulement à l'œil : le dé
+atterrit toujours sur le symbole que le moteur a tiré, même deux fois de suite
+sur la même face.
+
+**Reste à faire côté décor** : le nouveau plateau n'a plus l'échelle des
+joueurs à gauche, et `zone-players`, `zone-card`, `zone-live` et `zone-action`
+sont encore calées sur l'ancien dessin. Seules la rangée d'emplacements et la
+zone centrale ont été remesurées.
 
 ## 6. Questions jamais tranchées
 
@@ -145,3 +149,10 @@ tuiles.
    atteint : la prime est-elle due ? (Le cas 3 têtes, lui, est tranché : oui.)
 2. Le joueur actif de l'île doit-il perdre des points lui aussi ? Le moteur
    l'épargne, conformément à la règle éditeur.
+3. **Égalité en fin de dernière manche.** `Game.finish` départage par l'ordre de
+   jeu — le premier assis gagne. C'est un choix par défaut, pas une règle : rien
+   dans la règle éditeur ne tranche le cas. Vu en vrai (6300 / 6300).
+   La mécanique de mort subite existe déjà et pourrait servir de départage.
+4. **« Garder au moins un dé » à la relance.** La contrainte vient bien de la
+   règle éditeur, citée dans `turn.ts`. Romin la trouve arbitraire et voudrait
+   la retirer : ce serait un écart assumé de plus, à décider.
