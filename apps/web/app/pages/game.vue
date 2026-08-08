@@ -29,6 +29,7 @@ const {
   transient,
   turn,
   players,
+  history,
   currentIndex,
   currentPlayer,
   gamePhase,
@@ -367,19 +368,17 @@ watch(isDefeat, async (value) => {
   </div>
 
   <!-- Overlays ─────────────────────────────────────────────────────────────── -->
-  <!-- Récapitulatif de fin de tour, sur le parchemin comme les autres modales.
-       `turn.outcome` est nul après un minuteur expiré sans le moindre lancer :
-       il n'y a alors rien à détailler, on enchaîne directement. -->
-  <TurnRecap
+  <!-- Résultat du tour : en grand, par-dessus le plateau, sans rien masquer et
+       sans rien demander. `turn.outcome` est nul après un minuteur expiré sans
+       le moindre lancer — il n'y a alors rien à annoncer, on enchaîne. -->
+  <TurnFlash
     v-if="mode === 'turnEnd' && turn?.outcome"
     :outcome="turn.outcome"
     :actor="turnActor"
-    :continue-label="gamePhase === 'finished' ? 'Voir le résultat' : 'Continuer'"
-    @continue="continueGame"
   />
 
   <GameOverModal
-    v-else-if="mode === 'finished'"
+    v-if="mode === 'finished'"
     :players="players"
     :winner="winner"
     :avatar-of="portraitOf"
@@ -390,6 +389,9 @@ watch(isDefeat, async (value) => {
   <RulesModal v-if="showRules" @close="showRules = false" />
 
   <ScalePoints />
+  <!-- Sous le barème, comme un second onglet de dossier : d'où viennent les
+       scores, et pourquoi un tour s'est mal terminé. -->
+  <TurnLog :history="history" :players="players" />
   <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
   <div v-if="isDefeat">
     <SkullEyes />

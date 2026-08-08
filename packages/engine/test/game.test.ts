@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DECISION_TIMEOUT_MS, Game } from '../src/game'
+import { DECISION_TIMEOUT_MS, Game, HISTORY_LENGTH } from '../src/game'
 import type { DieFace, RollFn } from '../src/types'
 
 /** Roller de test : file de lancers pré-programmés. */
@@ -40,6 +40,57 @@ describe('nombre de joueurs', () => {
       game.timeout()
     }
     expect(vus).toEqual(['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'])
+  })
+})
+
+describe('historique des tours', () => {
+  const duo = () => [
+    { id: 'p0', name: 'P0' },
+    { id: 'p1', name: 'P1' }
+  ]
+
+  it('consigne un arrêt volontaire avec ses points', () => {
+    const game = new Game(duo(), { now: () => 0 })
+    game.state.deck = [{ type: 'guardian' }]
+    game.startTurn()
+    game.act({ type: 'roll' }, roller([S, S, S, M, M, P, C, C]))
+    game.act({ type: 'stop' })
+
+    expect(game.state.history).toHaveLength(1)
+    expect(game.state.history[0]).toMatchObject({ playerId: 'p0', reason: 'stopped' })
+    // La trace dit la même chose que le score : c'est la même source.
+    expect(game.state.history[0]!.score).toBe(game.state.players[0]!.score)
+  })
+
+  it('distingue un tour expiré d’un tour perdu', () => {
+    const game = new Game(duo(), { now: () => 0 })
+    game.state.deck = [{ type: 'guardian' }]
+    game.startTurn()
+    game.timeout()
+
+    // Sans cette distinction, un zéro ne se lit pas : trois têtes, une île et un
+    // minuteur expiré donnent tous zéro pour des raisons très différentes.
+    expect(game.state.history[0]).toMatchObject({ reason: 'timeout', score: 0 })
+  })
+
+  it('ne garde que les derniers tours', () => {
+    const game = new Game(duo(), { now: () => 0 })
+    for (let i = 0; i < HISTORY_LENGTH + 5; i++) {
+      game.state.deck = [{ type: 'guardian' }]
+      game.startTurn()
+      game.timeout()
+    }
+    // L'état part en entier à chaque diffusion : il ne doit pas enfler sans fin.
+    expect(game.state.history).toHaveLength(HISTORY_LENGTH)
+  })
+
+  it('un tour laisse exactement une trace', () => {
+    const game = new Game(duo(), { now: () => 0 })
+    game.state.deck = [{ type: 'guardian' }]
+    game.startTurn()
+    game.act({ type: 'roll' }, roller([S, S, S, M, M, P, C, C]))
+    game.act({ type: 'stop' })
+    expect(game.state.history).toHaveLength(1)
   })
 })
 

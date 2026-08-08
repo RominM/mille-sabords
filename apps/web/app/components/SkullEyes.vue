@@ -42,7 +42,7 @@
   // l'orbite entière. `screen` fait lire le tout comme de la lumière.
   &__eye {
     position: absolute;
-    top: 7.1%;
+    top: 8.5%;
     width: 1.5cqw;
     height: 1.5cqw;
     transform: translate(-50%, -50%);
@@ -61,11 +61,11 @@
     animation: eye-pulse 1.15s ease-in-out infinite;
 
     &--left {
-      left: 48.6%;
+      left: 49.2%;
     }
 
     &--right {
-      left: 51.2%;
+      left: 51.7%;
       animation-delay: 0.08s; // léger décalage : le regard « respire »
     }
   }

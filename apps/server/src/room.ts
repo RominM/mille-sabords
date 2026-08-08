@@ -17,10 +17,11 @@ import {
   type BotDifficulty,
   type GameState
 } from '@rf/engine'
-import type { ClientMessage, LobbyView, SeatView, ServerMessage } from '@rf/protocol'
+import { RECAP_MS, type ClientMessage, type LobbyView, type SeatView, type ServerMessage } from '@rf/protocol'
 
-/** Temps laissé au récapitulatif de fin de tour avant d'enchaîner. */
-export const RECAP_MS = 3_500
+// Le temps laissé au résultat d'un tour vient du protocole : le front l'utilise
+// pour la même chose, et deux valeurs divergentes désynchroniseraient l'écran.
+export { RECAP_MS }
 /** Cadence de l'IA : assez lente pour qu'on suive ce qu'elle fait. */
 export const BOT_STEP_MS = 800
 /** Un siège déconnecté avant le départ finit par libérer sa place. */

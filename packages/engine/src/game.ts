@@ -1,6 +1,15 @@
 import { buildDeck, shuffle } from './deck'
 import { applyAction, createTurn } from './turn'
-import type { PirateCard, RollFn, TurnAction, TurnState } from './types'
+import type { PirateCard, RollFn, TurnAction, TurnRecord, TurnState } from './types'
+
+/**
+ * Nombre de tours gardés dans l'historique.
+ *
+ * L'état part en entier à chaque diffusion en multijoueur : une partie longue
+ * traînerait sinon des centaines d'entrées derrière chaque coup de dés. Vingt
+ * tours suffisent à comprendre d'où viennent les scores.
+ */
+export const HISTORY_LENGTH = 20
 
 export const WINNING_SCORE = 6000
 
@@ -37,6 +46,8 @@ export interface GameState {
   turn: TurnState | null
   phase: GamePhase
   winnerId: string | null
+  /** Les derniers tours joués, du plus ancien au plus récent. */
+  history: TurnRecord[]
   /** Deadline epoch-ms de la décision en cours (autorité serveur) */
   decisionDeadline: number | null
   /**
@@ -83,6 +94,7 @@ export class Game {
       turn: null,
       phase: 'playing',
       winnerId: null,
+      history: [],
       decisionDeadline: null,
       finalTurnsLeft: null,
       suddenDeath: false
@@ -160,15 +172,18 @@ export class Game {
       return
     }
 
+    let penalty = 0
     if (turn.phase === 'island-roll') {
       const perSkull = turn.card.type === 'pirate' ? 200 : 100
       const skulls =
         turn.dice.filter((d) => d.face === 'skull').length +
         (turn.card.type === 'skulls' ? turn.card.count : 0)
-      this.applyOpponentPenalty(skulls * perSkull)
+      penalty = skulls * perSkull
+      this.applyOpponentPenalty(penalty)
     }
     // Dans tous les cas : 0 point pour le joueur actif
     this.state.turn = { ...turn, phase: 'ended', outcome: null }
+    this.record('timeout', 0, penalty)
     this.concludeTurn(turn.card)
   }
 
@@ -193,11 +208,22 @@ export class Game {
     })
   }
 
+  /**
+   * Consigne le tour qui vient de s'achever. Appelée par les DEUX sorties d'un
+   * tour — l'arbitrage normal et l'expiration du minuteur —, jamais ailleurs :
+   * un tour doit laisser exactement une trace.
+   */
+  private record(reason: TurnRecord['reason'], score: number, opponentPenalty: number): void {
+    this.state.history.push({ playerId: this.currentPlayer.id, score, reason, opponentPenalty })
+    if (this.state.history.length > HISTORY_LENGTH) this.state.history.shift()
+  }
+
   private settleTurn(): void {
     const turn = this.state.turn!
     const outcome = turn.outcome!
     this.currentPlayer.score += outcome.score
     this.applyOpponentPenalty(outcome.opponentPenalty)
+    this.record(outcome.reason, outcome.score, outcome.opponentPenalty)
 
     // « Magie pirate » : 9 symboles identiques emportent la partie sur-le-champ,
     // sans dernière manche ni comparaison des scores.

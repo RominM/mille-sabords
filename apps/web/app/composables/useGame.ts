@@ -17,6 +17,7 @@ import {
   type TurnAction,
   type TurnState
 } from '@rf/engine'
+import { RECAP_MS } from '@rf/protocol'
 
 export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
 
@@ -52,6 +53,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   const players = computed(() => snapshot.value?.players ?? [])
   const currentIndex = computed(() => snapshot.value?.currentPlayerIndex ?? 0)
   const currentPlayer = computed(() => players.value[currentIndex.value] ?? null)
+  const history = computed(() => snapshot.value?.history ?? [])
   const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
   const winner = computed(() => players.value.find((p) => p.id === snapshot.value?.winnerId) ?? null)
 
@@ -385,6 +387,27 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
       })
     )
 
+  /**
+   * Le résultat du tour s'efface tout seul.
+   *
+   * Il n'y a plus rien à décider une fois le tour joué : demander un clic pour
+   * enchaîner ne servait qu'à retarder la partie. Le compte à rebours est celui
+   * du serveur (`RECAP_MS`, partagé) — l'écran doit se libérer au moment même où
+   * le tour suivant s'ouvre, pas avant, pas après.
+   */
+  let recapTimer: ReturnType<typeof setTimeout> | null = null
+
+  watch(mode, (value) => {
+    if (recapTimer) clearTimeout(recapTimer)
+    recapTimer = null
+    if (value !== 'turnEnd') return
+    recapTimer = setTimeout(continueGame, RECAP_MS)
+  })
+
+  onScopeDispose(() => {
+    if (recapTimer) clearTimeout(recapTimer)
+  })
+
   function continueGame(): void {
     if (gamePhase.value === 'finished') {
       mode.value = 'finished'
@@ -431,6 +454,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     transient,
     turn,
     players,
+    history,
     currentIndex,
     currentPlayer,
     gamePhase,

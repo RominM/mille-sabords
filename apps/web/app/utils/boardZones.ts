@@ -38,13 +38,13 @@ export interface BoardZone {
  * rattrape le reste.
  */
 export const CARD_ZONE: BoardZone = {
-  left: 77.3,
-  top: 28.6,
-  width: 15.6,
-  height: 40.3,
-  tiltX: -5,
-  tiltY: -10,
-  tiltZ: 2.5,
+  left: 78,
+  top: 28.2,
+  width: 13.3,
+  height: 54.7,
+  tiltX: 9,
+  tiltY: 16,
+  tiltZ: -5
 }
 
 /**
@@ -53,12 +53,12 @@ export const CARD_ZONE: BoardZone = {
  * inclinaison, sinon les deux blocs ne semblent pas posés sur la même table.
  */
 export const LIVE_ZONE: BoardZone = {
-  left: 77.3,
-  top: 21.2,
-  width: 15.6,
-  tiltX: -5,
-  tiltY: -10,
-  tiltZ: 2.5,
+  left: 76.3,
+  top: 20.5,
+  width: 16.7,
+  tiltX: -7,
+  tiltY: 16.5,
+  tiltZ: 3
 }
 
 /**
@@ -75,6 +75,6 @@ export function zoneStyle(zone: BoardZone): Record<string, string> {
     ...(zone.height === undefined ? {} : { height: `${zone.height}%` }),
     '--tilt-x': `${zone.tiltX}deg`,
     '--tilt-y': `${zone.tiltY}deg`,
-    '--tilt-z': `${zone.tiltZ}deg`,
+    '--tilt-z': `${zone.tiltZ}deg`
   }
 }

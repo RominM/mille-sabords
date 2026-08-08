@@ -7,6 +7,16 @@
  */
 import type { BotDifficulty, GameState, TurnAction } from '@rf/engine'
 
+/**
+ * Temps laissé au résultat d'un tour avant d'enchaîner.
+ *
+ * Partagé, et pas dupliqué de chaque côté : le serveur s'en sert pour ouvrir le
+ * tour suivant, le front pour savoir combien de temps afficher le score. Deux
+ * valeurs qui divergeraient donneraient un écran qui s'efface avant la fin, ou
+ * un plateau qui repart sous un score encore affiché.
+ */
+export const RECAP_MS = 5_000
+
 /** Un siège tel que le voient tous les joueurs pendant la salle d'attente. */
 export interface SeatView {
   id: string

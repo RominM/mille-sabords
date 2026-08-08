@@ -63,6 +63,25 @@ export type TurnEndReason =
   /** Île de la Tête-de-Mort terminée : malus pour les adversaires */
   | 'skull-island'
 
+/**
+ * Trace d'un tour joué, pour l'historique de la partie.
+ *
+ * Volontairement maigre : de quoi relire « qui, combien, pourquoi », pas de
+ * quoi rejouer le tour. L'historique part dans CHAQUE diffusion d'état en
+ * multijoueur — le détail complet coûterait cher pour un écran qu'on consulte
+ * de temps en temps.
+ *
+ * `timeout` n'est pas une fin de tour au sens des règles mais au sens du jeu en
+ * ligne : le joueur n'a pas décidé à temps.
+ */
+export interface TurnRecord {
+  playerId: string
+  score: number
+  reason: TurnEndReason | 'timeout'
+  /** Malus subi par chaque adversaire, pour expliquer un score qui baisse. */
+  opponentPenalty: number
+}
+
 export interface ScoreBreakdown {
   /** Points des combinaisons (3+ dés identiques) */
   combos: { face: DieFace | 'animals'; count: number; points: number }[]
