@@ -80,6 +80,16 @@ export function useDiceDrag(onDrop: (drop: DiceDrop) => void) {
     hovered.value = null
   }
 
+  /**
+   * La corde se ferme sur tout le document, pas seulement sur le dé pris : le
+   * pointeur traverse le plateau et des boutons pendant le geste, et chacun
+   * réimposerait son propre curseur (cf. `.is-grabbing` dans `_components.scss`).
+   */
+  watch(heldDie, (held) => {
+    if (!import.meta.client) return
+    document.body.classList.toggle('is-grabbing', held !== null)
+  })
+
   onMounted(() => {
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', release)
@@ -89,6 +99,8 @@ export function useDiceDrag(onDrop: (drop: DiceDrop) => void) {
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', release)
     window.removeEventListener('pointercancel', release)
+    // Quitter la page en plein glissé laisserait la corde fermée pour de bon.
+    document.body.classList.remove('is-grabbing')
   })
 
   return { heldDie, hovered, at, grab }

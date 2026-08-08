@@ -48,10 +48,10 @@ export interface BoardZone {
  * 1289..1571 en bas, y 261..659 — puis affiné à la souris dans le labo.
  */
 export const CARD_QUAD: Quad = {
-  topLeft: { x: 75.9, y: 27.7 },
-  topRight: { x: 92.1, y: 27.7 },
-  bottomRight: { x: 94.6, y: 70 },
-  bottomLeft: { x: 77.5, y: 70 },
+  topLeft: { x: 77.1, y: 29.9 },
+  topRight: { x: 92.2, y: 29.6 },
+  bottomRight: { x: 92.8, y: 43.6 },
+  bottomLeft: { x: 77.7, y: 43.9 }
 }
 
 export const CARD_ZONE: BoardZone = {

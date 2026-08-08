@@ -174,3 +174,43 @@
 .timer.is-low {
   color: var(--danger-edge);
 }
+
+// ── Saisir : la corde ────────────────────────────────────────────────────────
+// Deux états, comme une main : la corde OUVERTE sur ce qui se saisit, FERMÉE
+// pendant qu'on tient. Utilitaires globaux et non styles de composant : le
+// curseur doit rester fermé sur TOUT le plateau pendant le glissé, pas
+// seulement au-dessus du dé qu'on a pris.
+//
+// Les points de chute (« hotspots ») visent le creux de la corde, et non le
+// coin de l'image — sans quoi on déposerait toujours à côté de ce qu'on vise.
+// Ils doublent avec la résolution, puisque l'image double aussi.
+.grabbable {
+  cursor:
+    url('../images/ui/cursors/cursor-rope-open-32.webp') 11 13,
+    grab;
+
+  @media (min-resolution: 2dppx) {
+    cursor:
+      url('../images/ui/cursors/cursor-rope-open-64.webp') 22 26,
+      grab;
+  }
+}
+
+// Posée sur `body` le temps du geste. Le sélecteur universel est nécessaire :
+// sans lui, chaque bouton survolé reimposerait son propre curseur en cours de
+// glissé, et la corde se rouvrirait au passage.
+body.is-grabbing,
+body.is-grabbing * {
+  cursor:
+    url('../images/ui/cursors/cursor-rope-closed-32.webp') 16 16,
+    grabbing !important;
+}
+
+@media (min-resolution: 2dppx) {
+  body.is-grabbing,
+  body.is-grabbing * {
+    cursor:
+      url('../images/ui/cursors/cursor-rope-closed-64.webp') 32 32,
+      grabbing !important;
+  }
+}

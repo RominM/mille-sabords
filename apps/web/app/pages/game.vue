@@ -47,7 +47,7 @@
           v-for="(d, i) in centerDice"
           :key="d.id"
           class="die-cell die-cell--big"
-          :class="{ 'die-cell--held': heldDie === d.id }"
+          :class="{ 'die-cell--held': heldDie === d.id, grabbable: clickable }"
           @pointerdown="clickable && grab(d.id, $event)"
         >
           <DieView
@@ -71,7 +71,8 @@
           class="die-cell"
           :class="{
             'die-cell--target': hovered === i - 1,
-            'die-cell--held': heldDie !== null && heldDie === slotDice[i - 1]?.id
+            'die-cell--held': heldDie !== null && heldDie === slotDice[i - 1]?.id,
+            grabbable: clickable && !!slotDice[i - 1]
           }"
           :data-slot="i - 1"
           @pointerdown="slotDice[i - 1] && clickable && grab(slotDice[i - 1]!.id, $event)"
