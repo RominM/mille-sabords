@@ -294,14 +294,32 @@ defineExpose({ rollTo })
     opacity: 0;
   }
 
-  // Dé posé dans son cadre : l'ombre se resserre sous lui et s'assombrit.
-  // Une ombre large dit « en l'air » ; une ombre courte et dense dit « au
-  // contact », et c'est tout ce qui fait entrer le dé DANS son logement.
-  &--seated .die-cube__ground {
-    width: 62%;
-    height: 11%;
-    bottom: -2%;
-    opacity: 0.72;
+  // ── Dé rangé dans un cadre ────────────────────────────────────────────────
+  // Trois indices, et aucun n'est de la géométrie : c'est l'ÉCLAIRAGE qui dit
+  // à l'œil qu'un objet est dans un creux.
+  &--seated {
+    // 1. Il repose bas dans son logement. Vu d'un peu au-dessus, un objet posé
+    //    au fond d'un cadre se lit plus près du bord proche que du centre.
+    translate: 0 var(--die-seat-drop, 6%);
+
+    // 2. Ombre de CONTACT : courte, dense, décalée du côté opposé aux
+    //    lanternes du décor, qui éclairent depuis le haut du plateau.
+    .die-cube__ground {
+      width: 66%;
+      height: 12%;
+      bottom: 1%;
+      opacity: 0.8;
+      background: radial-gradient(ellipse at center, rgba(24, 14, 8, 0.95), rgba(24, 14, 8, 0) 72%);
+    }
+
+    // 3. Occlusion : le pied du dé s'assombrit là où il rejoint le bois, comme
+    //    tout ce qui touche une surface. Sans elle, le dé reste « devant » son
+    //    cadre quoi qu'on fasse par ailleurs.
+    .die-cube__face {
+      box-shadow:
+        inset 0 0 0 1px rgba(24, 14, 8, 0.55),
+        inset 0 -22% 18% -12% rgba(24, 14, 8, 0.6);
+    }
   }
 
   // Ombre portée au sol : elle seule donne l'altitude pendant le vol.
@@ -328,8 +346,12 @@ defineExpose({ rollTo })
     transform-style: preserve-3d;
   }
 
+  // Le roulis vient EN PREMIER dans la liste, donc en dernier à l'application :
+  // c'est une rotation dans le plan de l'écran, celle qui aligne les arêtes du
+  // dé sur celles de son cadre.
   &__scene {
-    transform: rotateX(var(--die-tilt-x, -14deg)) rotateY(var(--die-tilt-y, -18deg));
+    transform: rotateZ(var(--die-tilt-z, 0deg)) rotateX(var(--die-tilt-x, -14deg))
+      rotateY(var(--die-tilt-y, -18deg));
   }
 
   &__cube {

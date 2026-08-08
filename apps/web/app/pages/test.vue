@@ -111,7 +111,12 @@
           </div>
         </div>
         <div class="lab__board-slots">
-          <div v-for="i in 8" :key="i" class="lab__board-slot">
+          <div
+            v-for="i in 8"
+            :key="i"
+            class="lab__board-slot"
+            :style="{ '--die-seat-drop': `${seatDrop}%`, '--die-size': `${seatSize}cqw` }"
+          >
             <DieCube :face="slots[i - 1]!.face" :roll="0" seated />
           </div>
         </div>
@@ -130,15 +135,37 @@
           <span>Plongée en BAS du plateau <b>{{ perspective.pitchBottom }}°</b></span>
           <input v-model.number="perspective.pitchBottom" type="range" min="0" max="25" step="0.5" />
         </label>
+        <label class="lab__knob">
+          <span>Roulis au bord <b>{{ perspective.roll }}°</b></span>
+          <input v-model.number="perspective.roll" type="range" min="-30" max="30" step="0.5" />
+        </label>
+        <label class="lab__knob">
+          <span>Relief des dés rangés <b>×{{ perspective.seatedRelief }}</b></span>
+          <input v-model.number="perspective.seatedRelief" type="range" min="-3" max="3" step="0.05" />
+        </label>
+        <label class="lab__knob">
+          <span>Relief carte &amp; points <b>×{{ perspective.flatRelief }}</b></span>
+          <input v-model.number="perspective.flatRelief" type="range" min="-2" max="2" step="0.05" />
+        </label>
+        <label class="lab__knob">
+          <span>Enfoncement dans le cadre <b>{{ seatDrop }} %</b></span>
+          <input v-model.number="seatDrop" type="range" min="0" max="16" step="0.5" />
+        </label>
+        <label class="lab__knob">
+          <span>Taille des dés rangés <b>{{ seatSize }} cqw</b></span>
+          <input v-model.number="seatSize" type="range" min="3.2" max="5.4" step="0.1" />
+        </label>
       </div>
       <PlateButton @click="rollBoard">Lancer sur le plateau</PlateButton>
+
+      <!-- Le labo ne sert à rien s'il faut ensuite retranscrire les valeurs à la
+           main : il rend directement le morceau de code à coller. -->
       <p class="lab__hint">
-        Quand ça te va, donne-moi ces trois nombres : ils vont dans
-        <code>BOARD_PERSPECTIVE</code> (<code>app/utils/boardTilt.ts</code>), et le
-        plateau les reprend tels quels. Réglage courant du jeu :
-        {{ BOARD_PERSPECTIVE.yaw }} / {{ BOARD_PERSPECTIVE.pitchTop }} /
-        {{ BOARD_PERSPECTIVE.pitchBottom }}.
+        Quand ça te va, colle ceci dans <code>BOARD_PERSPECTIVE</code>
+        (<code>app/utils/boardTilt.ts</code>) — le plateau le reprend tel quel.
+        Les deux dernières valeurs sont en CSS, dans <code>pages/game.vue</code>.
       </p>
+      <pre class="lab__code">{{ recipe }}</pre>
     </section>
 
     <!-- Le vrai test du plateau : huit dés, égrenés, à la taille réelle. -->
@@ -227,6 +254,26 @@ function rollVolley(): void {
 // ── Perspective sur le vrai décor ────────────────────────────────────────────
 /** Copie modifiable du réglage du jeu : on tourne les boutons sans rien casser. */
 const perspective = reactive({ ...BOARD_PERSPECTIVE })
+/** Les deux réglages qui vivent en CSS, et non dans le modèle de perspective. */
+const seatDrop = ref(6)
+const seatSize = ref(4.4)
+
+/** Le réglage courant, prêt à coller — un labo qu'il faut recopier à la main ne sert à rien. */
+const recipe = computed(
+  () => `// app/utils/boardTilt.ts
+export const BOARD_PERSPECTIVE: BoardPerspective = {
+  yaw: ${perspective.yaw},
+  pitchTop: ${perspective.pitchTop},
+  pitchBottom: ${perspective.pitchBottom},
+  roll: ${perspective.roll},
+  seatedRelief: ${perspective.seatedRelief},
+  flatRelief: ${perspective.flatRelief}
+}
+
+// app/pages/game.vue — .zone-slots .die-cell
+--die-size: ${seatSize.value}cqw;
+--die-seat-drop: ${seatDrop.value}%;`
+)
 
 const board = reactive(Array.from({ length: 8 }, () => ({ face: draw(), roll: 0 })))
 const slots = reactive(Array.from({ length: 8 }, () => ({ face: draw() })))
@@ -256,12 +303,14 @@ function applyTilt(): void {
     return boardTilt(
       (box.left + box.width / 2 - rect.left) / rect.width,
       (box.top + box.height / 2 - rect.top) / rect.height,
-      perspective
+      perspective,
+      { kind: cell.classList.contains('lab__board-slot') ? 'seated' : 'die' }
     )
   })
   cells.forEach((cell, i) => {
     cell.style.setProperty('--die-tilt-x', `${tilts[i]!.x}deg`)
     cell.style.setProperty('--die-tilt-y', `${tilts[i]!.y}deg`)
+    cell.style.setProperty('--die-tilt-z', `${tilts[i]!.z}deg`)
   })
 }
 
@@ -413,6 +462,22 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     max-width: 60ch;
     font-size: var(--fs-body-s);
     color: var(--text-dim);
+  }
+
+  &__code {
+    max-width: 60ch;
+    margin-top: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid rgba(201, 162, 39, 0.3);
+    border-radius: var(--cut);
+    background: rgba(24, 14, 8, 0.55);
+    color: var(--accent-hi);
+    font-family: var(--font-mono);
+    font-size: var(--fs-body-s);
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+    user-select: all;
   }
 
   // ── Maquette du plateau ──────────────────────────────────────────────────

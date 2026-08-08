@@ -18,7 +18,6 @@ const isSolo = route.query.mode !== 'multi'
 const room = useRoom()
 
 const {
-  WINNING_SCORE,
   TURN_SECONDS,
   secondsLeft,
   mode,
@@ -68,12 +67,6 @@ const FACE: Record<DieFace, string> = {
   diamond: '💎'
 }
 
-const diffs: { value: BotDifficulty; label: string }[] = [
-  { value: 'easy', label: 'Facile' },
-  { value: 'medium', label: 'Moyen' },
-  { value: 'hard', label: 'Difficile' }
-]
-const pendingDifficulty = ref<BotDifficulty>('medium')
 const darkLaughAudio = ref<HTMLAudioElement | null>(null)
 const showRules = ref(false)
 
@@ -88,10 +81,12 @@ const tableSetup = useTableSetup()
 
 onMounted(function openTable() {
   if (isSolo) {
-    const setup = tableSetup.value
-    if (!setup?.roster.length) return
-    pendingDifficulty.value = setup.difficulty
-    newGame(setup.difficulty, setup.roster)
+    // Demander une partie n'est pas demander sa mise en place : à défaut de
+    // table fraîchement composée, on repart sur la dernière jouée — et à
+    // défaut de tout, sur l'équipage par défaut. Aucun écran intermédiaire.
+    const setup = tableSetup.value ?? lastSoloSetup()
+    if (setup?.roster.length) rememberSoloSetup(setup)
+    newGame(setup?.difficulty ?? 'medium', setup?.roster)
     tableSetup.value = null // consommée : « Rejouer » réutilisera le même équipage
     return
   }
@@ -139,17 +134,30 @@ function applyBoardTilt(): void {
   const board = plateau.getBoundingClientRect()
   if (!board.width) return
 
-  const cells = [...plateau.querySelectorAll<HTMLElement>('.die-cell')]
-  const tilts = cells.map((cell) => {
-    const box = cell.getBoundingClientRect()
+  // Les dés, mais aussi la carte et les points : tout ce qui est POSÉ sur la
+  // table doit partager sa perspective, sinon chaque bloc dessine la sienne.
+  const items = [...plateau.querySelectorAll<HTMLElement>('.die-cell, .zone-card, .zone-live')]
+  const kindOf = (item: HTMLElement): 'die' | 'seated' | 'flat' => {
+    if (!item.classList.contains('die-cell')) return 'flat'
+    // Les dés des huit cadres ne se règlent pas comme ceux jetés sur la table :
+    // petits, encastrés, ils demandent leur propre dosage.
+    return item.closest('.zone-slots') ? 'seated' : 'die'
+  }
+
+  const tilts = items.map((item) => {
+    const box = item.getBoundingClientRect()
     return boardTilt(
       (box.left + box.width / 2 - board.left) / board.width,
-      (box.top + box.height / 2 - board.top) / board.height
+      (box.top + box.height / 2 - board.top) / board.height,
+      BOARD_PERSPECTIVE,
+      { kind: kindOf(item) }
     )
   })
-  cells.forEach((cell, i) => {
-    cell.style.setProperty('--die-tilt-x', `${tilts[i]!.x}deg`)
-    cell.style.setProperty('--die-tilt-y', `${tilts[i]!.y}deg`)
+  items.forEach((item, i) => {
+    const prefix = item.classList.contains('die-cell') ? '--die-tilt' : '--tilt'
+    item.style.setProperty(`${prefix}-x`, `${tilts[i]!.x}deg`)
+    item.style.setProperty(`${prefix}-y`, `${tilts[i]!.y}deg`)
+    item.style.setProperty(`${prefix}-z`, `${tilts[i]!.z}deg`)
   })
 }
 
@@ -377,27 +385,6 @@ watch(isDefeat, async (value) => {
   </div>
 
   <!-- Overlays ─────────────────────────────────────────────────────────────── -->
-  <!-- Choix de la difficulté : propre au solo, en multi l'équipage vient du lobby -->
-  <div v-if="mode === 'start' && isSolo" class="overlay">
-    <div class="panel">
-      <h2>Reckless Fathoms</h2>
-      <p class="card-effect">Affronte Le Corsaire (l’IA) en solo. Premier à {{ WINNING_SCORE }} points.</p>
-      <div class="diff-choices">
-        <button
-          v-for="d in diffs"
-          :key="d.value"
-          v-click-sound
-          class="btn"
-          :class="{ 'btn--ghost': pendingDifficulty !== d.value }"
-          @click="pendingDifficulty = d.value"
-        >
-          {{ d.label }}
-        </button>
-      </div>
-      <WaxSeal label="Jouer" @click="newGame(pendingDifficulty)" />
-    </div>
-  </div>
-
   <!-- Récapitulatif de fin de tour, sur le parchemin comme les autres modales.
        `turn.outcome` est nul après un minuteur expiré sans le moindre lancer :
        il n'y a alors rien à détailler, on enchaîne directement. -->
@@ -523,22 +510,41 @@ watch(isDefeat, async (value) => {
   flex-direction: column;
   gap: 0.74cqh; // = l'écart réel entre deux barreaux
 }
+// Cadre de la carte, mesuré sur le nouveau décor (1672×941) : liseré doré à
+// x 1275..1550 en haut, 1289..1571 en bas, y 261..659. Le cadre n'est pas
+// d'aplomb — il PENCHE, comme tout ce que ce grand angle a photographié —, d'où
+// le léger retrait : on se cale au milieu du quadrilatère, et c'est la
+// rotation ci-dessous qui rattrape l'inclinaison.
 .zone-card {
   position: absolute;
-  left: 78.999%;
-  top: 30%;
-  width: 13.79%;
-  height: 40%;
+  left: 77.3%;
+  top: 28.6%;
+  width: 15.6%;
+  height: 40.3%;
+  perspective: 90cqw;
+
+  > * {
+    width: 100%;
+    height: 100%;
+    transform: rotateZ(var(--tilt-z, 0deg)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  }
 }
 
-// Calé sur la colonne de la carte, dans la bande libre entre le bouton Règles
-// (haut) et le cadre de la carte, qui commence à 30 %.
+// Points en jeu, juste au-dessus du cadre : le joueur doit arbitrer « je
+// relance ou j'encaisse » sans quitter la carte des yeux. Même largeur et même
+// inclinaison que la carte, sinon les deux blocs ne semblent pas posés sur la
+// même table.
 .zone-live {
   position: absolute;
-  left: 78.999%;
-  top: 21%;
-  width: 13.79%;
+  left: 77.3%;
+  top: 21.2%;
+  width: 15.6%;
   z-index: 2;
+  perspective: 90cqw;
+
+  > * {
+    transform: rotateZ(var(--tilt-z, 0deg)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  }
 }
 
 // Dés en jeu, au centre. Bornes du bois libre sur le nouveau décor : sous les
@@ -587,7 +593,7 @@ watch(isDefeat, async (value) => {
 // liseré doré du décor doit rester visible tout autour, sinon le dé a l'air
 // posé DEVANT son logement plutôt que dedans.
 .zone-slots .die-cell {
-  --die-size: 4.4cqw;
+  --die-size: 4cqw;
   width: 100%;
   height: 100%;
 }
@@ -665,38 +671,6 @@ watch(isDefeat, async (value) => {
   font-weight: 600;
 }
 
-// ── Overlays ─────────────────────────────────────────────────────────────────
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-  background: rgba(24, 14, 8, 0.78);
-}
-.overlay .panel {
-  max-width: 460px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  text-align: center;
-}
-.overlay h2 {
-  color: var(--accent);
-}
-.card-effect {
-  color: var(--text-dim);
-  max-width: 52ch;
-}
-.diff-choices {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  justify-content: center;
-}
 .outcome-lines {
   font-family: var(--font-body);
   display: flex;

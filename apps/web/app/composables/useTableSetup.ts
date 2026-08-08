@@ -28,3 +28,36 @@ export interface TableSetup {
 
 /** État partagé (Nuxt `useState` : une seule instance pour toute l'app). */
 export const useTableSetup = () => useState<TableSetup | null>('table-setup', () => null)
+
+/**
+ * Dernière table solo jouée.
+ *
+ * `useState` ne survit pas à un rechargement : sans cette mémoire, revenir sur
+ * `/game` redemanderait les réglages. Or redemander une partie ne veut pas dire
+ * redemander sa mise en place — on repart sur un plateau neuf avec le même
+ * équipage et la même difficulté.
+ *
+ * `localStorage` et non `sessionStorage` : ce n'est pas une identité — que deux
+ * onglets partagent la même préférence de jeu ne gêne personne, contrairement
+ * au jeton de joueur (cf. `useRoom`).
+ */
+const LAST_SOLO_KEY = 'rf-last-solo'
+
+export function rememberSoloSetup(setup: TableSetup): void {
+  if (!import.meta.client) return
+  try {
+    localStorage.setItem(LAST_SOLO_KEY, JSON.stringify(setup))
+  } catch {
+    // Stockage plein ou refusé : on joue quand même, on ne mémorise pas.
+  }
+}
+
+export function lastSoloSetup(): TableSetup | null {
+  if (!import.meta.client) return null
+  try {
+    const setup = JSON.parse(localStorage.getItem(LAST_SOLO_KEY) ?? 'null') as TableSetup | null
+    return setup?.roster?.length ? setup : null
+  } catch {
+    return null
+  }
+}
