@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Room, RECAP_MS, LOBBY_GRACE_MS } from '../src/room.js'
-import type { LobbyView, ServerMessage } from '@rf/protocol'
+import type { LobbyView, SeatView, ServerMessage } from '@rf/protocol'
 
 /** Salle instrumentée : on capture ce qu'elle émet, à qui. */
 function makeRoom() {
@@ -23,7 +23,16 @@ function makeRoom() {
     }
     return null
   }
-  return { room, sent, lastLobby, errorsFor, lastStateFor }
+  const lastRoster = (from = 0): SeatView[] | null => {
+    for (let i = sent.length - 1; i >= from; i--) {
+      const m = sent[i]!.msg
+      if (m.t === 'roster') return m.seats
+    }
+    return null
+  }
+  const rosterCount = (): number => sent.filter((s) => s.msg.t === 'roster').length
+
+  return { room, sent, lastLobby, errorsFor, lastStateFor, lastRoster, rosterCount }
 }
 
 describe('salle d’attente', () => {
@@ -83,8 +92,8 @@ describe('partie', () => {
   /** Deux humains parés, partie lancée. */
   function started() {
     const h = makeRoom()
-    const a = h.room.join('tok-a', 'Romin', 'av', 0)!
-    const b = h.room.join('tok-b', 'Ami', 'av', 0)!
+    const a = h.room.join('tok-a', 'Romin', 'av-a', 0)!
+    const b = h.room.join('tok-b', 'Ami', 'av-b', 0)!
     h.room.handle(a, { t: 'ready', ready: true }, 0)
     h.room.handle(b, { t: 'ready', ready: true }, 0)
     h.room.handle(a, { t: 'start' }, 0)
@@ -139,9 +148,41 @@ describe('partie', () => {
     room.handle(actif, { t: 'act', action: { type: 'roll' } }, 0)
 
     room.leave(b, 100)
-    const retour = room.join('tok-b', 'Ami', 'av', 200)
+    const retour = room.join('tok-b', 'Ami', 'av-b', 200)
     expect(retour).toBe(b) // même siège, donc même score
     expect(lastStateFor(b)).not.toBeNull()
+  })
+
+  it('diffuse les portraits, que l’état de jeu ne transporte pas', () => {
+    const { a, b, lastRoster, lastStateFor } = started()
+    // Le moteur ignore tout des avatars : c'est bien ce qu'on vérifie ici.
+    expect(lastStateFor(a)!.players[0]).not.toHaveProperty('avatar')
+    expect(lastRoster()!.map((s) => [s.id, s.avatar])).toEqual([
+      [a, 'av-a'],
+      [b, 'av-b']
+    ])
+  })
+
+  it('rediffuse la composition à celui qui revient en pleine partie', () => {
+    const { room, b, sent, lastRoster } = started()
+    room.leave(b, 100)
+    const depuis = sent.length
+    room.join('tok-b', 'Ami', 'av-b', 200)
+
+    // Sans cette rediffusion, le joueur rechargé se retrouverait avec l'état de
+    // la partie mais aucun visage à afficher.
+    const revu = lastRoster(depuis)
+    expect(revu).not.toBeNull()
+    expect(revu!.find((s) => s.id === b)!.avatar).toBe('av-b')
+  })
+
+  it('ne rediffuse pas la composition à chaque coup', () => {
+    const { room, a, b, lastStateFor, rosterCount } = started()
+    const avant = rosterCount()
+    const actif = lastStateFor(a)!.currentPlayerIndex === 0 ? a : b
+    room.handle(actif, { t: 'act', action: { type: 'roll' } }, 0)
+    room.handle(actif, { t: 'act', action: { type: 'stop' } }, 0)
+    expect(rosterCount()).toBe(avant)
   })
 
   it('un inconnu ne peut pas s’inviter en cours de partie', () => {

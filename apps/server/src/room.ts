@@ -49,6 +49,8 @@ export class Room {
   /** Prochaine échéance interne : enchaînement de tour ou coup de l'IA. */
   private nextStepAt = 0
   private seq = 0
+  /** Dernière composition diffusée : on ne réémet que si elle a changé. */
+  private rosterSent = ''
 
   constructor(
     code: string,
@@ -86,6 +88,10 @@ export class Room {
 
   private publish(): void {
     if (this.game) {
+      // Portraits et présences ne sont pas dans l'état de jeu — le moteur n'en a
+      // que faire. On les diffuse à côté, et seulement quand ils changent : la
+      // composition bouge une fois par déconnexion, l'état à chaque coup.
+      this.publishRoster()
       // En partie, chaque joueur reçoit l'état ET son propre identifiant : c'est
       // ainsi qu'il sait si c'est à lui de jouer.
       for (const s of this.seats) {
@@ -94,6 +100,14 @@ export class Room {
       return
     }
     this.emit('all', { t: 'lobby', lobby: this.view() })
+  }
+
+  private publishRoster(): void {
+    const seats = this.view().seats
+    const signature = JSON.stringify(seats)
+    if (signature === this.rosterSent) return
+    this.rosterSent = signature
+    this.emit('all', { t: 'roster', seats })
   }
 
   private fail(seatId: string, message: string): void {
@@ -130,6 +144,9 @@ export class Room {
       known.connected = true
       known.goneAt = null
       attach(known.id)
+      // Celui qui revient n'a plus rien en mémoire : il lui faut la composition
+      // complète, même si elle n'a pas bougé pour les autres.
+      this.rosterSent = ''
       this.emit(known.id, { t: 'joined', code: this.code, youId: known.id })
       this.publish()
       return known.id

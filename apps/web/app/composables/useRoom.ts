@@ -9,7 +9,7 @@
  * serveur répond. Toute règle refusée revient par `error`, jamais par une
  * exception : c'est une réponse, pas un incident.
  */
-import type { ClientMessage, LobbyView, ServerMessage } from '@rf/protocol'
+import type { ClientMessage, LobbyView, SeatView, ServerMessage } from '@rf/protocol'
 import type { BotDifficulty, GameState } from '@rf/engine'
 
 /** Clé du jeton d'identité : c'est lui qui rend son siège au joueur. */
@@ -48,6 +48,13 @@ export type RoomStatus = 'idle' | 'connecting' | 'lobby' | 'playing' | 'error'
 
 // ── État partagé ─────────────────────────────────────────────────────────────
 const lobby = ref<LobbyView | null>(null)
+/**
+ * Composition de la table — portraits compris. Séparée de `lobby` parce qu'elle
+ * SURVIT au départ vers le plateau : en partie, le serveur n'émet plus de vue de
+ * salle, et l'écran de jeu n'aurait plus de quoi dessiner les visages après un
+ * rechargement.
+ */
+const roster = ref<SeatView[]>([])
 const gameState = shallowRef<GameState | null>(null)
 const youId = ref<string | null>(null)
 const code = ref('')
@@ -88,7 +95,11 @@ export const useRoom = () => {
         return
       case 'lobby':
         lobby.value = msg.lobby
+        roster.value = msg.lobby.seats
         status.value = 'lobby'
+        return
+      case 'roster':
+        roster.value = msg.seats
         return
       case 'state':
         gameState.value = msg.game
@@ -190,6 +201,7 @@ export const useRoom = () => {
     code,
     youId,
     lobby,
+    roster,
     gameState,
     error,
     isHost,

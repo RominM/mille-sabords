@@ -44,6 +44,15 @@ export type ClientMessage =
 export type ServerMessage =
   | { t: 'joined'; code: string; youId: string }
   | { t: 'lobby'; lobby: LobbyView }
+  /**
+   * Composition de la table PENDANT la partie.
+   *
+   * L'état de jeu ne transporte ni portrait ni état de connexion : un avatar ne
+   * regarde pas les règles, et le moteur reste ainsi sans rien savoir du réseau.
+   * On les diffuse donc à part — sans quoi un rechargement en pleine partie
+   * laisserait l'écran sans visages, la vue de salle n'étant plus émise.
+   */
+  | { t: 'roster'; seats: SeatView[] }
   | { t: 'state'; game: GameState; youId: string }
   /** Règle ou droit refusé. Jamais fatal : la salle continue. */
   | { t: 'error'; message: string }

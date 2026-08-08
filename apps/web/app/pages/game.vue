@@ -104,12 +104,14 @@ onMounted(function openTable() {
 
 /**
  * Portrait d'un joueur. En solo il vient de la table composée sur place ; en
- * multi, de la dernière vue de salle reçue — l'état de partie ne transporte pas
- * les avatars, qui ne regardent pas les règles.
+ * multi, de la composition que le serveur diffuse à part — l'état de partie ne
+ * transporte pas les avatars, qui ne regardent pas les règles. On lit `roster`
+ * et non `lobby` : le premier survit à un rechargement en pleine partie, où
+ * plus aucune vue de salle n'est émise.
  */
 function portraitOf(playerId: string): string | undefined {
   if (isSolo) return avatarOf(playerId)
-  return room.lobby.value?.seats.find((s) => s.id === playerId)?.avatar || undefined
+  return room.roster.value.find((s) => s.id === playerId)?.avatar || undefined
 }
 
 /**
