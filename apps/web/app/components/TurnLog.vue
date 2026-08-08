@@ -3,6 +3,7 @@
     id="historique"
     label="Historique des tours"
     title="Tours joués"
+    hint="Historique de la partie — le détail des points, tour par tour"
     :icon="History"
     :top="62"
     :shift="7"

@@ -4,6 +4,7 @@
  * dans un `createApp()` maison qui ne serait jamais exécuté.
  */
 import { clickSoundDirective, hoverSoundDirective, provideUiSoundVolume } from '~/directives/uiSound'
+import { tooltipDirective } from '~/directives/tooltip'
 
 export default defineNuxtPlugin(nuxtApp => {
   // Le plugin tourne dans le contexte Nuxt, les directives non : c'est donc ici
@@ -13,4 +14,7 @@ export default defineNuxtPlugin(nuxtApp => {
 
   nuxtApp.vueApp.directive('click-sound', clickSoundDirective)
   nuxtApp.vueApp.directive('hover-sound', hoverSoundDirective)
+  // Même raison d'être ici : Nuxt monte l'application lui-même, il n'y a pas de
+  // `createApp()` à nous où enregistrer une directive globale.
+  nuxtApp.vueApp.directive('tooltip', tooltipDirective)
 })

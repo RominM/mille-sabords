@@ -214,3 +214,33 @@ body.is-grabbing * {
       grabbing !important;
   }
 }
+
+// ── Infobulle (directive `v-tooltip`) ────────────────────────────────────────
+// Un seul élément, réutilisé par tous les éléments survolés, écrit dans `body`
+// par la directive. Positionnée par `transform` depuis le coin haut-gauche de
+// la page : `top`/`left` déclencheraient un recalcul de mise en page à chaque
+// déplacement, là où une transformation reste sur le compositeur.
+.tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200; // au-dessus de tout, modales comprises
+  max-width: 22rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--color-abyss-900);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-body-s);
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: var(--shadow-2);
+  pointer-events: none; // elle ne doit jamais voler le survol de sa cible
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.tooltip--shown {
+  opacity: 1;
+}

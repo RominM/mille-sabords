@@ -28,9 +28,9 @@
 // Les trois nombres de l'ambiance, réunis pour être retouchés d'un coup d'œil.
 // Ils se règlent à l'œil dans le labo (`/lab`).
 .island {
-  --island-hue: -18deg; // vers le rouge : le bois chauffe
-  --island-saturation: 1.45;
-  --island-brightness: 0.82;
+  --island-hue: 0;
+  --island-saturation: 2.25;
+  --island-brightness: 0.48;
 
   position: absolute;
   inset: 0;

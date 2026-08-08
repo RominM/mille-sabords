@@ -11,6 +11,7 @@
            poignée. Elle reste atteignable en pleine partie sans rien masquer. -->
       <button
         v-click-sound
+        v-tooltip="hint ?? label"
         class="side__tab"
         type="button"
         :aria-expanded="open"
@@ -55,6 +56,8 @@ const props = withDefaults(
     icon: Component
     /** Titre du contenu. */
     title?: string
+    /** Infobulle au survol de la languette, à défaut le libellé. */
+    hint?: string
     /** Centre vertical de la planche, en % de la fenêtre. */
     top?: number
     /**
@@ -68,7 +71,7 @@ const props = withDefaults(
      */
     shift?: number
   }>(),
-  { title: undefined, top: 50, shift: 0 }
+  { title: undefined, hint: undefined, top: 50, shift: 0 }
 )
 
 const { isOpen, toggle } = useSidePanels()

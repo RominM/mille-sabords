@@ -163,7 +163,25 @@
         />
       </div>
 
-      <div class="lab__knobs">
+      <!-- Le plateau reste sous les yeux, les réglages changent dessous : c'est
+           tout l'objet des onglets. Corriger une teinte d'un degré ne doit pas
+           demander de faire l'aller-retour jusqu'en bas de page. -->
+      <nav class="lab__tabs">
+        <button
+          v-for="t in TABS"
+          :key="t.key"
+          v-click-sound
+          type="button"
+          class="lab__tab"
+          :class="{ 'lab__tab--on': tab === t.key }"
+          :aria-pressed="tab === t.key"
+          @click="tab = t.key"
+        >
+          {{ t.label }}
+        </button>
+      </nav>
+
+      <div v-show="tab === 'dice'" class="lab__knobs">
         <label class="lab__knob">
           <span
             >Convergence au bord (yaw) <b>{{ perspective.yaw }}°</b></span
@@ -207,24 +225,22 @@
           <input v-model.number="seatSize" type="range" min="3.2" max="5.4" step="0.1" />
         </label>
       </div>
-      <PlateButton @click="rollBoard">Lancer sur le plateau</PlateButton>
+      <template v-if="tab === 'dice'">
+        <PlateButton @click="rollBoard">Lancer sur le plateau</PlateButton>
 
-      <!-- Le labo ne sert à rien s'il faut ensuite retranscrire les valeurs à la
-           main : il rend directement le morceau de code à coller. -->
-      <p class="lab__hint">
-        Quand ça te va, colle ceci dans <code>BOARD_PERSPECTIVE</code> (<code>app/utils/boardTilt.ts</code>) —
-        le plateau le reprend tel quel. Les deux dernières valeurs sont en CSS, dans
-        <code>pages/game.vue</code>.
-      </p>
-      <pre class="lab__code">{{ recipe }}</pre>
-    </section>
+        <!-- Le labo ne sert à rien s'il faut ensuite retranscrire les valeurs à
+             la main : il rend directement le morceau de code à coller. -->
+        <p class="lab__hint">
+          Quand ça te va, colle ceci dans <code>BOARD_PERSPECTIVE</code> (<code>app/utils/boardTilt.ts</code>) —
+          le plateau le reprend tel quel. Les deux dernières valeurs sont en CSS, dans
+          <code>pages/game.vue</code>.
+        </p>
+        <pre class="lab__code">{{ recipe }}</pre>
+      </template>
 
-    <!-- La carte et les points ont une place FIXE dans le décor : leurs angles
-         se donnent en clair, ils ne se déduisent pas du modèle des dés. -->
-    <section class="lab__panel">
-      <h2 class="lab__legend">Carte Pirate &amp; points en jeu</h2>
-
-      <div class="lab__knobs">
+      <!-- La carte et les points ont une place FIXE dans le décor : leurs angles
+           se donnent en clair, ils ne se déduisent pas du modèle des dés. -->
+      <div v-show="tab === 'card'" class="lab__knobs">
         <button
           v-for="z in ZONES"
           :key="z.key"
@@ -238,67 +254,68 @@
         </button>
       </div>
 
-      <div class="lab__knobs">
-        <label v-for="k in ZONE_KNOBS" :key="k.field" class="lab__knob">
-          <span>
-            {{ k.label }} <b>{{ current[k.field] }}{{ k.unit }}</b>
-          </span>
-          <input
-            v-model.number="current[k.field]"
-            type="range"
-            :min="k.min"
-            :max="k.max"
-            :step="k.step"
-          />
+      <template v-if="tab === 'card'">
+        <div class="lab__knobs">
+          <label v-for="k in ZONE_KNOBS" :key="k.field" class="lab__knob">
+            <span>
+              {{ k.label }} <b>{{ current[k.field] }}{{ k.unit }}</b>
+            </span>
+            <input
+              v-model.number="current[k.field]"
+              type="range"
+              :min="k.min"
+              :max="k.max"
+              :step="k.step"
+            />
+          </label>
+        </div>
+        <p class="lab__hint">
+          Les quatre premiers curseurs placent le bloc dans son cadre, les trois
+          derniers l'y couchent. Pour aligner les arêtes sur le cadre dessiné,
+          commence par le <strong>roulis</strong> seul, les autres à 0.
+        </p>
+        <label class="lab__knob lab__knob--check">
+          <input v-model="fitted" type="checkbox" />
+          <span>Carte posée dans le cadre (décochée : carte redressée)</span>
         </label>
-      </div>
-      <p class="lab__hint">
-        Les quatre premiers curseurs placent le bloc dans son cadre, les trois
-        derniers l'y couchent. Pour aligner les arêtes sur le cadre dessiné,
-        commence par le <strong>roulis</strong> seul, les autres à 0.
-      </p>
-      <label class="lab__knob lab__knob--check">
-        <input v-model="fitted" type="checkbox" />
-        <span>Carte posée dans le cadre (décochée : carte redressée)</span>
-      </label>
-      <p class="lab__hint">
-        Les illustrations ne sont jamais retouchées : la déformation est calculée
-        à l'affichage, et se retire en décochant. Rien à refaire, jamais.
-      </p>
+        <p class="lab__hint">
+          Les illustrations ne sont jamais retouchées : la déformation est calculée
+          à l'affichage, et se retire en décochant. Rien à refaire, jamais.
+        </p>
 
-      <pre class="lab__code">{{ quadRecipe }}</pre>
-      <pre class="lab__code">{{ zoneRecipe }}</pre>
-    </section>
+        <pre class="lab__code">{{ quadRecipe }}</pre>
+        <pre class="lab__code">{{ zoneRecipe }}</pre>
+      </template>
 
-    <!-- L'Île sort rarement au tirage : on ne peut pas juger son ambiance en
-         attendant qu'elle tombe. -->
-    <section class="lab__panel">
-      <h2 class="lab__legend">Ambiance de l’Île de la Tête-de-Mort</h2>
-      <label class="lab__knob lab__knob--check">
-        <input v-model="island" type="checkbox" />
-        <span>Allumer l’ambiance sur le plateau ci-dessus</span>
-      </label>
+      <!-- L'Île sort rarement au tirage : on ne peut pas juger son ambiance en
+           attendant qu'elle tombe. -->
+      <template v-if="tab === 'island'">
+        <label class="lab__knob lab__knob--check">
+          <input v-model="island" type="checkbox" />
+          <span>Allumer l’ambiance sur le plateau ci-dessus</span>
+        </label>
 
-      <div class="lab__knobs">
-        <label class="lab__knob">
-          <span>Rotation de teinte <b>{{ islandHue }}°</b></span>
-          <input v-model.number="islandHue" type="range" min="-180" max="180" step="1" />
-        </label>
-        <label class="lab__knob">
-          <span>Saturation <b>×{{ islandSaturation }}</b></span>
-          <input v-model.number="islandSaturation" type="range" min="0" max="3" step="0.05" />
-        </label>
-        <label class="lab__knob">
-          <span>Luminosité <b>×{{ islandBrightness }}</b></span>
-          <input v-model.number="islandBrightness" type="range" min="0.3" max="1.5" step="0.02" />
-        </label>
-      </div>
-      <p class="lab__hint">
-        Le décor garde son image : c'est un <code>backdrop-filter</code>, il
-        retouche ce qui est déjà dessiné dessous. Un <code>filter</code>
-        aplatirait la scène 3D des dés.
-      </p>
-      <pre class="lab__code">{{ islandRecipe }}</pre>
+        <div class="lab__knobs">
+          <label class="lab__knob">
+            <span>Rotation de teinte <b>{{ islandHue }}°</b></span>
+            <input v-model.number="islandHue" type="range" min="-180" max="180" step="1" />
+          </label>
+          <label class="lab__knob">
+            <span>Saturation <b>×{{ islandSaturation }}</b></span>
+            <input v-model.number="islandSaturation" type="range" min="0" max="3" step="0.05" />
+          </label>
+          <label class="lab__knob">
+            <span>Luminosité <b>×{{ islandBrightness }}</b></span>
+            <input v-model.number="islandBrightness" type="range" min="0.3" max="1.5" step="0.02" />
+          </label>
+        </div>
+        <p class="lab__hint">
+          Le décor garde son image : c'est un <code>backdrop-filter</code>, il
+          retouche ce qui est déjà dessiné dessous. Un <code>filter</code>
+          aplatirait la scène 3D des dés.
+        </p>
+        <pre class="lab__code">{{ islandRecipe }}</pre>
+      </template>
     </section>
 
     <!-- Le vrai test du plateau : huit dés, égrenés, à la taille réelle. -->
@@ -533,6 +550,18 @@ export const LIVE_ZONE: BoardZone = {
 }`
 )
 
+/**
+ * Les trois familles de réglage partagent le MÊME plateau, affiché au-dessus et
+ * collé en haut de la fenêtre. Corriger une teinte d'un degré ne doit pas
+ * demander un aller-retour jusqu'en bas de page pour en voir l'effet.
+ */
+const TABS = [
+  { key: 'dice' as const, label: 'Dés' },
+  { key: 'card' as const, label: 'Carte & points' },
+  { key: 'island' as const, label: 'Ambiance de l’Île' }
+]
+const tab = ref<(typeof TABS)[number]['key']>('dice')
+
 /** Ambiance de l'Île, allumée à la demande : elle sort trop rarement au tirage. */
 const island = ref(false)
 const islandHue = ref(-18)
@@ -688,6 +717,36 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     }
   }
 
+  // Barre d'onglets, collée juste sous le plateau pour rester atteignable.
+  &__tabs {
+    position: sticky;
+    top: min(46dvh, 420px);
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) 0;
+    background: var(--bg);
+  }
+
+  &__tab {
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-btn);
+    background: transparent;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+
+    &--on {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+  }
+
   &__knobs {
     display: flex;
     flex-wrap: wrap;
@@ -744,11 +803,18 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
   // ── Maquette du plateau ──────────────────────────────────────────────────
   // Mêmes proportions et mêmes zones que `pages/game.vue` : régler la
   // perspective sur une approximation ne servirait à rien.
+  // Collé en haut : c'est ce qui permet de régler en voyant. Un plateau qui
+  // sort de l'écran dès qu'on descend vers ses curseurs ne sert à rien.
   &__board {
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 2;
     aspect-ratio: 1672 / 941;
-    width: min(100%, 60rem);
-    margin-bottom: var(--space-4);
+    height: min(46dvh, 420px);
+    width: auto;
+    margin-bottom: var(--space-3);
+    // Le contenu défile DERRIÈRE le plateau : sans fond, il transparaîtrait.
+    box-shadow: 0 12px 24px -8px var(--bg);
     background-position: center;
     background-size: 100% 100%;
     container-type: size;

@@ -1,5 +1,5 @@
 <template>
-  <div class="pcard">
+  <div v-tooltip="EFFECT[card.type]" class="pcard">
     <img :src="image" :alt="name" class="pcard__img" />
     <!-- Sur 3, pas juste un nombre : le joueur doit lire d'un coup d'œil à quelle
          distance il est du tour perdu, dés ET carte confondus. -->
@@ -27,6 +27,21 @@ import ship500 from '~/assets/images/cards/500_sabre.webp'
 import ship1000 from '~/assets/images/cards/1000_sabre.webp'
 
 const props = defineProps<{ card: PirateCard; skulls: number }>()
+
+/**
+ * Ce que la carte CHANGE, en une phrase. Le dessin dit laquelle c'est, pas ce
+ * qu'elle fait — et une carte mal comprise coûte un tour.
+ */
+const EFFECT: Record<PirateCard['type'], string> = {
+  'treasure-island': 'Île au Trésor : les dés gardés sont réservés sur la carte et comptent à la fin, même après trois têtes.',
+  pirate: 'Carte Pirate : les points du tour sont doublés. Les têtes de mort du Bateau valent 200 au lieu de 100.',
+  skulls: 'Tête de Mort : elle compte comme une tête déjà sortie, avant même ton premier lancer.',
+  guardian: 'Gardienne : une fois dans le tour, tu peux relancer une tête de mort déjà tombée.',
+  ship: 'Bateau Pirate : réunis le quota de sabres pour empocher la prime — sinon tu la perds.',
+  coin: 'Pièce d’or : elle compte comme une pièce supplémentaire, +100 points.',
+  diamond: 'Diamant : il compte comme un diamant supplémentaire, +100 points.',
+  animals: 'Animaux : singes et perroquets se comptent ensemble pour former une combinaison.'
+}
 
 const NAME: Record<PirateCard['type'], string> = {
   'treasure-island': 'Île au Trésor',

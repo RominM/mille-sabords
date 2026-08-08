@@ -3,6 +3,7 @@
     id="bareme"
     label="Barème des points"
     title="Barème des points"
+    hint="Barème des points — ce que rapporte chaque combinaison de dés"
     :icon="Scroll"
     :top="62"
     :shift="-7"
