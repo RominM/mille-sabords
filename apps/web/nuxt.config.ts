@@ -9,6 +9,20 @@ export default defineNuxtConfig({
   // Design system global (portable : app/assets/scss/).
   css: ['~/assets/scss/main.scss'],
 
+  /**
+   * Adresse du serveur de jeu. Publique — elle part dans le navigateur — et
+   * surchargeable à l'exécution par `NUXT_PUBLIC_WS_URL`, sans reconstruire :
+   * changer d'hébergeur ne demande donc qu'une variable d'environnement.
+   *
+   * Vide par défaut : on retombe alors sur l'hôte qui sert la page, ce qui est
+   * le cas quand front et serveur vivent derrière le même domaine.
+   */
+  runtimeConfig: {
+    public: {
+      wsUrl: ''
+    }
+  },
+
   vite: {
     css: {
       preprocessorOptions: {

@@ -69,14 +69,30 @@ export const useRoom = () => {
   }
 
   /**
+   * Adresse du serveur.
+   *
+   * Réglée par `NUXT_PUBLIC_WS_URL`, sans reconstruction : changer d'hébergeur
+   * ne demande qu'une variable d'environnement. À défaut, on vise l'hôte qui a
+   * servi la page — le cas quand front et serveur partagent un domaine. Le
+   * schéma suit celui de la page : `wss` en HTTPS, sinon le navigateur refuse
+   * la connexion pour contenu mixte.
+   */
+  function serverUrl(): string {
+    const configured = useRuntimeConfig().public.wsUrl
+    if (configured) return configured
+    const scheme = location.protocol === 'https:' ? 'wss' : 'ws'
+    return `${scheme}://${location.host}`
+  }
+
+  /**
    * Ouvre la connexion et demande une place. Sans `roomCode`, le serveur crée
    * une salle et renvoie son code ; avec, il fait rejoindre — ou refuse.
    */
-  function connect(url: string, pirate: { name: string; avatar: string }, roomCode?: string): void {
+  function connect(pirate: { name: string; avatar: string }, roomCode?: string): void {
     close()
     status.value = 'connecting'
     error.value = ''
-    socket = new WebSocket(url)
+    socket = new WebSocket(serverUrl())
 
     socket.addEventListener('open', () => {
       send({
