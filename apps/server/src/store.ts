@@ -29,16 +29,30 @@ const FILE = process.env.RF_DATA_DIR
 export const STALE_MS = 12 * 60 * 60 * 1_000
 
 /**
+ * Dernier contenu écrit. Un serveur au repos repasse ici toutes les 5 s avec
+ * exactement le même JSON : réécrire pour rien userait une carte SD — le
+ * Raspberry Pi est une cible assumée — sans rien apporter.
+ *
+ * `savedAt` change à chaque photographie, donc une partie VIVANTE se réécrit
+ * bien à chaque passage : la comparaison n'économise que le vrai repos.
+ */
+let lastWritten: string | null = null
+
+/**
  * Écriture ATOMIQUE : on écrit à côté puis on renomme. Sans cela, une coupure
  * au milieu de l'écriture laisserait un JSON tronqué — et le redémarrage
  * suivant perdrait TOUTES les parties au lieu d'une.
  */
 export function saveRooms(snapshots: RoomSnapshot[]): void {
+  const payload = JSON.stringify(snapshots)
+  if (payload === lastWritten) return
+
   try {
     mkdirSync(dirname(FILE), { recursive: true })
     const temp = `${FILE}.tmp`
-    writeFileSync(temp, JSON.stringify(snapshots), 'utf8')
+    writeFileSync(temp, payload, 'utf8')
     renameSync(temp, FILE)
+    lastWritten = payload
   } catch (err) {
     // Ne jamais tuer le serveur pour une sauvegarde ratée : les parties en cours
     // valent mieux qu'une reprise hypothétique après redémarrage.
