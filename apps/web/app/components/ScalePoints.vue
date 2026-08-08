@@ -4,8 +4,8 @@
     label="Barème des points"
     title="Barème des points"
     :icon="Scroll"
-    :top="72"
-    :tab-top="26"
+    :top="62"
+    :shift="-7"
   >
     <ul class="bareme__list">
       <li v-for="line in COMBOS" :key="line.label">{{ line.label }} — {{ line.points }}</li>

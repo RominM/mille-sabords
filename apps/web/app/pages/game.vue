@@ -616,9 +616,13 @@ watch(isDefeat, async (value) => {
 
 // ── Saisir un dé ────────────────────────────────────────────────────────────
 // `touch-action: none` : sans lui, un glissé au doigt fait défiler la page au
-// lieu de déplacer le dé.
+// lieu de déplacer le dé. `user-select` écarte la sélection de texte, qui
+// parasiterait le geste à la souris.
 .die-cell {
+  display: grid;
+  place-items: center;
   touch-action: none;
+  user-select: none;
 }
 
 // Le dé saisi laisse un creux à sa place, pour qu'on voie d'où il vient.
@@ -667,10 +671,6 @@ watch(isDefeat, async (value) => {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 1.76%;
-  place-items: center;
-}
-.die-cell {
-  display: grid;
   place-items: center;
 }
 // Dés réservés : nettement plus petits que leur cadre (91 px = 5,44 cqw). Le

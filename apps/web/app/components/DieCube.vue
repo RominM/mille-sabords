@@ -17,7 +17,11 @@
             class="die-cube__face"
             :class="`die-cube__face--${slot.name}`"
           >
-            <img :src="FACE_ART[slot.face]" alt="" class="die-cube__art" />
+            <!-- `draggable="false"` n'est PAS décoratif : sans lui, un vrai
+                 clic-glissé sur la face déclenche le glisser-déposer d'image du
+                 navigateur, qui confisque le geste et affiche le curseur
+                 « interdit ». Notre propre saisie ne reçoit alors plus rien. -->
+            <img :src="FACE_ART[slot.face]" alt="" class="die-cube__art" draggable="false" />
           </span>
         </div>
       </div>
@@ -399,6 +403,10 @@ defineExpose({ rollTo })
     left: 50%;
     top: 50%;
     max-width: none;
+    // Même raison que `draggable="false"` : ni glissé natif, ni sélection de
+    // texte qui viendrait parasiter la saisie du dé.
+    user-select: none;
+    -webkit-user-drag: none;
     width: calc(var(--die-art, 1.57) * 100%);
     height: calc(var(--die-art, 1.57) * 100%);
     transform: translate(-50%, -50%);

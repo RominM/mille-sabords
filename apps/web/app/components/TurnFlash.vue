@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div class="flash" :class="`flash--${sign}`" role="status" aria-live="polite">
       <p class="flash__actor">{{ actor }}</p>
-      <p class="flash__score">{{ signed }}</p>
+      <p class="flash__score">{{ signed }} pts</p>
       <p v-if="why" class="flash__why">{{ why }}</p>
       <p v-if="outcome.opponentPenalty > 0" class="flash__penalty">
         Chaque adversaire perd {{ outcome.opponentPenalty }} points
@@ -35,9 +35,7 @@ const signed = computed(() =>
   props.outcome.score >= 0 ? `+${props.outcome.score}` : `${props.outcome.score}`
 )
 
-const sign = computed(() =>
-  props.outcome.score > 0 ? 'pos' : props.outcome.score < 0 ? 'neg' : 'zero'
-)
+const sign = computed(() => (props.outcome.score > 0 ? 'pos' : props.outcome.score < 0 ? 'neg' : 'zero'))
 
 const why = computed(() => {
   if (props.outcome.reason === 'three-skulls') return 'Trois têtes de mort — tour perdu'
@@ -71,14 +69,18 @@ const why = computed(() => {
     font-size: clamp(1.2rem, 3vw, 2rem);
     letter-spacing: 0.04em;
     // Sans halo, le texte se perd dans les zones claires du bois.
-    text-shadow: 0 0 0.6rem rgba(24, 14, 8, 0.95), 0 2px 4px rgba(24, 14, 8, 1);
+    text-shadow:
+      0 0 0.6rem rgba(24, 14, 8, 0.95),
+      0 2px 4px rgba(24, 14, 8, 1);
   }
 
   &__score {
     font-family: var(--font-display);
     font-size: clamp(4rem, 16vw, 12rem);
     line-height: 0.9;
-    text-shadow: 0 0 1.2rem rgba(24, 14, 8, 0.9), 0 4px 10px rgba(24, 14, 8, 1);
+    text-shadow:
+      0 0 1.2rem rgba(24, 14, 8, 0.9),
+      0 4px 10px rgba(24, 14, 8, 1);
   }
 
   // Vert et rouge lisibles sur bois sombre — ni le teal ni le rouge cire des
@@ -101,7 +103,9 @@ const why = computed(() => {
     color: var(--text);
     font-family: var(--font-body);
     font-size: clamp(0.9rem, 1.8vw, 1.3rem);
-    text-shadow: 0 0 0.6rem rgba(24, 14, 8, 0.95), 0 2px 4px rgba(24, 14, 8, 1);
+    text-shadow:
+      0 0 0.6rem rgba(24, 14, 8, 0.95),
+      0 2px 4px rgba(24, 14, 8, 1);
   }
 
   &__magic {

@@ -4,8 +4,8 @@
     label="Historique des tours"
     title="Tours joués"
     :icon="History"
-    :top="72"
-    :tab-top="55"
+    :top="62"
+    :shift="7"
   >
     <p v-if="!entries.length" class="log__empty">Aucun tour joué pour l’instant.</p>
 
