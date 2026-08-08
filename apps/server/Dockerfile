@@ -33,6 +33,12 @@ COPY apps/server apps/server
 ENV PORT=8787
 EXPOSE 8787
 
+# Les parties en cours sont écrites ici. Sans volume monté dessus, elles
+# disparaissent avec le conteneur — ce qui vide la persistance de son sens :
+#   docker run -v rf-data:/data -e RF_DATA_DIR=/data …
+ENV RF_DATA_DIR=/data
+VOLUME /data
+
 # Pas de `npm start` : on évite un process intermédiaire, pour que les signaux
 # d'arrêt de l'hôte atteignent bien Node.
 CMD ["npx", "tsx", "apps/server/src/index.ts"]

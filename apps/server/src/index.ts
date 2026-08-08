@@ -7,11 +7,20 @@
  */
 import { WebSocketServer, type WebSocket } from 'ws'
 import { Room } from './room.js'
+import { loadRooms, saveRooms } from './store.js'
 import type { ClientMessage, ServerMessage } from '@rf/protocol'
 
 const PORT = Number(process.env.PORT ?? 8787)
 /** Cadence du battement : assez fine pour un minuteur à la seconde. */
 const TICK_MS = 500
+/** Cadence de sauvegarde : on accepte de perdre au plus ces quelques secondes. */
+const SAVE_MS = 5_000
+/**
+ * Une salle désertée n'est pas une salle morte : un rechargement de page coupe
+ * le socket pendant une seconde, et un redémarrage du serveur les coupe TOUS.
+ * On laisse donc le temps de revenir avant de rendre le code.
+ */
+const EMPTY_GRACE_MS = 10 * 60 * 1_000
 
 /** Codes sans I, O, 0 ni 1 : ils se dictent à l'oral sans ambiguïté. */
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -49,6 +58,24 @@ function freshCode(): string {
   let code = makeCode()
   while (rooms.has(code)) code = makeCode()
   return code
+}
+
+/** Depuis quand une salle n'a plus personne — `undefined` = elle est habitée. */
+const emptySince = new Map<string, number>()
+
+// ── Reprise après redémarrage ────────────────────────────────────────────────
+// Les parties en cours sont relues AVANT d'ouvrir le port : un joueur qui se
+// reconnecte à la seconde où le serveur revient doit retrouver sa salle, pas
+// s'entendre dire que son code n'existe pas.
+{
+  const now = Date.now()
+  for (const snap of loadRooms(now)) {
+    if (rooms.has(snap.code)) continue
+    sockets.set(snap.code, new Map())
+    rooms.set(snap.code, Room.restore(snap, emitFor(snap.code), now))
+    emptySince.set(snap.code, now)
+  }
+  if (rooms.size) console.info(`[serveur] ${rooms.size} partie(s) reprise(s) du disque`)
 }
 
 const wss = new WebSocketServer({ port: PORT })
@@ -107,12 +134,43 @@ setInterval(() => {
   const now = Date.now()
   for (const [code, room] of rooms) {
     room.tick(now)
-    // Salle sans âme qui vive : on la libère plutôt que de la garder en mémoire.
+
+    // Salle sans âme qui vive. On ne la libère plus sur-le-champ : ce délai est
+    // ce qui rend la reprise possible, puisqu'après un redémarrage TOUTES les
+    // salles sont désertes le temps que les joueurs reviennent.
     if (room.isEmpty && (sockets.get(code)?.size ?? 0) === 0) {
-      rooms.delete(code)
-      sockets.delete(code)
+      const since = emptySince.get(code) ?? now
+      emptySince.set(code, since)
+      if (now - since >= EMPTY_GRACE_MS) {
+        rooms.delete(code)
+        sockets.delete(code)
+        emptySince.delete(code)
+      }
+    } else {
+      emptySince.delete(code)
     }
   }
 }, TICK_MS)
+
+/** Sauvegarde des parties en cours. Les salles d'attente ne rendent rien. */
+function persist(): void {
+  const snapshots = []
+  for (const room of rooms.values()) {
+    const snap = room.snapshot()
+    if (snap) snapshots.push(snap)
+  }
+  saveRooms(snapshots)
+}
+
+setInterval(persist, SAVE_MS)
+
+// Un arrêt propre — redémarrage, `docker restart`, Ctrl+C — sauve la dernière
+// seconde de jeu, que le battement périodique n'aurait pas eu le temps d'écrire.
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, () => {
+    persist()
+    process.exit(0)
+  })
+}
 
 console.info(`[serveur] à l'écoute sur ws://localhost:${PORT}`)

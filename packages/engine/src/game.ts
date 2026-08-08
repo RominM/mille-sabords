@@ -89,6 +89,23 @@ export class Game {
     }
   }
 
+  /**
+   * Reprend une partie à partir d'un état déjà produit par ce même moteur —
+   * un serveur qui redémarre, typiquement.
+   *
+   * Aucune règle n'est rejouée et rien n'est revalidé : l'état vient d'ici, il
+   * est repris tel quel. Le moteur ne sait rien du support (disque, base) et ne
+   * doit rien en savoir — il reçoit un état, pas un fichier.
+   */
+  static resume(state: GameState, opts: GameOptions = {}): Game {
+    // Le constructeur pose un état neuf que l'on remplace aussitôt : on paie une
+    // pioche mélangée pour rien, mais on garde UN seul endroit qui sait ce
+    // qu'est une partie bien formée.
+    const game = new Game(state.players, opts)
+    game.state = state
+    return game
+  }
+
   get currentPlayer(): Player {
     return this.state.players[this.state.currentPlayerIndex]!
   }

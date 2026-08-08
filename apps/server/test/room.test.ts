@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { Room, RECAP_MS, LOBBY_GRACE_MS } from '../src/room.js'
+import { DECISION_TIMEOUT_MS } from '@rf/engine'
+import { Room, RECAP_MS, LOBBY_GRACE_MS, type RoomSnapshot } from '../src/room.js'
 import type { LobbyView, SeatView, ServerMessage } from '@rf/protocol'
 
 /** Salle instrumentée : on capture ce qu'elle émet, à qui. */
 function makeRoom() {
   const sent: { to: string; msg: ServerMessage }[] = []
-  const room = new Room('ABCD', (to, msg) => sent.push({ to, msg }))
+  const emit = (to: 'all' | string, msg: ServerMessage): void => void sent.push({ to, msg })
+  const room = new Room('ABCD', emit)
 
   const lastLobby = (): LobbyView | null => {
     for (let i = sent.length - 1; i >= 0; i--) {
@@ -32,7 +34,7 @@ function makeRoom() {
   }
   const rosterCount = (): number => sent.filter((s) => s.msg.t === 'roster').length
 
-  return { room, sent, lastLobby, errorsFor, lastStateFor, lastRoster, rosterCount }
+  return { room, sent, emit, lastLobby, errorsFor, lastStateFor, lastRoster, rosterCount }
 }
 
 describe('salle d’attente', () => {
@@ -88,18 +90,36 @@ describe('salle d’attente', () => {
   })
 })
 
-describe('partie', () => {
-  /** Deux humains parés, partie lancée. */
-  function started() {
-    const h = makeRoom()
-    const a = h.room.join('tok-a', 'Romin', 'av-a', 0)!
-    const b = h.room.join('tok-b', 'Ami', 'av-b', 0)!
-    h.room.handle(a, { t: 'ready', ready: true }, 0)
-    h.room.handle(b, { t: 'ready', ready: true }, 0)
-    h.room.handle(a, { t: 'start' }, 0)
-    return { ...h, a, b }
-  }
+/** Deux humains parés, partie lancée. */
+function started() {
+  const h = makeRoom()
+  const a = h.room.join('tok-a', 'Romin', 'av-a', 0)!
+  const b = h.room.join('tok-b', 'Ami', 'av-b', 0)!
+  h.room.handle(a, { t: 'ready', ready: true }, 0)
+  h.room.handle(b, { t: 'ready', ready: true }, 0)
+  h.room.handle(a, { t: 'start' }, 0)
+  return { ...h, a, b }
+}
 
+/**
+ * Même chose, mais le joueur actif a lancé et sa décision est ENCORE OUVERTE.
+ *
+ * Le tirage est aléatoire : trois têtes de mort clôturent le tour sur-le-champ,
+ * et l'Île de la Tête-de-Mort interdit l'arrêt. Les tests qui portent sur la
+ * suite du tour n'ont alors plus de sujet — on remet donc la table jusqu'à
+ * obtenir un tour ordinaire, plutôt que d'échouer une fois sur dix.
+ */
+function enDecision() {
+  for (let essai = 0; essai < 50; essai++) {
+    const h = started()
+    const actif = h.lastStateFor(h.a)!.currentPlayerIndex === 0 ? h.a : h.b
+    h.room.handle(actif, { t: 'act', action: { type: 'roll' } }, 0)
+    if (h.lastStateFor(h.a)!.turn!.phase === 'decision') return { ...h, actif }
+  }
+  throw new Error('aucun tour resté ouvert en 50 essais')
+}
+
+describe('partie', () => {
   it('démarre et diffuse l’état à chaque joueur', () => {
     const { a, b, lastStateFor } = started()
     expect(lastStateFor(a)).not.toBeNull()
@@ -126,12 +146,10 @@ describe('partie', () => {
   })
 
   it('enchaîne le tour suivant tout seul, sans attendre un clic', () => {
-    const { room, a, b, lastStateFor } = started()
+    const { room, a, actif, lastStateFor } = enDecision()
     const depart = lastStateFor(a)!.currentPlayerIndex
-    const actif = depart === 0 ? a : b
 
     // Le tour se termine par un arrêt volontaire.
-    room.handle(actif, { t: 'act', action: { type: 'roll' } }, 0)
     room.handle(actif, { t: 'act', action: { type: 'stop' } }, 0)
     expect(lastStateFor(a)!.turn!.phase).toBe('ended')
 
@@ -177,10 +195,8 @@ describe('partie', () => {
   })
 
   it('ne rediffuse pas la composition à chaque coup', () => {
-    const { room, a, b, lastStateFor, rosterCount } = started()
+    const { room, actif, rosterCount } = enDecision()
     const avant = rosterCount()
-    const actif = lastStateFor(a)!.currentPlayerIndex === 0 ? a : b
-    room.handle(actif, { t: 'act', action: { type: 'roll' } }, 0)
     room.handle(actif, { t: 'act', action: { type: 'stop' } }, 0)
     expect(rosterCount()).toBe(avant)
   })
@@ -198,5 +214,78 @@ describe('partie', () => {
     room.tick(60_000)
     room.tick(60_000 + RECAP_MS + 1)
     expect(lastStateFor(b)!.currentPlayerIndex).not.toBe(avant)
+  })
+})
+
+describe('reprise après redémarrage', () => {
+  /** Le redémarrage lui-même : on ne garde QUE ce qui passe par le disque. */
+  function redemarre(snap: RoomSnapshot, now: number) {
+    const h = makeRoom()
+    // Le passage par JSON n'est pas un détail : c'est exactement ce que le
+    // fichier fait subir à la photographie.
+    const revenue = JSON.parse(JSON.stringify(snap)) as RoomSnapshot
+    return { ...h, room: Room.restore(revenue, h.emit, now) }
+  }
+
+  it('une salle d’attente n’a rien à sauver', () => {
+    const { room } = makeRoom()
+    room.join('tok-a', 'Romin', 'av-a', 0)
+    room.join('tok-b', 'Ami', 'av-b', 0)
+    // Elle se recompose en dix secondes, et ses sièges auraient expiré pendant
+    // le redémarrage de toute façon.
+    expect(room.snapshot()).toBeNull()
+  })
+
+  it('la partie reprend au même point, dés et scores compris', () => {
+    const { room, a, lastStateFor } = enDecision()
+    const avant = lastStateFor(a)!
+    const snap = room.snapshot()!
+
+    const T = 5_000_000
+    const repris = redemarre(snap, T)
+    // Le joueur revient avec son jeton : il retrouve son siège.
+    expect(repris.room.join('tok-a', 'Romin', 'av-a', T)).toBe(a)
+
+    const apres = repris.lastStateFor(a)!
+    expect(apres.players).toEqual(avant.players)
+    expect(apres.currentPlayerIndex).toBe(avant.currentPlayerIndex)
+    expect(apres.turn!.dice).toEqual(avant.turn!.dice)
+    expect(apres.deck.length).toBe(avant.deck.length)
+  })
+
+  it('le joueur actif ne perd pas son tour à cause du redémarrage', () => {
+    const { room, a } = enDecision()
+    const snap = room.snapshot()!
+
+    // L'échéance sauvegardée date d'avant le redémarrage : telle quelle, elle
+    // serait dépassée dès la reprise et coûterait son tour au joueur actif.
+    const T = 5_000_000
+    const repris = redemarre(snap, T)
+    repris.room.join('tok-a', 'Romin', 'av-a', T)
+    expect(repris.lastStateFor(a)!.decisionDeadline).toBe(T + DECISION_TIMEOUT_MS)
+
+    repris.room.tick(T + 1_000)
+    expect(repris.lastStateFor(a)!.turn!.phase).not.toBe('ended')
+  })
+
+  it('les portraits survivent au redémarrage', () => {
+    const { room, a, b } = enDecision()
+    const T = 5_000_000
+    const repris = redemarre(room.snapshot()!, T)
+    repris.room.join('tok-b', 'Ami', 'av-b', T)
+
+    expect(repris.lastRoster()!.map((s) => [s.id, s.avatar])).toEqual([
+      [a, 'av-a'],
+      [b, 'av-b']
+    ])
+  })
+
+  it('personne n’est réputé connecté avant d’être revenu', () => {
+    const { room } = enDecision()
+    const T = 5_000_000
+    const repris = redemarre(room.snapshot()!, T)
+    // Les sockets n'ont pas survécu : prétendre le contraire enverrait l'état à
+    // des destinataires inexistants et fausserait le ramassage des salles.
+    expect(repris.room.isEmpty).toBe(true)
   })
 })

@@ -1,6 +1,6 @@
 # Reckless Fathoms — brief de reprise
 
-> À jour au 2026-08-06. Les conventions, les constantes mesurées des assets et
+> À jour au 2026-08-08. Les conventions, les constantes mesurées des assets et
 > les pièges techniques vivent dans **`CLAUDE.md`**, lu automatiquement au
 > démarrage — ce document-ci ne parle que de l'ÉTAT et du RESTE À FAIRE.
 
@@ -14,13 +14,13 @@ multijoueur en ligne**. Monorepo npm workspaces, Node 22, Windows.
 ```
 packages/engine    Moteur pur TypeScript. AUTORITÉ des règles. 80 tests.
 packages/protocol  Types des messages client ↔ serveur. Partagé par les deux.
-apps/server        WebSocket autoritaire : salles, identité, arbitrage. 12 tests.
+apps/server        WebSocket autoritaire : salles, identité, arbitrage. 20 tests.
 apps/web           Nuxt 4 SPA (ssr: false) + SCSS. Port 5173.
 apps/cli           CLI hotseat pour éprouver les règles au clavier.
 ```
 
 ```bash
-npm test                      # 92 tests (moteur + serveur)
+npm test                      # 100 tests (moteur + serveur)
 npm run server                # serveur de jeu → ws://localhost:8787
 npm run web                   # front → http://localhost:5173
 npm run typecheck -w @rf/web
@@ -28,6 +28,7 @@ npm run assets -w @rf/web     # convertit images/sons ET met à jour les imports
 ```
 
 `apps/web/.env` (non versionné) pointe le front vers le serveur local.
+`RF_DATA_DIR` dit au serveur où écrire les parties en cours (défaut : `./data`).
 
 ## 2. Ce qui marche
 
@@ -51,19 +52,30 @@ Table de 2 à 8 joueurs.
 à un plantage de page ; pas à la fermeture de l'onglet. Ce choix permet de tester
 une partie à plusieurs sur un seul poste.
 
+**Portraits en multi** — diffusés par un message `roster`, à côté de l'état de
+jeu : le moteur ne sait rien des avatars et n'a pas à le savoir. Émis seulement
+quand la composition change, et rediffusé à qui revient. Un F5 en pleine partie
+retrouve donc les visages.
+
+**Persistance des salles** — les parties LANCÉES sont sérialisées dans
+`$RF_DATA_DIR/rooms.json` toutes les 5 s et à l'arrêt propre, en écriture
+atomique. Au démarrage, le serveur les relit (sauf celles de plus de 12 h) et
+chacun retrouve son siège avec son jeton. La décision en cours repart avec tout
+son temps — le redémarrage n'est pas la faute du joueur actif. Les salles
+d'attente ne sont PAS sauvées : elles se recomposent en dix secondes. Vérifié
+bout en bout, serveur tué au `SIGKILL` puis relancé.
+
+Corollaire : une salle vidée n'est plus ramassée sur-le-champ mais après
+**10 minutes** — sans ce délai, toutes les salles reprises seraient détruites
+avant que quiconque ait eu le temps de revenir.
+
 ## 3. Reste à faire — par ordre de dépendance
 
 ### Bloquant pour jouer vraiment
 
-- [ ] **Avatars en multi.** L'état de partie ne les transporte pas ; le plateau
-      retombe sur la dernière vue de salle, ce qui casse après un F5 en pleine
-      partie. Les ajouter au `Player` du protocole (pas au moteur : un avatar ne
-      regarde pas les règles) ou les diffuser à part.
-- [ ] **Persistance des salles.** Tout est en mémoire : un redémarrage du serveur
-      perd les parties en cours. Sérialiser sur disque, ou accepter la limite et
-      l'assumer explicitement.
 - [ ] **Hébergement.** Le serveur est prêt (Dockerfile écrit mais **jamais
-      construit** — à vérifier). Il faut un process qui vit, pas du serverless.
+      construit** — à vérifier). Il faut un process qui vit, pas du serverless,
+      et un volume monté sur `RF_DATA_DIR` sinon la persistance ne sert à rien.
       Cloudflare Tunnel si Raspberry Pi ; sinon Fly/Railway/Render.
 
 ### Ensuite
@@ -116,9 +128,21 @@ elle doit finir sur un résultat imposé. C'est ce qui contraint le choix.
 ce sont des tuiles plates avec une image par face dans un cadre de bois. Passer
 au cube 3D change le rendu du plateau, pas seulement l'animation.
 
-**Prochaine étape convenue** : un prototype isolé dans `pages/test.vue` (page
-inutilisée) — un dé cliquable en cube 3D CSS qui tombe sur une face demandée.
-Romin juge à l'écran, puis on généralise ou on bascule sur le brassage.
+**Prototype livré** — `pages/test.vue`, à `http://localhost:5173/test` avec
+`npm run web`. Le composant est `app/components/DieCube.vue`.
+
+Le point technique est réglé : l'orientation finale est CALCULÉE, en ajoutant
+des tours entiers (multiples de 360°, sans effet sur l'orientation) à la
+rotation qui présente la face voulue. Le dé roule vraiment et atterrit toujours
+sur le bon symbole, même deux fois de suite sur la même face — mesuré sur la
+matrice de transformation, pas seulement à l'œil.
+
+La page laisse régler durée, tours, inclinaison au repos et échelle de la tuile,
+montre le cube à côté de la tuile plate à taille égale, et rejoue une volée de
+huit à la taille du plateau. **En attente du jugement de Romin** : si le rendu
+convainc, on généralise (`DieView` garde son rôle d'état — sélection, verrou,
+réserve — et `DieCube` prend le rendu) ; sinon on bascule sur le brassage de
+tuiles.
 
 ## 6. Questions jamais tranchées
 

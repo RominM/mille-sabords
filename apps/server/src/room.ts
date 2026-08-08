@@ -9,11 +9,13 @@
  */
 import {
   decideAction,
+  DECISION_TIMEOUT_MS,
   Game,
   IllegalActionError,
   MAX_PLAYERS,
   MIN_PLAYERS,
-  type BotDifficulty
+  type BotDifficulty,
+  type GameState
 } from '@rf/engine'
 import type { ClientMessage, LobbyView, SeatView, ServerMessage } from '@rf/protocol'
 
@@ -39,6 +41,25 @@ interface Seat {
 
 export type Emit = (target: 'all' | string, msg: ServerMessage) => void
 
+/**
+ * Tout ce qu'il faut pour ressusciter une salle après un redémarrage.
+ *
+ * Volontairement du JSON nu : la salle ne sait pas où il finit — fichier
+ * aujourd'hui, base demain — et le module qui l'écrit ne sait rien des règles.
+ * Les jetons y figurent : sans eux, personne ne retrouverait son siège, ce qui
+ * est tout l'objet de la reprise.
+ */
+export interface RoomSnapshot {
+  code: string
+  seats: Seat[]
+  hostId: string | null
+  difficulty: BotDifficulty
+  seq: number
+  game: GameState
+  /** Instant de l'écriture : on ne ressuscite pas une salle d'avant-hier. */
+  savedAt: number
+}
+
 export class Room {
   readonly code: string
   private seats: Seat[] = []
@@ -57,6 +78,60 @@ export class Room {
     private emit: Emit
   ) {
     this.code = code
+  }
+
+  // ── Persistance ────────────────────────────────────────────────────────────
+
+  /**
+   * Photographie de la salle, ou `null` si elle n'a rien à sauver.
+   *
+   * Seules les parties LANCÉES valent d'être reprises : une salle d'attente se
+   * recompose en dix secondes, et ses sièges auraient de toute façon expiré
+   * pendant le redémarrage.
+   *
+   * `savedAt` vient de l'horloge injectée par `tick`, que la coquille réseau
+   * fait battre en continu : la salle, elle, n'a pas de montre.
+   */
+  snapshot(): RoomSnapshot | null {
+    if (!this.game) return null
+    return {
+      code: this.code,
+      seats: this.seats.map((s) => ({ ...s })),
+      hostId: this.hostId,
+      difficulty: this.difficulty,
+      seq: this.seq,
+      game: this.game.state,
+      savedAt: this.now
+    }
+  }
+
+  /** Ressuscite une salle sauvegardée. Les joueurs reviendront avec leur jeton. */
+  static restore(snap: RoomSnapshot, emit: Emit, now: number): Room {
+    const room = new Room(snap.code, emit)
+    room.hostId = snap.hostId
+    room.difficulty = snap.difficulty
+    room.seq = snap.seq
+    room.now = now
+
+    // Aucun socket n'a survécu au redémarrage : tout le monde est réputé parti,
+    // et chacun retrouvera son siège en se reconnectant avec son jeton.
+    room.seats = snap.seats.map((s) => ({
+      ...s,
+      connected: s.bot,
+      goneAt: s.bot ? null : now
+    }))
+
+    room.game = Game.resume(snap.game, { now: () => room.now })
+    // Le redémarrage n'est pas la faute du joueur actif : sa décision repart
+    // avec tout son temps, sinon il perdrait son tour avant même d'avoir revu
+    // le plateau.
+    if (room.game.state.decisionDeadline !== null) {
+      room.game.state.decisionDeadline = now + DECISION_TIMEOUT_MS
+    }
+    // Les échéances internes se RECALCULENT : les persister n'aurait aucun sens,
+    // elles se comptent depuis un « maintenant » qui n'existe plus.
+    room.scheduleNextStep()
+    return room
   }
 
   // ── Lecture ────────────────────────────────────────────────────────────────
@@ -292,8 +367,8 @@ export class Room {
     this.afterGameChange()
   }
 
-  /** Publie et programme la prochaine échéance interne. */
-  private afterGameChange(): void {
+  /** Programme la prochaine échéance interne, sans rien publier. */
+  private scheduleNextStep(): void {
     const game = this.game!
     const turn = game.state.turn
 
@@ -308,6 +383,11 @@ export class Room {
     } else {
       this.nextStepAt = 0 // c'est au joueur ; seul son minuteur court
     }
+  }
+
+  /** Publie et programme la prochaine échéance interne. */
+  private afterGameChange(): void {
+    this.scheduleNextStep()
     this.publish()
   }
 
