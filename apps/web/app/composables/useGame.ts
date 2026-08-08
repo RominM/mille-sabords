@@ -38,6 +38,53 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   const mode = ref<Mode>('start')
   const difficulty = ref<BotDifficulty>('medium')
   const selected = ref<Set<number>>(new Set())
+
+  /**
+   * Quel dé occupe quel emplacement du bas : `slots[i]` = identifiant du dé, ou
+   * `null`. C'est de la MISE EN SCÈNE, pas une règle — le moteur se moque de
+   * savoir dans quel cadre un dé est rangé. Mais un joueur, lui, aime regrouper
+   * ses dés, et le glisser-déposer ne veut rien dire sans cette table.
+   */
+  const slots = ref<(number | null)[]>(Array(MAX_DICE).fill(null))
+
+  const slotOfDie = (id: number): number => slots.value.indexOf(id)
+
+  /**
+   * Range un dé dans un emplacement précis. Si la place est prise, les deux dés
+   * ÉCHANGENT : c'est le geste attendu quand on réorganise à la main, et ça
+   * évite d'avoir à vider une case avant de la remplir.
+   */
+  function moveToSlot(dieId: number, target: number): void {
+    if (target < 0 || target >= MAX_DICE) return
+    const next = [...slots.value]
+    const from = next.indexOf(dieId)
+    const occupant = next[target] ?? null
+
+    if (from !== -1) next[from] = occupant
+    else if (occupant !== null) {
+      // Le dé arrive du plateau et la case est prise : l'occupant retourne au
+      // premier creux libre plutôt que d'être renvoyé au centre.
+      const free = next.indexOf(null)
+      if (free !== -1) next[free] = occupant
+    }
+    next[target] = dieId
+    slots.value = next
+  }
+
+  /**
+   * Aligne la table des emplacements sur les dés réellement gardés. Certains le
+   * deviennent SANS clic — une tête de mort se verrouille toute seule —, et un
+   * dé relancé libère sa place. Les positions choisies à la main survivent.
+   */
+  function syncSlots(kept: number[]): void {
+    const next = slots.value.map((id) => (id !== null && kept.includes(id) ? id : null))
+    for (const id of kept) {
+      if (next.includes(id)) continue
+      const free = next.indexOf(null)
+      if (free !== -1) next[free] = id
+    }
+    slots.value = next
+  }
   /** Tête de mort désignée pour la relance exceptionnelle de la Gardienne. */
   const guardianDie = ref<number | null>(null)
   const botThinking = ref(false)
@@ -53,6 +100,29 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   const players = computed(() => snapshot.value?.players ?? [])
   const currentIndex = computed(() => snapshot.value?.currentPlayerIndex ?? 0)
   const currentPlayer = computed(() => players.value[currentIndex.value] ?? null)
+  /**
+   * Dés GARDÉS : ceux choisis par le joueur, plus les têtes de mort
+   * (verrouillées, donc gardées d'office) et les dés réservés de l'Île au
+   * Trésor. La définition vit ici et non dans l'écran : la table des
+   * emplacements doit s'y accrocher, et deux définitions divergeraient.
+   */
+  const keptIds = computed(() => {
+    const t = turn.value
+    if (!t) return []
+    return t.dice
+      .filter(
+        (d) =>
+          d.face !== null &&
+          // Une tête verrouillée reste au CENTRE le temps du vol : c'est la face
+          // qu'on veut voir tomber, elle ne doit pas sauter dans son cadre avant
+          // d'avoir fini de rouler.
+          ((d.locked && !rolling.value) || d.banked || selected.value.has(d.id))
+      )
+      .map((d) => d.id)
+  })
+
+  watch(keptIds, syncSlots, { immediate: true })
+
   const history = computed(() => snapshot.value?.history ?? [])
   const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
   const winner = computed(() => players.value.find((p) => p.id === snapshot.value?.winnerId) ?? null)
@@ -247,6 +317,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   function startTurn(): void {
     transient.value = ''
     selected.value = new Set()
+    slots.value = Array(MAX_DICE).fill(null)
     guardianDie.value = null
     // Le serveur ouvre les tours de lui-même : le lui demander serait au mieux
     // ignoré, au pire une course avec sa propre horloge.
@@ -447,6 +518,9 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     mode,
     difficulty,
     selected,
+    slots,
+    keptIds,
+    moveToSlot,
     botThinking,
     rolling,
     rollSeq,

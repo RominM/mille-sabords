@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div
       class="side"
-      :class="{ 'side--open': isOpen }"
+      :class="{ 'side--open': open }"
       :style="{ '--side-top': `${top}%`, '--tab-top': `${tabTop}%` }"
     >
       <img :src="panelUrl" alt="" class="side__img" />
@@ -13,14 +13,14 @@
         v-click-sound
         class="side__tab"
         type="button"
-        :aria-expanded="isOpen"
-        :aria-label="isOpen ? `Fermer ${label}` : `Ouvrir ${label}`"
-        @click="isOpen = !isOpen"
+        :aria-expanded="open"
+        :aria-label="open ? `Fermer ${label}` : `Ouvrir ${label}`"
+        @click="toggle(id)"
       >
-        <span class="side__tab-label">{{ label }}</span>
+        <component :is="icon" class="side__tab-icon" :size="20" :stroke-width="1.75" />
       </button>
 
-      <div class="side__content" :aria-hidden="!isOpen">
+      <div class="side__content" :aria-hidden="!open">
         <h2 class="side__title">{{ title ?? label }}</h2>
         <slot />
       </div>
@@ -33,31 +33,38 @@
  * Tiroir sur le bord gauche : une planche de bois qui glisse, dont seule la
  * languette dépasse au repos.
  *
- * Extrait du barème le jour où l'historique en a demandé un second. Les deux
- * planches vivent l'une SOUS l'autre — d'où `top`, qui les sépare vraiment.
- * Décaler seulement les languettes ne suffisait pas : les planches se
- * recouvraient et la seconde masquait la première.
+ * Extrait du barème le jour où l'historique en a demandé un second. Les
+ * planches se SUPERPOSENT, décalées de leur seule languette : c'est ce qui
+ * donne l'allure d'onglets de dossier, et ce qui laisse le plateau dégagé. D'où
+ * l'ouverture exclusive — deux planches ouvertes au même endroit se
+ * masqueraient (cf. `useSidePanels`).
  *
  * `Teleport` vers le body : `.plateau` déclare `container-type: size`, ce qui
  * piégerait un `position: fixed` à l'intérieur.
  */
+import type { Component } from 'vue'
 import panelUrl from '~/assets/images/ui/panel-bareme.webp'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    /** Texte de la languette, et titre par défaut du panneau. */
+    /** Identifiant du tiroir, pour l'ouverture exclusive. */
+    id: string
+    /** Nom lu par les lecteurs d'écran — la languette, elle, ne porte qu'une icône. */
     label: string
-    /** Titre du contenu, quand il doit être plus long que la languette. */
+    /** Icône Lucide de la languette. */
+    icon: Component
+    /** Titre du contenu. */
     title?: string
     /** Centre vertical de la planche, en % de la fenêtre. */
     top?: number
-    /** Hauteur de la languette sur la planche, en %. */
+    /** Hauteur de la languette sur la planche, en % — c'est elle qui empile. */
     tabTop?: number
   }>(),
   { title: undefined, top: 50, tabTop: 40.5 }
 )
 
-const isOpen = ref(false)
+const { isOpen, toggle } = useSidePanels()
+const open = computed(() => isOpen(props.id))
 </script>
 
 <style scoped lang="scss">
@@ -70,9 +77,7 @@ const isOpen = ref(false)
   left: 0;
   top: var(--side-top, 50%);
   z-index: 60; // au-dessus du plateau, sous les modales (100)
-  // Volontairement plus courte qu'une planche seule : il en tient DEUX dans la
-  // hauteur, l'une sous l'autre, sans qu'aucune ne déborde de l'écran.
-  height: min(42dvh, 500px);
+  height: min(52dvh, 640px);
   aspect-ratio: 772 / 1060;
   transform: translate(-87.7%, -50%);
   transition: transform 0.32s ease;
@@ -110,13 +115,18 @@ const isOpen = ref(false)
     cursor: pointer;
   }
 
-  &__tab-label {
+  // Une icône plutôt qu'un mot : la languette est étroite, et un libellé
+  // vertical se lit mal en pleine partie.
+  &__tab-icon {
     display: block;
+    margin: 0 auto;
     color: var(--accent);
-    font-family: var(--font-display);
-    font-size: 0.85rem;
-    writing-mode: vertical-rl;
-    text-shadow: 0 1px 3px rgba(24, 14, 8, 0.9);
+    filter: drop-shadow(0 1px 3px rgba(24, 14, 8, 0.95));
+    transition: color 0.15s ease;
+  }
+
+  &__tab:hover &__tab-icon {
+    color: var(--accent-hi);
   }
 
   // Bois utile, à l'intérieur du liseré doré.

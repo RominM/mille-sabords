@@ -1,5 +1,12 @@
 <template>
-  <SidePanel label="Barème" title="Barème des points" :top="28">
+  <SidePanel
+    id="bareme"
+    label="Barème des points"
+    title="Barème des points"
+    :icon="Scroll"
+    :top="72"
+    :tab-top="26"
+  >
     <ul class="bareme__list">
       <li v-for="line in COMBOS" :key="line.label">{{ line.label }} — {{ line.points }}</li>
     </ul>
@@ -17,6 +24,7 @@
  * Ce composant ne porte plus que le CONTENU : la planche, la languette et le
  * glissement vivent dans `SidePanel`, partagé avec l'historique des tours.
  */
+import { Scroll } from 'lucide-vue-next'
 const COMBOS = [
   { label: '3 symboles identiques', points: '100 points' },
   { label: '4 symboles identiques', points: '200 points' },

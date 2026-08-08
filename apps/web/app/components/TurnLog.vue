@@ -1,5 +1,12 @@
 <template>
-  <SidePanel label="Historique" title="Tours joués" :top="73">
+  <SidePanel
+    id="historique"
+    label="Historique des tours"
+    title="Tours joués"
+    :icon="History"
+    :top="72"
+    :tab-top="55"
+  >
     <p v-if="!entries.length" class="log__empty">Aucun tour joué pour l’instant.</p>
 
     <ol v-else class="log__list">
@@ -54,6 +61,7 @@
  * L'historique vient du MOTEUR, pas d'un cumul local : en multijoueur, tout le
  * monde doit lire la même chose, et un rechargement ne doit rien effacer.
  */
+import { History } from 'lucide-vue-next'
 import type { Player, TurnRecord } from '@rf/engine'
 
 const props = defineProps<{ history: TurnRecord[]; players: Player[] }>()

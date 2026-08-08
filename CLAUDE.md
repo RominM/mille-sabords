@@ -39,10 +39,22 @@ Toute règle de jeu vit dans `packages/engine`, **jamais** dans l'UI.
 | `PlateButton` | CTA principal (plaque de bois). Joue `axe-impact`. |
 | `DieView` | Un dé : son ÉTAT et son clic (verrou, réserve, Gardienne). Délègue le rendu à `DieCube`. |
 | `DieCube` | Rendu d'un dé : cube 3D CSS qui tombe sur une face IMPOSÉE. Aucune règle. |
+| `SidePanel` | Tiroir de bord d'écran (planche + languette). Ouverture EXCLUSIVE. |
+| `ScalePoints` / `TurnLog` | Contenus des deux tiroirs : barème, historique des tours. |
+| `TurnFlash` | Résultat du tour en grand, transparent, sans action. Remplace l'ancienne modale. |
 | `WaxSeal`, `PirateCard`, `PlayerSlot`, `SkullEyes`, `AppLoader` | Plateau. |
 
 Composables : `useGame`, `useTableSetup`, `useRules`, `useSoundSettings`,
-`useBackgroundMusic` (musique de fond), `useSfx` (bruitages ponctuels).
+`useBackgroundMusic` (musique de fond), `useSfx` (bruitages ponctuels),
+`useSidePanels` (quel tiroir est ouvert), `useDiceDrag` (saisir un dé).
+
+Utilitaires (`app/utils`) : `boardTilt` (inclinaison d'un dé selon sa place),
+`boardZones` (blocs à place fixe), `quad` (homographie à 4 points pour la carte),
+`scoreLines` (mise en mots d'un décompte).
+
+Icônes : **Lucide** (`lucide-vue-next`), importées nommément.
+`/lab` est la page de réglage — exclue du build de production par `ignore` dans
+`nuxt.config.ts`, dont le chemin est relatif à la RACINE et non à `srcDir`.
 
 Directives : `v-click-sound` (clic), `v-hover-sound` (survol). Jamais les deux
 sur le même élément. Enregistrées dans `app/plugins/ui-sound.ts`.

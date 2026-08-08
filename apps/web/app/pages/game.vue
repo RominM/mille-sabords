@@ -1,3 +1,167 @@
+<template>
+  <!-- En multi, la partie vit sur le serveur : entre l'entrée sur la page et la
+       première réponse, il n'y a rien à dessiner. On réutilise le chargeur du
+       jeu plutôt que de laisser un fond nu. -->
+  <AppLoader v-if="waitingForTable" :loaded="0" :total="0" :progress="0" hint="Connexion à la table…" />
+
+  <div v-else-if="mode !== 'start'" class="stage">
+    <div ref="plateauEl" class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
+      <!-- Rappel des règles, calé dans le creux entre le crâne et la lanterne gauche -->
+      <button v-click-sound class="rules-link" type="button" aria-label="Règles" @click="showRules = true">
+        <img :src="rulesIcon" alt="" class="rules-link__icon" />
+        <span class="rules-link__label">Règles</span>
+      </button>
+
+      <!-- Joueurs : colonne de 5 slots à gauche -->
+      <div class="zone-players">
+        <!-- Un slot par joueur RÉEL, et non cinq cases fixes : la table monte
+             désormais à huit, et la colonne défile plutôt que de déborder. -->
+        <PlayerSlot
+          v-for="(p, i) in players"
+          :key="p.id"
+          :player="p"
+          :avatar="portraitOf(p.id)"
+          :current="gamePhase === 'playing' && i === currentIndex"
+          :seconds="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
+          :total-seconds="TURN_SECONDS"
+        />
+      </div>
+
+      <!-- Points en jeu, juste au-dessus de la carte : le joueur doit pouvoir
+           arbitrer « je relance ou j'encaisse » sans quitter le plateau des yeux. -->
+      <div v-if="potentialScore !== null" class="zone-live" :style="zoneStyle(LIVE_ZONE)">
+        <LiveScore :score="potentialScore" />
+      </div>
+
+      <!-- Carte Pirate : dans le cadre dessiné à droite. Place et inclinaison
+           viennent de `boardZones` — un seul objet, une seule place, des angles
+           donnés en clair plutôt que déduits du modèle des dés. -->
+      <div v-if="turn" ref="cardEl" class="zone-card">
+        <PirateCard :card="turn.card" :skulls="skulls" />
+      </div>
+
+      <!-- Dés en jeu : au centre du plateau. Ils sont égrenés au lancer — huit
+           dés partant au cordeau ressembleraient à un seul objet. -->
+      <div v-if="turn" class="zone-center">
+        <div
+          v-for="(d, i) in centerDice"
+          :key="d.id"
+          class="die-cell die-cell--big"
+          :class="{ 'die-cell--held': heldDie === d.id }"
+          @pointerdown="clickable && grab(d.id, $event)"
+        >
+          <DieView
+            :die="d"
+            :clickable="clickable"
+            :roll="rollSeq"
+            :delay="i * DIE_STAGGER_MS"
+            :duration="DIE_FLIGHT_MS"
+            :silent="i > 0"
+            @click="toggleDie(d.id)"
+          />
+        </div>
+      </div>
+
+      <!-- Emplacements du bas. `data-slot` est ce que le glissé cherche sous le
+           pointeur : le joueur choisit SA case, et peut regrouper ses dés. -->
+      <div v-if="turn" class="zone-slots">
+        <div
+          v-for="i in 8"
+          :key="i"
+          class="die-cell"
+          :class="{
+            'die-cell--target': hovered === i - 1,
+            'die-cell--held': heldDie !== null && heldDie === slotDice[i - 1]?.id
+          }"
+          :data-slot="i - 1"
+          @pointerdown="slotDice[i - 1] && clickable && grab(slotDice[i - 1]!.id, $event)"
+        >
+          <DieView
+            v-if="slotDice[i - 1]"
+            :die="slotDice[i - 1]!"
+            :clickable="clickable"
+            :rescuable="guardianOffered && slotDice[i - 1]!.face === 'skull'"
+            :selected="slotDice[i - 1]!.id !== guardianDie"
+            seated
+            @click="toggleDie(slotDice[i - 1]!.id)"
+          />
+        </div>
+      </div>
+
+      <!-- Zone d'action : les DEUX cachets sont toujours présents, simplement
+           grisés quand l'action n'est pas possible (jet en cours, tour de l'IA). -->
+      <div v-if="turn" class="zone-action">
+        <div class="zone-action__roll">
+          <WaxSeal label="Lancer" :disabled="!canRoll" @click="rollOrReroll" />
+        </div>
+        <div class="zone-action__stop">
+          <WaxSeal label="S’arrêter" :image="stopSeal" :disabled="!canStop" @click="stop" />
+        </div>
+        <span v-if="isBotTurn" class="bot-banner">Le Corsaire réfléchit…</span>
+      </div>
+
+      <!-- Indice : sous les slots -->
+      <p v-if="turn && !isBotTurn && turn.phase === 'decision'" class="zone-hint">
+        <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
+        <span v-else-if="guardianDie !== null" class="guardian-txt">
+          🗝 Tête de mort confiée à la Gardienne — elle repartira à la relance.
+        </span>
+        <span v-else-if="guardianOffered" class="guardian-txt">
+          🗝 Gardienne : clique une tête de mort pour la relancer, une fois dans le tour.
+        </span>
+        <span v-else-if="isTreasure">
+          Île au Trésor : les dés que tu gardes sont réservés sur la carte — reclique pour les reprendre.
+        </span>
+        <span v-else>Sélectionne les dés que tu veux GARDER, puis relance les autres — ou arrête-toi.</span>
+      </p>
+      <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
+        Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.
+      </p>
+    </div>
+  </div>
+
+  <!-- Overlays ─────────────────────────────────────────────────────────────── -->
+  <!-- Résultat du tour : en grand, par-dessus le plateau, sans rien masquer et
+       sans rien demander. `turn.outcome` est nul après un minuteur expiré sans
+       le moindre lancer — il n'y a alors rien à annoncer, on enchaîne. -->
+  <TurnFlash
+    v-if="mode === 'turnEnd' && turn?.outcome"
+    :outcome="turn.outcome"
+    :actor="turnActor"
+  />
+
+  <GameOverModal
+    v-if="mode === 'finished'"
+    :players="players"
+    :winner="winner"
+    :avatar-of="portraitOf"
+    @replay="newGame(difficulty)"
+    @menu="router.push('/')"
+  />
+
+  <!-- Le dé en main : le vrai cube, décollé du plateau et suspendu au pointeur.
+       `Teleport` vers le body — `.plateau` piégerait un `position: fixed`. -->
+  <Teleport to="body">
+    <div v-if="heldFace" class="held" :style="{ left: `${at.x}px`, top: `${at.y}px` }">
+      <DieCube :face="heldFace" :roll="0" />
+    </div>
+  </Teleport>
+
+  <RulesModal v-if="showRules" @close="showRules = false" />
+
+  <ScalePoints />
+  <!-- Sous le barème, comme un second onglet de dossier : d'où viennent les
+       scores, et pourquoi un tour s'est mal terminé. -->
+  <TurnLog :history="history" :players="players" />
+  <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
+  <div v-if="isDefeat">
+    <SkullEyes />
+    <!-- Pas d'`autoplay` : la lecture passe par le watcher, qui applique le
+         réglage « Ambiance ». L'attribut jouerait le son même réglage coupé. -->
+    <audio ref="darkLaughAudio" :src="darkLaugh" />
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { BotDifficulty, DieFace } from '@rf/engine'
 import layoutUrl from '~/assets/images/ui/layout-game.webp'
@@ -23,6 +187,9 @@ const {
   mode,
   difficulty,
   selected,
+  slots,
+  keptIds,
+  moveToSlot,
   rolling,
   rollSeq,
   turnActor,
@@ -214,17 +381,45 @@ const rerollCount = computed(() => eligibleReroll().length)
 // centre : elle vient d'être jetée, elle doit rouler avec les autres. Elle
 // rejoindra la rangée en retombant. Sans cela, la seule face qu'on veut voir
 // tomber serait justement celle qui saute directement dans son cadre.
-const isKept = (d: { id: number; locked: boolean; banked: boolean }) =>
-  (d.locked && !rolling.value) || d.banked || selected.value.has(d.id)
-
 /**
  * Les dés encore SANS face restent de la partie, invisibles : leur composant
  * doit exister avant le premier jet du tour, sinon ce jet-là apparaîtrait tout
  * posé au lieu de rouler comme les suivants.
  */
-const centerDice = computed(() => (turn.value ? turn.value.dice.filter((d) => !isKept(d)) : []))
+const centerDice = computed(() =>
+  turn.value ? turn.value.dice.filter((d) => !keptIds.value.includes(d.id)) : []
+)
+
+/**
+ * Un dé par emplacement, à SA place — et non les dés gardés tassés à gauche.
+ * C'est `slots` qui mémorise le rangement choisi, sans quoi un glisser-déposer
+ * n'aurait rien à déplacer.
+ */
 const slotDice = computed(() =>
-  turn.value ? turn.value.dice.filter((d) => d.face !== null && isKept(d)) : []
+  slots.value.map((id) => (id === null ? null : (turn.value?.dice[id] ?? null)))
+)
+
+// ── Saisir un dé ─────────────────────────────────────────────────────────────
+const { heldDie, hovered, at, grab } = useDiceDrag(({ slot, dieId }) => {
+  const kept = keptIds.value.includes(dieId)
+
+  // Lâché sur le plateau : le dé revient en jeu. C'est exactement ce que fait
+  // un second clic — on repasse donc par la même porte, règles comprises.
+  if (slot === null) {
+    if (kept) toggleDie(dieId)
+    return
+  }
+
+  // Lâché sur un cadre : on le garde s'il venait du centre, puis on le range à
+  // la place demandée. Le rangement attend que la sélection soit prise en
+  // compte, sinon il viserait une table d'emplacements périmée.
+  if (!kept) toggleDie(dieId)
+  void nextTick(() => moveToSlot(dieId, slot))
+})
+
+/** Face du dé en main, pour le dessiner sous le pointeur. */
+const heldFace = computed(() =>
+  heldDie.value === null ? null : (turn.value?.dice[heldDie.value]?.face ?? null)
 )
 
 const outcome = computed(() => {
@@ -266,145 +461,6 @@ watch(isDefeat, async (value) => {
   await audio.play()
 })
 </script>
-
-<template>
-  <!-- En multi, la partie vit sur le serveur : entre l'entrée sur la page et la
-       première réponse, il n'y a rien à dessiner. On réutilise le chargeur du
-       jeu plutôt que de laisser un fond nu. -->
-  <AppLoader v-if="waitingForTable" :loaded="0" :total="0" :progress="0" hint="Connexion à la table…" />
-
-  <div v-else-if="mode !== 'start'" class="stage">
-    <div ref="plateauEl" class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
-      <!-- Rappel des règles, calé dans le creux entre le crâne et la lanterne gauche -->
-      <button v-click-sound class="rules-link" type="button" aria-label="Règles" @click="showRules = true">
-        <img :src="rulesIcon" alt="" class="rules-link__icon" />
-        <span class="rules-link__label">Règles</span>
-      </button>
-
-      <!-- Joueurs : colonne de 5 slots à gauche -->
-      <div class="zone-players">
-        <!-- Un slot par joueur RÉEL, et non cinq cases fixes : la table monte
-             désormais à huit, et la colonne défile plutôt que de déborder. -->
-        <PlayerSlot
-          v-for="(p, i) in players"
-          :key="p.id"
-          :player="p"
-          :avatar="portraitOf(p.id)"
-          :current="gamePhase === 'playing' && i === currentIndex"
-          :seconds="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
-          :total-seconds="TURN_SECONDS"
-        />
-      </div>
-
-      <!-- Points en jeu, juste au-dessus de la carte : le joueur doit pouvoir
-           arbitrer « je relance ou j'encaisse » sans quitter le plateau des yeux. -->
-      <div v-if="potentialScore !== null" class="zone-live" :style="zoneStyle(LIVE_ZONE)">
-        <LiveScore :score="potentialScore" />
-      </div>
-
-      <!-- Carte Pirate : dans le cadre dessiné à droite. Place et inclinaison
-           viennent de `boardZones` — un seul objet, une seule place, des angles
-           donnés en clair plutôt que déduits du modèle des dés. -->
-      <div v-if="turn" ref="cardEl" class="zone-card">
-        <PirateCard :card="turn.card" :skulls="skulls" />
-      </div>
-
-      <!-- Dés en jeu : au centre du plateau. Ils sont égrenés au lancer — huit
-           dés partant au cordeau ressembleraient à un seul objet. -->
-      <div v-if="turn" class="zone-center">
-        <div v-for="(d, i) in centerDice" :key="d.id" class="die-cell die-cell--big">
-          <DieView
-            :die="d"
-            :clickable="clickable"
-            :roll="rollSeq"
-            :delay="i * DIE_STAGGER_MS"
-            :duration="DIE_FLIGHT_MS"
-            :silent="i > 0"
-            @click="toggleDie(d.id)"
-          />
-        </div>
-      </div>
-
-      <!-- Dés sélectionnés : dans les slots du bas -->
-      <div v-if="turn" class="zone-slots">
-        <div v-for="i in 8" :key="i" class="die-cell">
-          <DieView
-            v-if="slotDice[i - 1]"
-            :die="slotDice[i - 1]!"
-            :clickable="clickable"
-            :rescuable="guardianOffered && slotDice[i - 1]!.face === 'skull'"
-            :selected="slotDice[i - 1]!.id !== guardianDie"
-            seated
-            @click="toggleDie(slotDice[i - 1]!.id)"
-          />
-        </div>
-      </div>
-
-      <!-- Zone d'action : les DEUX cachets sont toujours présents, simplement
-           grisés quand l'action n'est pas possible (jet en cours, tour de l'IA). -->
-      <div v-if="turn" class="zone-action">
-        <div class="zone-action__roll">
-          <WaxSeal label="Lancer" :disabled="!canRoll" @click="rollOrReroll" />
-        </div>
-        <div class="zone-action__stop">
-          <WaxSeal label="S’arrêter" :image="stopSeal" :disabled="!canStop" @click="stop" />
-        </div>
-        <span v-if="isBotTurn" class="bot-banner">Le Corsaire réfléchit…</span>
-      </div>
-
-      <!-- Indice : sous les slots -->
-      <p v-if="turn && !isBotTurn && turn.phase === 'decision'" class="zone-hint">
-        <span v-if="transient" class="danger-txt">⛔ {{ transient }}</span>
-        <span v-else-if="guardianDie !== null" class="guardian-txt">
-          🗝 Tête de mort confiée à la Gardienne — elle repartira à la relance.
-        </span>
-        <span v-else-if="guardianOffered" class="guardian-txt">
-          🗝 Gardienne : clique une tête de mort pour la relancer, une fois dans le tour.
-        </span>
-        <span v-else-if="isTreasure">
-          Île au Trésor : les dés que tu gardes sont réservés sur la carte — reclique pour les reprendre.
-        </span>
-        <span v-else>Sélectionne les dés que tu veux GARDER, puis relance les autres — ou arrête-toi.</span>
-      </p>
-      <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
-        Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.
-      </p>
-    </div>
-  </div>
-
-  <!-- Overlays ─────────────────────────────────────────────────────────────── -->
-  <!-- Résultat du tour : en grand, par-dessus le plateau, sans rien masquer et
-       sans rien demander. `turn.outcome` est nul après un minuteur expiré sans
-       le moindre lancer — il n'y a alors rien à annoncer, on enchaîne. -->
-  <TurnFlash
-    v-if="mode === 'turnEnd' && turn?.outcome"
-    :outcome="turn.outcome"
-    :actor="turnActor"
-  />
-
-  <GameOverModal
-    v-if="mode === 'finished'"
-    :players="players"
-    :winner="winner"
-    :avatar-of="portraitOf"
-    @replay="newGame(difficulty)"
-    @menu="router.push('/')"
-  />
-
-  <RulesModal v-if="showRules" @close="showRules = false" />
-
-  <ScalePoints />
-  <!-- Sous le barème, comme un second onglet de dossier : d'où viennent les
-       scores, et pourquoi un tour s'est mal terminé. -->
-  <TurnLog :history="history" :players="players" />
-  <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
-  <div v-if="isDefeat">
-    <SkullEyes />
-    <!-- Pas d'`autoplay` : la lecture passe par le watcher, qui applique le
-         réglage « Ambiance ». L'attribut jouerait le son même réglage coupé. -->
-    <audio ref="darkLaughAudio" :src="darkLaugh" />
-  </div>
-</template>
 
 <style scoped lang="scss">
 // ── Scène : remplit la fenêtre, centre le plateau, letterbox autour ─────────
@@ -552,9 +608,49 @@ watch(isDefeat, async (value) => {
 // tire la profondeur de ses faces (translateZ = la moitié). Une longueur, donc,
 // jamais un pourcentage.
 .die-cell--big {
-  --die-size: 7cqw;
+  --die-size: 5.8cqw;
   width: var(--die-size);
   height: var(--die-size);
+}
+
+// ── Saisir un dé ────────────────────────────────────────────────────────────
+// `touch-action: none` : sans lui, un glissé au doigt fait défiler la page au
+// lieu de déplacer le dé.
+.die-cell {
+  touch-action: none;
+}
+
+// Le dé saisi laisse un creux à sa place, pour qu'on voie d'où il vient.
+.die-cell--held {
+  opacity: 0.25;
+}
+
+// Cadre visé : il s'allume avant le lâcher, sinon on dépose à l'aveugle.
+.die-cell--target::after {
+  content: '';
+  position: absolute;
+  inset: -6%;
+  border: 0.25cqw solid var(--accent-hi);
+  border-radius: 10%;
+  box-shadow: 0 0 1.2cqw rgba(232, 196, 104, 0.55);
+  pointer-events: none;
+}
+
+.zone-slots .die-cell {
+  position: relative;
+}
+
+// Le dé en main, suspendu au pointeur. Taille en pixels et non en `cqw` : il
+// vit dans le body, hors du conteneur qu'est le plateau.
+.held {
+  position: fixed;
+  z-index: 90;
+  --die-size: 76px;
+
+  // Pas de `filter` ici, si tentant soit-il pour une ombre portée : il
+  // aplatirait la scène 3D du cube. Le dé porte déjà son ombre au sol.
+  translate: -50% -50%;
+  pointer-events: none;
 }
 
 // Rangée d'emplacements du nouveau décor, mesurée sur l'image (1672×941) :
