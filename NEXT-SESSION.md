@@ -80,8 +80,11 @@ avant que quiconque ait eu le temps de revenir.
 
 ### Ensuite
 
-- [ ] **Animation des dés** — voir §5, la question est déjà instruite.
-      Volontairement APRÈS le réseau : le flux de tour est devenu asynchrone.
+- [ ] **Recaler le reste du plateau sur le nouveau décor.** Seules la rangée des
+      8 emplacements et la zone centrale des dés ont été remesurées. Restent
+      faux : la colonne des joueurs (l'échelle dessinée a DISPARU du nouveau
+      décor, les cartes flottent sur la corde), la zone d'action (les cachets
+      tombent vers la roue de gouvernail), le cadre de carte et `LiveScore`.
 - [ ] Feedback : tour de l'IA plus lisible, ambiance différente sur l'île.
 - [ ] Décor restant : image du lobby, écran de victoire.
 - [ ] Supprimer le son orphelin `dobcommunications-busy-restaurant…mp3` (4,5 Mo).
@@ -102,34 +105,26 @@ avant que quiconque ait eu le temps de revenir.
   secondes et le minuteur de 30 s tourne pendant ce temps. Regrouper « attendre
   mon tour + agir + vérifier » dans UN seul appel.
 
-## 5. Animation des dés — analyse déjà faite
-
-Romin veut voir les dés **rouler**, et doute que CSS suffise. Le vrai obstacle
-n'est pas la technologie :
+## 5. Animation des dés — tranché
 
 **Le moteur a déjà décidé des faces avant que l'animation ne commence** — en
 multi, c'est même le serveur qui les a tirées. L'animation est donc du THÉÂTRE :
-elle doit finir sur un résultat imposé. C'est ce qui contraint le choix.
+elle doit finir sur un résultat imposé. Tout découle de là.
 
-- **Cube 3D en CSS** — six faces en `translateZ`/`rotate`, parent en
-  `transform-style: preserve-3d`, `rotate3d` animé avec plusieurs tours, un arc
-  et un rebond amorti. On peut CALCULER la rotation finale qui présente la face
-  voulue. Pas de collisions ni d'immobilisation imprévisible : chaque dé suit une
-  trajectoire scriptée. C'est la piste recommandée.
-- **Physique réelle** (Rapier/cannon) — vraies collisions, mais la simulation
-  déciderait de la face, or elle est déjà décidée. Il faudrait soit forcer
-  l'orientation finale (ça se voit), soit précalculer des graines qui tombent sur
-  chaque face (gros chantier, gain invisible). À écarter.
-- **Brassage de tuiles** — garder la tuile plate, faire défiler les faces vite
-  avec un flou et un rebond. Ce n'est pas « rouler », mais c'est cohérent avec la
-  direction artistique actuelle et bien moins cher.
+D'où le cube 3D en CSS, dont l'orientation finale se CALCULE : on ajoute des
+tours entiers (multiples de 360°, sans effet sur l'orientation) à la rotation
+qui présente la face voulue. La physique réelle a été écartée pour la raison
+inverse — la simulation déciderait de la face, or elle est déjà décidée.
 
-⚠ **Point de direction artistique** : les dés ne sont PAS des cubes numérotés,
-ce sont des tuiles plates avec une image par face dans un cadre de bois. Passer
-au cube 3D change le rendu du plateau, pas seulement l'animation.
+**Intégré au plateau** — validé par Romin le 2026-08-08, puis généralisé.
+`DieCube` fait le rendu, `DieView` garde l'état et le clic. Le labo
+`pages/test.vue` reste en place pour régler les valeurs à l'œil.
 
-**Prototype livré** — `pages/test.vue`, à `http://localhost:5173/test` avec
-`npm run web`. Le composant est `app/components/DieCube.vue`.
+Le jet se DÉDUIT de l'état (`rollSeq` dans `useGame`) et non du clic : en multi,
+les autres joueurs ne cliquent rien mais doivent voir la même volée. Les dés
+sont égrenés de 35 ms, volent 750 ms, et une tête de mort verrouillée reste au
+centre le temps du vol — sinon la seule face qu'on veut voir tomber serait
+justement celle qui saute dans son cadre.
 
 Le point technique est réglé : l'orientation finale est CALCULÉE, en ajoutant
 des tours entiers (multiples de 360°, sans effet sur l'orientation) à la

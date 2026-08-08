@@ -37,7 +37,9 @@ Toute règle de jeu vit dans `packages/engine`, **jamais** dans l'UI.
 | `HomeMenu` | Navigation de l'accueil. Change de vue au SURVOL. |
 | `GamePitch` | Accroche d'un mode : titre, texte, CTA. Émet `embark`. |
 | `PlateButton` | CTA principal (plaque de bois). Joue `axe-impact`. |
-| `WaxSeal`, `DieView`, `PirateCard`, `PlayerSlot`, `SkullEyes`, `AppLoader` | Plateau. |
+| `DieView` | Un dé : son ÉTAT et son clic (verrou, réserve, Gardienne). Délègue le rendu à `DieCube`. |
+| `DieCube` | Rendu d'un dé : cube 3D CSS qui tombe sur une face IMPOSÉE. Aucune règle. |
+| `WaxSeal`, `PirateCard`, `PlayerSlot`, `SkullEyes`, `AppLoader` | Plateau. |
 
 Composables : `useGame`, `useTableSetup`, `useRules`, `useSoundSettings`,
 `useBackgroundMusic` (musique de fond), `useSfx` (bruitages ponctuels).
@@ -55,7 +57,7 @@ Géométrie des assets, en pixels du fichier source :
 | `ui/parchemin.webp` | 1536×1024 | rouleau opaque x 367..1181, y 32..984 (815×953) ; zone plate y 168..865 |
 | `ui/main-cta.webp` | 1536×1024 | plaque opaque x 179..1359, y 331..648 (1181×318, ratio 3.714) |
 | `main-title.webp` | 1200×800 | encre x 112..1085, y 117..635 (974×519) — grande marge transparente |
-| `ui/layout-game.webp` | — | plateau, ratio 1672/941 |
+| `ui/layout-game.webp` | 1672×941 | plateau (décor incliné). Rangée des 8 emplacements : cadres x 413..1242, y 652..748 ; un cadre fait 91×96, le pas est de 105,6 (écart 14,6). Cadre de carte : x ~1265..1560, y 261..659 |
 
 `PlayerSlot` : bande utile 1024×411 dans un PNG 1024×1536 → `aspect-ratio: 1024/411`,
 `top: -130.17%`, `height: 373.72%`.
@@ -79,6 +81,11 @@ Géométrie des assets, en pixels du fichier source :
 7. **Barres de défilement** : `scrollbar-width`/`scrollbar-color` ne sont pas
    héritées en pratique → règle sur `*`. Quand `scrollbar-color` est présente,
    Chromium ignore `::-webkit-scrollbar-*`.
+8. **Scène 3D des dés** : un `transform` ou un `filter` sur un ANCÊTRE du cube
+   aplatit la scène (le survol d'un dé passe donc par `translate`, et l'état se
+   dit par un halo au sol, pas par un `drop-shadow`). La taille arrive par
+   `--die-size`, qui doit être une LONGUEUR : le cube en tire la profondeur de
+   ses faces (`translateZ` n'accepte pas de pourcentage).
 
 ## Conventions
 

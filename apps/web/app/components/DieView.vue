@@ -3,7 +3,6 @@
     v-click-sound="canClick"
     class="die-view"
     :class="{
-      'die-view--empty': die.face === null,
       'die-view--clickable': canClick,
       'die-view--selected': selected,
       'die-view--locked': die.locked,
@@ -15,20 +14,20 @@
     :aria-label="die.face ?? 'dé vide'"
     @click="onClick"
   >
-    <img v-if="die.face" :src="FACE_IMG[die.face]" alt="" class="die-view__img" />
+    <DieCube :face="die.face" :roll="roll" :delay="delay" :duration="duration" :silent="silent" />
   </button>
 </template>
 
 <script setup lang="ts">
-import type { Die, DieFace } from '@rf/engine'
-import sabre from '~/assets/images/dice/die-face_sabre.webp'
-import skull from '~/assets/images/dice/die-face_skull.webp'
-import monkey from '~/assets/images/dice/die-face_monkey.webp'
-import parrot from '~/assets/images/dice/die-face_parot.webp'
-import coin from '~/assets/images/dice/die-fice_coin.webp'
-import diamond from '~/assets/images/dice/die-face_diamond.webp'
-
-const FACE_IMG: Record<DieFace, string> = { sabre, skull, monkey, parrot, coin, diamond }
+/**
+ * Un dé sur la table : son ÉTAT et son interaction.
+ *
+ * Le rendu proprement dit est délégué à `DieCube` — la séparation vaut d'être
+ * gardée : ici vivent le clic, le verrou de la tête de mort, la réserve de
+ * l'Île au Trésor ; là-bas, la géométrie et l'animation. Aucun des deux n'a
+ * besoin de connaître l'autre.
+ */
+import type { Die } from '@rf/engine'
 
 const props = defineProps<{
   die: Die
@@ -36,6 +35,13 @@ const props = defineProps<{
   selected?: boolean
   /** Tête de mort récupérable par la Gardienne : elle redevient cliquable. */
   rescuable?: boolean
+  /** Compteur de jets : toute incrémentation fait rouler le dé. */
+  roll?: number
+  /** Retard au départ, pour égrener la volée au lieu de la lancer d'un bloc. */
+  delay?: number
+  duration?: number
+  /** Un dé silencieux : une volée n'a pas besoin de huit bruitages. */
+  silent?: boolean
 }>()
 const emit = defineEmits<{ click: [] }>()
 
@@ -54,68 +60,83 @@ function onClick(): void {
 </script>
 
 <style scoped lang="scss">
+// Le bouton n'est plus qu'une zone de clic et un porte-état : c'est le cube
+// qui occupe la boîte, à la taille que lui donne `--die-size`.
 .die-view {
   position: relative;
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
   padding: 0;
   border: 0;
-  border-radius: 12%;
   background: none;
   cursor: not-allowed;
-  transition: transform 0.12s ease;
-
-  &__img {
-    width: 100%;
-    height: 100%;
-    border-radius: 12%;
-    object-fit: contain;
-  }
 
   &--clickable {
     cursor: inherit;
 
-    &:hover {
-      transform: translateY(-6%) scale(1.04);
+    // Pas de `transform` sur le bouton : il aplatirait la scène 3D du cube.
+    // On surélève le dé par son propre décalage, qui reste dans le plan.
+    &:hover .die-cube {
+      translate: 0 -6%;
     }
   }
 
-  // États : liseré coloré autour de la tuile
-  &--selected {
-    border-radius: 12%;
-    outline: 0.4cqw solid var(--accent);
-    outline-offset: -0.4cqw;
-    box-shadow: 0 0 12px rgba(232, 196, 104, 0.6);
+  // ── États ────────────────────────────────────────────────────────────────
+  // Un liseré plat autour d'un objet en volume jurerait : l'état se dit par un
+  // halo posé au sol, sous le dé. Surtout, un `filter` sur un ancêtre du cube
+  // APLATIRAIT sa scène 3D — d'où cet anneau en pseudo-élément, à part.
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 2%;
+    width: 96%;
+    height: 26%;
+    translate: -50% 0;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.15s ease;
   }
 
-  &--locked {
-    border-radius: 12%;
-    outline: 0.35cqw solid var(--danger-edge);
-    outline-offset: -0.35cqw;
+  &--selected::before {
+    opacity: 1;
+    background: radial-gradient(ellipse at center, rgba(232, 196, 104, 0.75), transparent 70%);
+  }
+
+  &--locked::before {
+    opacity: 1;
+    background: radial-gradient(ellipse at center, rgba(192, 82, 75, 0.8), transparent 70%);
+  }
+
+  &--banked::before {
+    opacity: 1;
+    background: radial-gradient(ellipse at center, rgba(47, 110, 104, 0.85), transparent 70%);
   }
 
   // Tête de mort que la Gardienne peut reprendre : elle doit se distinguer des
   // autres têtes, sinon le joueur ne devine pas qu'elle est encore jouable.
   &--rescuable {
-    outline-color: var(--accent);
     cursor: pointer;
-    animation: rescuable-pulse 1.4s ease-in-out infinite;
+
+    &::before {
+      opacity: 1;
+      background: radial-gradient(ellipse at center, rgba(232, 196, 104, 0.9), transparent 70%);
+      animation: rescuable-pulse 1.4s ease-in-out infinite;
+    }
   }
 
   @keyframes rescuable-pulse {
     0%,
     100% {
-      box-shadow: 0 0 0 rgba(232, 196, 104, 0);
+      opacity: 0.35;
+      scale: 0.9;
     }
     50% {
-      box-shadow: 0 0 14px rgba(232, 196, 104, 0.75);
+      opacity: 1;
+      scale: 1.12;
     }
-  }
-
-  &--banked {
-    border-radius: 12%;
-    outline: 0.35cqw solid var(--success);
-    outline-offset: -0.35cqw;
   }
 }
 </style>

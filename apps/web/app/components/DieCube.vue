@@ -1,6 +1,7 @@
 <template>
   <div
     class="die-cube"
+    :class="{ 'die-cube--void': face === null }"
     role="img"
     :aria-label="face ?? 'dé'"
     :style="{ '--die-tilt-x': `${tiltX}deg`, '--die-tilt-y': `${tiltY}deg`, '--die-art': artScale }"
@@ -223,12 +224,21 @@ function rollTo(face: DieFace): void {
   }
 }
 
-watch(
-  () => props.roll,
-  () => {
-    if (props.face) rollTo(props.face)
-  }
-)
+/**
+ * Un seul observateur pour les deux entrées, parce qu'elles racontent deux
+ * gestes différents qu'il faut distinguer :
+ *
+ * - le compteur bouge → un JET a eu lieu, le dé roule ;
+ * - seule la face change → le dé n'a pas été jeté, il vient d'être RANGÉ (un dé
+ *   gardé qui rejoint un emplacement). Il se pose sans rouler, sinon la table
+ *   s'agiterait à chaque clic.
+ */
+watch([() => props.roll, () => props.face], ([roll, face], [previousRoll]) => {
+  if (!face) return
+  if (roll !== previousRoll) return rollTo(face)
+  const slot = SLOTS.find((s) => s.face === face)
+  if (slot) settle({ ...slot.land, z: current.z })
+})
 
 onMounted(() => {
   const slot = SLOTS.find((s) => s.face === props.face)
@@ -249,6 +259,18 @@ defineExpose({ rollTo })
   height: var(--die-size, 120px);
   perspective: calc(var(--die-size, 120px) * 4.5);
   perspective-origin: 50% 42%;
+  // `translate` et non `transform` : le second écraserait la scène 3D.
+  transition:
+    opacity 0.2s ease,
+    translate 0.12s ease;
+
+  // Avant le premier jet du tour, le dé n'est pas encore sur la table — mais
+  // son composant, lui, est déjà monté. C'est ce qui permet au PREMIER lancer
+  // d'être animé comme les suivants : sans cela les dés apparaîtraient
+  // brutalement, déjà posés sur leur face.
+  &--void {
+    opacity: 0;
+  }
 
   // Ombre portée au sol : elle seule donne l'altitude pendant le vol.
   &__ground {

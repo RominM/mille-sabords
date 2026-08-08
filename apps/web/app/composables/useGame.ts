@@ -13,11 +13,19 @@ import {
   DECISION_TIMEOUT_MS,
   WINNING_SCORE,
   type BotDifficulty,
+  type DieFace,
   type TurnAction,
   type TurnState
 } from '@rf/engine'
 
 export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
+
+/** Durée du vol d'un dé. */
+export const DIE_FLIGHT_MS = 750
+/** Décalage entre deux dés d'une même volée : ils ne partent pas au cordeau. */
+export const DIE_STAGGER_MS = 35
+/** Nombre maximum de dés en l'air, pour borner l'attente de la volée. */
+const MAX_DICE = 8
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -36,7 +44,8 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   const transient = ref('')
   /** Vrai pendant le jet de dés : les boutons d'action sont alors inactifs. */
   const rolling = ref(false)
-  const ROLL_MS = 450
+  /** Le temps que la volée entière retombe — dernier dé compris. */
+  const ROLL_MS = DIE_FLIGHT_MS + (MAX_DICE - 1) * DIE_STAGGER_MS
 
   // Lectures réactives (sur l'état publié par le transport).
   const turn = computed<TurnState | null>(() => snapshot.value?.turn ?? null)
@@ -45,6 +54,58 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   const currentPlayer = computed(() => players.value[currentIndex.value] ?? null)
   const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
   const winner = computed(() => players.value.find((p) => p.id === snapshot.value?.winnerId) ?? null)
+
+  // ── Détection des jets ──────────────────────────────────────────────────────
+  /**
+   * Compteur de jets, qui déclenche l'animation des dés.
+   *
+   * Il se DÉDUIT de l'état plutôt que d'être posé au moment du clic, et c'est
+   * volontaire : personne ne reçoit d'événement « lancer ». En multi, les
+   * adversaires et les spectateurs ne voient que l'état arriver — déduire le
+   * jet est la seule façon que tout le monde voie rouler les mêmes dés.
+   */
+  const rollSeq = ref(0)
+  let knownFaces: (DieFace | null)[] = []
+  let facesSeen = false
+
+  /**
+   * Arme le drapeau « des dés sont en l'air ».
+   *
+   * Il se déduit du jet, et non du clic : en multi, les autres joueurs ne
+   * cliquent rien mais doivent voir la même volée voler pendant la même durée.
+   */
+  let rollTimer: ReturnType<typeof setTimeout> | null = null
+  function markRolling(): void {
+    rolling.value = true
+    if (rollTimer) clearTimeout(rollTimer)
+    rollTimer = setTimeout(() => {
+      rolling.value = false
+      rollTimer = null
+    }, ROLL_MS)
+  }
+
+  watch(
+    turn,
+    (t) => {
+      const faces = t ? t.dice.map((d) => d.face) : []
+      // Premier passage : on prend l'état tel quel. Sinon un rechargement en
+      // pleine partie relancerait les dés déjà posés sur la table.
+      if (!facesSeen) {
+        facesSeen = true
+        knownFaces = faces
+        return
+      }
+      // Une face qui APPARAÎT ou qui CHANGE ne peut venir que d'un jet. Un dé
+      // retombé sur la même face passerait inaperçu ici — mais ses voisins,
+      // non : on anime la volée entière, pas dé par dé.
+      if (faces.some((face, i) => face !== null && face !== knownFaces[i])) {
+        rollSeq.value += 1
+        markRolling()
+      }
+      knownFaces = faces
+    },
+    { immediate: true }
+  )
 
   // ── Minuteur de DÉCISION ────────────────────────────────────────────────────
   // Il ne borne pas le tour mais chaque décision : un joueur peut relancer
@@ -100,6 +161,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
 
   onScopeDispose(() => {
     stopTimer()
+    if (rollTimer) clearTimeout(rollTimer)
     if (remoteTickId) clearInterval(remoteTickId)
     transport.close()
   })
@@ -296,11 +358,12 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     if (rolling.value || botThinking.value) return
     const phase = turn.value?.phase
     if (phase !== 'first-roll' && phase !== 'island-roll' && phase !== 'decision') return
-    rolling.value = true
+    // On arme tout de suite, sans attendre la réponse : en distant, l'état met
+    // un aller-retour à revenir, et le cachet doit s'éteindre au clic. Le
+    // détecteur de jet réarmera ensuite sur la volée réellement observée.
+    markRolling()
     if (phase === 'decision') reroll()
     else roll()
-    // Laisse le temps au jet d'être perçu (et plus tard, à l'animation 3D).
-    setTimeout(() => (rolling.value = false), ROLL_MS)
   }
 
   const bank = () =>
@@ -363,6 +426,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     selected,
     botThinking,
     rolling,
+    rollSeq,
     turnActor,
     transient,
     turn,

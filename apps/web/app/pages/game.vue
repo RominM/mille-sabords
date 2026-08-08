@@ -25,6 +25,7 @@ const {
   difficulty,
   selected,
   rolling,
+  rollSeq,
   turnActor,
   transient,
   turn,
@@ -162,12 +163,19 @@ const rerollCount = computed(() => eligibleReroll().length)
  * Slots du bas = dés GARDÉS : ceux choisis par le joueur, plus les têtes de mort
  * (verrouillées, donc gardées d'office) et les dés réservés de l'Île au Trésor.
  */
+// Une tête de mort verrouillée PENDANT que la volée est en l'air reste au
+// centre : elle vient d'être jetée, elle doit rouler avec les autres. Elle
+// rejoindra la rangée en retombant. Sans cela, la seule face qu'on veut voir
+// tomber serait justement celle qui saute directement dans son cadre.
 const isKept = (d: { id: number; locked: boolean; banked: boolean }) =>
-  d.locked || d.banked || selected.value.has(d.id)
+  (d.locked && !rolling.value) || d.banked || selected.value.has(d.id)
 
-const centerDice = computed(() =>
-  turn.value ? turn.value.dice.filter((d) => d.face !== null && !isKept(d)) : []
-)
+/**
+ * Les dés encore SANS face restent de la partie, invisibles : leur composant
+ * doit exister avant le premier jet du tour, sinon ce jet-là apparaîtrait tout
+ * posé au lieu de rouler comme les suivants.
+ */
+const centerDice = computed(() => (turn.value ? turn.value.dice.filter((d) => !isKept(d)) : []))
 const slotDice = computed(() =>
   turn.value ? turn.value.dice.filter((d) => d.face !== null && isKept(d)) : []
 )
@@ -264,10 +272,19 @@ watch(isDefeat, async (value) => {
         <PirateCard :card="turn.card" :skulls="skulls" />
       </div>
 
-      <!-- Dés en jeu : au centre du plateau -->
+      <!-- Dés en jeu : au centre du plateau. Ils sont égrenés au lancer — huit
+           dés partant au cordeau ressembleraient à un seul objet. -->
       <div v-if="turn" class="zone-center">
-        <div v-for="d in centerDice" :key="d.id" class="die-cell die-cell--big">
-          <DieView :die="d" :clickable="clickable" @click="toggleDie(d.id)" />
+        <div v-for="(d, i) in centerDice" :key="d.id" class="die-cell die-cell--big">
+          <DieView
+            :die="d"
+            :clickable="clickable"
+            :roll="rollSeq"
+            :delay="i * DIE_STAGGER_MS"
+            :duration="DIE_FLIGHT_MS"
+            :silent="i > 0"
+            @click="toggleDie(d.id)"
+          />
         </div>
       </div>
 
@@ -482,42 +499,52 @@ watch(isDefeat, async (value) => {
   z-index: 2;
 }
 
-// Dés en jeu, au centre
+// Dés en jeu, au centre. Bornes du bois libre sur le nouveau décor : sous les
+// lanternes, au-dessus de la rangée d'emplacements, à gauche du cadre de carte.
 .zone-center {
   position: absolute;
-  left: 21%;
-  top: 21%;
-  width: 58%;
-  height: 45%;
+  left: 19%;
+  top: 22%;
+  width: 55%;
+  height: 42%;
   display: flex;
   flex-wrap: wrap;
-  gap: 1.6cqw;
+  gap: 1.4cqw;
   align-content: center;
   justify-content: center;
 }
+// Le dé porte sa propre taille : `--die-size` descend jusqu'au cube, qui en
+// tire la profondeur de ses faces (translateZ = la moitié). Une longueur, donc,
+// jamais un pourcentage.
 .die-cell--big {
-  width: 9.5cqw;
-  height: 9.5cqw;
+  --die-size: 7cqw;
+  width: var(--die-size);
+  height: var(--die-size);
 }
 
-// Slots du bas : dés sélectionnés
+// Rangée d'emplacements du nouveau décor, mesurée sur l'image (1672×941) :
+// cadres x 413..1242, y 652..748 ; largeur d'un cadre 91 px, pas de 105,6 px.
+// L'écart de 14,6 px se rapporte à la LARGEUR DE LA RANGÉE (829 px) et non au
+// plateau — c'est ce que fait `gap` en pourcentage : 14,6 / 829 = 1,76 %.
 .zone-slots {
   position: absolute;
-  left: 24.6%;
-  top: 75.7%;
-  width: 50.7%;
-  height: 11.9%;
+  left: 24.7%;
+  top: 69.29%;
+  width: 49.58%;
+  height: 10.2%;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 0.6%;
+  gap: 1.76%;
   place-items: center;
 }
 .die-cell {
   display: grid;
   place-items: center;
 }
-// Dés réservés : remplissent leur slot (et s'étirent avec le plateau au resize).
+// Dés réservés : un cheveu plus petits que leur cadre (91 px = 5,44 cqw), pour
+// que le liseré doré du décor reste visible tout autour.
 .zone-slots .die-cell {
+  --die-size: 4.9cqw;
   width: 100%;
   height: 100%;
 }
