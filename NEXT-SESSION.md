@@ -68,7 +68,7 @@ une partie à plusieurs sur un seul poste.
 
 ### Ensuite
 
-- [ ] **Animation des dés** (CSS plutôt que Three.js), bruitage de lancer.
+- [ ] **Animation des dés** — voir §5, la question est déjà instruite.
       Volontairement APRÈS le réseau : le flux de tour est devenu asynchrone.
 - [ ] Feedback : tour de l'IA plus lisible, ambiance différente sur l'île.
 - [ ] Décor restant : image du lobby, écran de victoire.
@@ -90,7 +90,37 @@ une partie à plusieurs sur un seul poste.
   secondes et le minuteur de 30 s tourne pendant ce temps. Regrouper « attendre
   mon tour + agir + vérifier » dans UN seul appel.
 
-## 5. Questions jamais tranchées
+## 5. Animation des dés — analyse déjà faite
+
+Romin veut voir les dés **rouler**, et doute que CSS suffise. Le vrai obstacle
+n'est pas la technologie :
+
+**Le moteur a déjà décidé des faces avant que l'animation ne commence** — en
+multi, c'est même le serveur qui les a tirées. L'animation est donc du THÉÂTRE :
+elle doit finir sur un résultat imposé. C'est ce qui contraint le choix.
+
+- **Cube 3D en CSS** — six faces en `translateZ`/`rotate`, parent en
+  `transform-style: preserve-3d`, `rotate3d` animé avec plusieurs tours, un arc
+  et un rebond amorti. On peut CALCULER la rotation finale qui présente la face
+  voulue. Pas de collisions ni d'immobilisation imprévisible : chaque dé suit une
+  trajectoire scriptée. C'est la piste recommandée.
+- **Physique réelle** (Rapier/cannon) — vraies collisions, mais la simulation
+  déciderait de la face, or elle est déjà décidée. Il faudrait soit forcer
+  l'orientation finale (ça se voit), soit précalculer des graines qui tombent sur
+  chaque face (gros chantier, gain invisible). À écarter.
+- **Brassage de tuiles** — garder la tuile plate, faire défiler les faces vite
+  avec un flou et un rebond. Ce n'est pas « rouler », mais c'est cohérent avec la
+  direction artistique actuelle et bien moins cher.
+
+⚠ **Point de direction artistique** : les dés ne sont PAS des cubes numérotés,
+ce sont des tuiles plates avec une image par face dans un cadre de bois. Passer
+au cube 3D change le rendu du plateau, pas seulement l'animation.
+
+**Prochaine étape convenue** : un prototype isolé dans `pages/test.vue` (page
+inutilisée) — un dé cliquable en cube 3D CSS qui tombe sur une face demandée.
+Romin juge à l'écran, puis on généralise ou on bascule sur le brassage.
+
+## 6. Questions jamais tranchées
 
 1. Sur l'Île de la Tête-de-Mort avec un Bateau Pirate et le quota de sabres
    atteint : la prime est-elle due ? (Le cas 3 têtes, lui, est tranché : oui.)
