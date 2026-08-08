@@ -110,12 +110,19 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
    * un `watch` plutôt que des appels, qui entreraient en course avec lui.
    */
   if (remote) {
-    watch(snapshot, (s) => {
-      if (!s) return
-      turnActor.value = s.players[s.currentPlayerIndex]?.name ?? ''
-      mode.value =
-        s.phase === 'finished' ? 'finished' : s.turn?.phase === 'ended' ? 'turnEnd' : 'playing'
-    })
+    watch(
+      snapshot,
+      (s) => {
+        if (!s) return
+        turnActor.value = s.players[s.currentPlayerIndex]?.name ?? ''
+        mode.value =
+          s.phase === 'finished' ? 'finished' : s.turn?.phase === 'ended' ? 'turnEnd' : 'playing'
+      },
+      // `immediate` est indispensable : l'état arrive souvent AVANT que le
+      // plateau ne soit monté — la partie démarre alors qu'on est encore au
+      // lobby. Sans lui, l'écran resterait bloqué sur « start » à l'arrivée.
+      { immediate: true }
+    )
 
     // Le décompte se déduit de l'échéance diffusée. Les horloges des deux
     // machines peuvent différer de quelques secondes : ce n'est qu'un affichage,

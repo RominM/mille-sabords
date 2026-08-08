@@ -1,6 +1,10 @@
 /**
  * Lien avec le serveur autoritaire : une salle, sa composition, puis sa partie.
  *
+ * État et socket sont au niveau du MODULE, donc partagés : la connexion doit
+ * survivre au passage du lobby au plateau. Un état par composant couperait la
+ * partie à chaque navigation.
+ *
  * Le composable ne décide de rien — il envoie des intentions et publie ce que le
  * serveur répond. Toute règle refusée revient par `error`, jamais par une
  * exception : c'est une réponse, pas un incident.
@@ -10,48 +14,77 @@ import type { BotDifficulty, GameState } from '@rf/engine'
 
 /** Clé du jeton d'identité : c'est lui qui rend son siège au joueur. */
 const TOKEN_KEY = 'rf-player-token'
+/** Dernière salle et dernier pirate, pour se reconnecter seul après un F5. */
+const LAST_ROOM_KEY = 'rf-last-room'
+
+export interface Pirate {
+  name: string
+  avatar: string
+}
 
 /**
- * Jeton opaque, stable pour ce navigateur. Il n'identifie pas une personne mais
- * une INSTALLATION : depuis un autre navigateur ou en navigation privée, le
- * joueur sera un inconnu. C'est le compromis assumé — l'alternative « code +
- * pseudo » laisserait n'importe qui reprendre la place d'un autre.
+ * Jeton opaque identifiant un joueur, rangé dans `sessionStorage` — donc par
+ * ONGLET, et non par navigateur.
+ *
+ * `localStorage` serait partagé entre tous les onglets d'un même navigateur :
+ * deux onglets seraient le même joueur, se voleraient leur siège, et il
+ * deviendrait impossible de tester une partie à plusieurs sur un seul poste.
+ *
+ * Le compromis est net : le jeton survit à un F5 et à un plantage de la page —
+ * ce qu'on veut pour la reprise — mais pas à la fermeture de l'onglet. Fermer,
+ * c'est quitter la table.
  */
 function playerToken(): string {
   if (!import.meta.client) return ''
-  let token = localStorage.getItem(TOKEN_KEY)
+  let token = sessionStorage.getItem(TOKEN_KEY)
   if (!token) {
     token = crypto.randomUUID()
-    localStorage.setItem(TOKEN_KEY, token)
+    sessionStorage.setItem(TOKEN_KEY, token)
   }
   return token
 }
 
 export type RoomStatus = 'idle' | 'connecting' | 'lobby' | 'playing' | 'error'
 
+// ── État partagé ─────────────────────────────────────────────────────────────
+const lobby = ref<LobbyView | null>(null)
+const gameState = shallowRef<GameState | null>(null)
+const youId = ref<string | null>(null)
+const code = ref('')
+const error = ref('')
+const status = ref<RoomStatus>('idle')
+
+let socket: WebSocket | null = null
+
+/** Ce qu'il faut pour se reconnecter tout seul : la salle et qui on y est. */
+function remember(pirate: Pirate, roomCode: string): void {
+  if (!import.meta.client) return
+  sessionStorage.setItem(LAST_ROOM_KEY, JSON.stringify({ ...pirate, code: roomCode }))
+}
+
+export function lastRoom(): (Pirate & { code: string }) | null {
+  if (!import.meta.client) return null
+  try {
+    return JSON.parse(sessionStorage.getItem(LAST_ROOM_KEY) ?? 'null')
+  } catch {
+    return null
+  }
+}
+
 export const useRoom = () => {
-  const lobby = ref<LobbyView | null>(null)
-  const gameState = shallowRef<GameState | null>(null)
-  const youId = ref<string | null>(null)
-  const code = ref('')
-  const error = ref('')
-  const status = ref<RoomStatus>('idle')
-
-  let socket: WebSocket | null = null
-  /** Intention mise en attente le temps que la connexion s'ouvre. */
-  let pending: ClientMessage | null = null
-
   const send = (msg: ClientMessage): void => {
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg))
-    else pending = msg
   }
 
-  function receive(msg: ServerMessage): void {
+  function receive(msg: ServerMessage, pirate: Pirate): void {
     switch (msg.t) {
       case 'joined':
         code.value = msg.code
         youId.value = msg.youId
         error.value = ''
+        // On ne mémorise qu'une salle RÉELLEMENT rejointe : un code refusé ne
+        // doit pas nous faire reconnecter en boucle sur une salle fantôme.
+        remember(pirate, msg.code)
         return
       case 'lobby':
         lobby.value = msg.lobby
@@ -88,7 +121,7 @@ export const useRoom = () => {
    * Ouvre la connexion et demande une place. Sans `roomCode`, le serveur crée
    * une salle et renvoie son code ; avec, il fait rejoindre — ou refuse.
    */
-  function connect(pirate: { name: string; avatar: string }, roomCode?: string): void {
+  function connect(pirate: Pirate, roomCode?: string): void {
     close()
     status.value = 'connecting'
     error.value = ''
@@ -102,15 +135,11 @@ export const useRoom = () => {
         name: pirate.name,
         avatar: pirate.avatar
       })
-      if (pending) {
-        socket!.send(JSON.stringify(pending))
-        pending = null
-      }
     })
 
     socket.addEventListener('message', (event) => {
       try {
-        receive(JSON.parse(String(event.data)) as ServerMessage)
+        receive(JSON.parse(String(event.data)) as ServerMessage, pirate)
       } catch {
         error.value = 'Réponse illisible du serveur'
       }
@@ -128,13 +157,20 @@ export const useRoom = () => {
     })
   }
 
+  /** Reprend la dernière salle connue. Rend `false` s'il n'y a rien à reprendre. */
+  function resume(): boolean {
+    const last = lastRoom()
+    if (!last?.code) return false
+    connect({ name: last.name, avatar: last.avatar }, last.code)
+    return true
+  }
+
   function close(): void {
     socket?.close()
     socket = null
-    pending = null
   }
 
-  onScopeDispose(close)
+  const connected = computed(() => status.value === 'lobby' || status.value === 'playing')
 
   // ── Intentions de la salle d'attente ───────────────────────────────────────
   const setReady = (ready: boolean) => send({ t: 'ready', ready })
@@ -145,16 +181,21 @@ export const useRoom = () => {
 
   /** Vrai si c'est TOI qui règles la partie. */
   const isHost = computed(() => !!youId.value && lobby.value?.hostId === youId.value)
+  /** Ton propre siège, pour savoir si tu t'es déjà déclaré paré. */
+  const mySeat = computed(() => lobby.value?.seats.find((s) => s.id === youId.value) ?? null)
 
   return {
     status,
+    connected,
     code,
     youId,
     lobby,
     gameState,
     error,
     isHost,
+    mySeat,
     connect,
+    resume,
     close,
     send,
     setReady,

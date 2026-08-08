@@ -6,6 +6,17 @@ import stopSeal from '~/assets/images/ui/wax-seal-stop.webp'
 import rulesIcon from '~/assets/images/ui/icon-rules.webp'
 import darkLaugh from '~/assets/sounds/soundscrate-evil-chuckle-02.mp3'
 
+const route = useRoute()
+const router = useRouter()
+
+/**
+ * Le mode est lu UNE fois : il détermine qui fait autorité, et cela ne peut pas
+ * changer en cours de partie. En solo le moteur tourne dans l'onglet ; en multi
+ * c'est le serveur, et l'écran se contente de suivre.
+ */
+const isSolo = route.query.mode !== 'multi'
+const room = useRoom()
+
 const {
   WINNING_SCORE,
   TURN_SECONDS,
@@ -33,7 +44,7 @@ const {
   avatarOf,
   guardianDie,
   potentialScore
-} = useGame()
+} = useGame(isSolo ? createLocalTransport() : createNetworkTransport(room))
 
 /**
  * La Gardienne n'a de sens qu'affichée : sans indication, le joueur ignore
@@ -43,7 +54,7 @@ const guardianOffered = computed(
   () =>
     turn.value?.guardianAvailable === true &&
     turn.value?.phase === 'decision' &&
-    !isBotTurn.value &&
+    isMySeat.value &&
     turn.value.dice.some((d) => d.face === 'skull')
 )
 
@@ -65,18 +76,6 @@ const pendingDifficulty = ref<BotDifficulty>('medium')
 const darkLaughAudio = ref<HTMLAudioElement | null>(null)
 const showRules = ref(false)
 
-const route = useRoute()
-const router = useRouter()
-
-/**
- * Le plateau est le même en solo et en multi : seule la provenance de l'équipage
- * change. Le mode passe donc par l'URL (`/game?mode=solo|multi`).
- *
- * En query plutôt qu'en segment de route : la reprise d'une partie interrompue
- * ajoutera un `?room=CODE` sans avoir à retoucher le chemin.
- */
-const isSolo = computed(() => route.query.mode !== 'multi')
-
 const { sfxGain } = useSoundSettings()
 
 /**
@@ -86,18 +85,38 @@ const { sfxGain } = useSoundSettings()
  */
 const tableSetup = useTableSetup()
 
-onMounted(function startFromLobby() {
-  const setup = tableSetup.value
-  if (setup?.roster.length) {
+onMounted(function openTable() {
+  if (isSolo) {
+    const setup = tableSetup.value
+    if (!setup?.roster.length) return
     pendingDifficulty.value = setup.difficulty
     newGame(setup.difficulty, setup.roster)
     tableSetup.value = null // consommée : « Rejouer » réutilisera le même équipage
     return
   }
-  // En multi la table vient du lobby : sans elle (accès direct à l'URL,
-  // rechargement de page), il n'y a rien à jouer — on renvoie composer l'équipage.
-  if (!isSolo.value) router.push('/lobby')
+
+  // En multi, la partie vit sur le serveur. Après un rechargement la connexion
+  // est perdue mais le jeton demeure : on la rouvre seul et le serveur nous rend
+  // notre siège. Sans salle connue, il n'y a rien à reprendre.
+  if (room.connected.value) return
+  if (!room.resume()) router.push('/lobby')
 })
+
+/**
+ * Portrait d'un joueur. En solo il vient de la table composée sur place ; en
+ * multi, de la dernière vue de salle reçue — l'état de partie ne transporte pas
+ * les avatars, qui ne regardent pas les règles.
+ */
+function portraitOf(playerId: string): string | undefined {
+  if (isSolo) return avatarOf(playerId)
+  return room.lobby.value?.seats.find((s) => s.id === playerId)?.avatar || undefined
+}
+
+/**
+ * En multi, tant que le serveur n'a rien envoyé, il n'y a pas de table à
+ * dessiner. En solo la question ne se pose pas : le moteur répond tout de suite.
+ */
+const waitingForTable = computed(() => !isSolo && !turn.value)
 
 const skulls = computed(() => {
   const t = turn.value
@@ -111,8 +130,18 @@ const isDefeat = computed(function detectDefeat() {
   const reason = turn.value?.outcome?.reason
   return reason === 'three-skulls' || reason === 'skull-island'
 })
+/**
+ * Le siège actif est-il le MIEN ? En solo, tout siège non-IA l'est. En multi, il
+ * faut le comparer à mon identifiant : sans ça, chaque joueur verrait ses
+ * boutons actifs pendant le tour des autres, et le serveur devrait refuser des
+ * actions que l'écran n'aurait jamais dû proposer.
+ */
+const isMySeat = computed(() =>
+  isSolo ? !isBotTurn.value : currentPlayer.value?.id === room.youId.value
+)
+
 /** Les cachets restent affichés en permanence ; ils sont grisés hors de notre tour. */
-const myTurn = computed(() => !isBotTurn.value && !rolling.value && turn.value?.phase !== 'ended')
+const myTurn = computed(() => isMySeat.value && !rolling.value && turn.value?.phase !== 'ended')
 // En phase de décision, le cachet ne s'allume que si la relance est LÉGALE :
 // au moins deux dés à relancer, et au moins un dé gardé.
 const canRoll = computed(() => {
@@ -122,7 +151,7 @@ const canRoll = computed(() => {
   return phase === 'decision' && eligibleReroll().length > 0
 })
 const canStop = computed(() => myTurn.value && turn.value?.phase === 'decision')
-const clickable = computed(() => !isBotTurn.value && turn.value?.phase === 'decision')
+const clickable = computed(() => isMySeat.value && turn.value?.phase === 'decision')
 const isTreasure = computed(() => turn.value?.card.type === 'treasure-island')
 const rerollCount = computed(() => eligibleReroll().length)
 
@@ -182,7 +211,18 @@ watch(isDefeat, async (value) => {
 </script>
 
 <template>
-  <div v-if="mode !== 'start'" class="stage">
+  <!-- En multi, la partie vit sur le serveur : entre l'entrée sur la page et la
+       première réponse, il n'y a rien à dessiner. On réutilise le chargeur du
+       jeu plutôt que de laisser un fond nu. -->
+  <AppLoader
+    v-if="waitingForTable"
+    :loaded="0"
+    :total="0"
+    :progress="0"
+    hint="Connexion à la table…"
+  />
+
+  <div v-else-if="mode !== 'start'" class="stage">
     <div class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
       <!-- Rappel des règles, calé dans le creux entre le crâne et la lanterne gauche -->
       <button
@@ -204,7 +244,7 @@ watch(isDefeat, async (value) => {
           v-for="(p, i) in players"
           :key="p.id"
           :player="p"
-          :avatar="avatarOf(p.id)"
+          :avatar="portraitOf(p.id)"
           :current="gamePhase === 'playing' && i === currentIndex"
           :seconds="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
           :total-seconds="TURN_SECONDS"
@@ -312,7 +352,7 @@ watch(isDefeat, async (value) => {
     v-else-if="mode === 'finished'"
     :players="players"
     :winner="winner"
-    :avatar-of="avatarOf"
+    :avatar-of="portraitOf"
     @replay="newGame(difficulty)"
     @menu="router.push('/')"
   />

@@ -1,10 +1,18 @@
 <template>
   <main class="lobby" :style="{ backgroundImage: `url(${backgroundUrl})` }">
-    <div class="lobby__grid">
+    <!-- Tant qu'on n'est pas entré, un seul écran : qui tu es, puis créer ou
+         rejoindre. C'est ici que les invités saisissent le code. -->
+    <RoomEntry
+      v-if="!room.connected.value"
+      :error="room.error.value"
+      @create="(pirate) => room.connect(pirate)"
+      @join="(pirate, code) => room.connect(pirate, code)"
+    />
+
+    <div v-else class="lobby__grid">
       <h1 class="lobby__title">Salle d’équipage</h1>
 
-      <!-- Réglage de partie, réservé à l'hôte : il ne concerne pas les invités. -->
-      <div v-if="isHost" class="lobby__ai">
+      <div v-if="room.isHost.value" class="lobby__ai">
         <span class="lobby__ai-label">Niveau des IA</span>
         <div class="lobby__ai-choices">
           <button
@@ -12,108 +20,93 @@
             :key="d.value"
             v-click-sound
             class="btn lobby__ai-btn"
-            :class="{ 'btn--ghost': difficulty !== d.value }"
+            :class="{ 'btn--ghost': lobby?.difficulty !== d.value }"
             type="button"
-            :aria-pressed="difficulty === d.value"
-            @click="difficulty = d.value"
+            :aria-pressed="lobby?.difficulty === d.value"
+            @click="room.setDifficulty(d.value)"
           >
             {{ d.label }}
           </button>
         </div>
       </div>
 
-      <!-- Panneau des sièges, sur la planche du menu -->
       <section class="lobby__crew" :style="{ backgroundImage: `url(${panelUrl})` }">
-        <!-- Le cartouche du haut est fait pour porter un titre : on y met le
-             code, qui est justement ce qu'on dicte à ses camarades. Sans lui,
-             cette réserve resterait vide et la planche paraîtrait écrasée. -->
+        <!-- Le cartouche porte le code : c'est ce qu'on dicte à ses camarades. -->
         <div class="lobby__code">
           <span class="lobby__code-label">Code de la partie</span>
-          <strong class="lobby__code-value">{{ roomCode }}</strong>
+          <strong class="lobby__code-value">{{ room.code.value }}</strong>
         </div>
 
         <ul class="crew">
-          <li v-for="(seat, i) in seats" :key="i" class="crew__row">
-            <template v-if="seat">
-              <img :src="seat.avatar" alt="" class="crew__avatar" />
-              <span class="crew__name">
-                {{ seat.name }}
-                <span v-if="seat.host" class="crew__tag">(hôte)</span>
-                <span v-else-if="seat.bot" class="crew__tag">IA</span>
-              </span>
-              <span class="crew__state" :class="{ 'crew__state--ready': seat.ready }">
-                {{ seat.bot ? 'Paré' : seat.ready ? 'Paré' : 'En attente' }}
-              </span>
-              <button
-                v-if="!seat.bot"
-                v-click-sound
-                class="btn btn--ghost crew__action"
-                type="button"
-                @click="toggleReady(i)"
-              >
-                {{ seat.ready ? 'Annuler' : 'Je suis paré' }}
-              </button>
-              <button
-                v-else
-                v-click-sound
-                class="btn btn--ghost crew__action"
-                type="button"
-                @click="removeSeat(i)"
-              >
-                Retirer
-              </button>
-            </template>
+          <li v-for="seat in lobby?.seats ?? []" :key="seat.id" class="crew__row">
+            <img :src="seat.avatar || botAvatar" alt="" class="crew__avatar" />
+            <span class="crew__name">
+              {{ seat.name }}
+              <span v-if="seat.id === lobby?.hostId" class="crew__tag">(hôte)</span>
+              <span v-else-if="seat.bot" class="crew__tag">IA</span>
+              <span v-if="!seat.connected" class="crew__tag">déconnecté</span>
+            </span>
 
-            <template v-else>
-              <!-- Le siège libre est lui-même le bouton : cliquer dessus ouvre
-                   la personnalisation, comme prévu au wireframe. -->
-              <button v-click-sound class="crew__empty" type="button" @click="openSeat(i)">
-                Siège libre — clique pour embarquer
-              </button>
-              <button
-                v-click-sound
-                class="btn btn--ghost crew__action"
-                type="button"
-                @click="addBot(i)"
-              >
-                + Ajouter IA
-              </button>
-            </template>
+            <span class="crew__state" :class="{ 'crew__state--ready': seat.ready }">
+              {{ seat.ready ? 'Paré' : 'En attente' }}
+            </span>
+
+            <!-- Chacun ne se déclare paré que pour lui-même ; les IA le sont
+                 d'office, et seul l'hôte peut les retirer. -->
+            <button
+              v-if="seat.id === room.youId.value"
+              v-click-sound
+              class="btn btn--ghost crew__action"
+              type="button"
+              @click="room.setReady(!seat.ready)"
+            >
+              {{ seat.ready ? 'Annuler' : 'Je suis paré' }}
+            </button>
+            <button
+              v-else-if="seat.bot && room.isHost.value"
+              v-click-sound
+              class="btn btn--ghost crew__action"
+              type="button"
+              @click="room.removeSeat(seat.id)"
+            >
+              Retirer
+            </button>
+          </li>
+
+          <li v-if="room.isHost.value && (lobby?.seats.length ?? 0) < MAX_PLAYERS" class="crew__row">
+            <button v-click-sound class="crew__empty" type="button" @click="room.addBot()">
+              + Ajouter une IA
+            </button>
           </li>
         </ul>
       </section>
 
-      <NuxtLink v-click-sound to="/" class="lobby__back">← Retour</NuxtLink>
+      <NuxtLink v-click-sound to="/" class="lobby__back" @click="room.close()">← Retour</NuxtLink>
 
-      <p class="lobby__hint">{{ hint }}</p>
+      <p class="lobby__hint" :class="{ 'lobby__hint--error': room.error.value }">
+        {{ room.error.value || hint }}
+      </p>
 
       <div class="lobby__start">
-        <PlateButton :disabled="!canStart" @click="startGame">Lever l’ancre</PlateButton>
+        <PlateButton v-if="room.isHost.value" :disabled="!canStart" @click="room.start()">
+          Lever l’ancre
+        </PlateButton>
       </div>
     </div>
-
-    <SeatSetupModal
-      v-if="openSeatIndex !== null"
-      @close="openSeatIndex = null"
-      @confirm="takeSeat"
-    />
   </main>
 </template>
 
 <script setup lang="ts">
 /**
- * Salle d'équipage. Purement locale pour l'instant : elle compose la table
- * (joueurs sur ce poste + IA) avant de lancer la partie.
+ * Salle d'équipage, pilotée par le serveur.
  *
- * La forme de l'état — sièges, « paré », hôte — est déjà celle que le serveur
- * WebSocket diffusera : seule la SOURCE changera, pas la structure.
+ * La page ne compose plus rien : elle affiche ce que le serveur diffuse et lui
+ * renvoie des intentions. C'est ce qui fait que tous les joueurs voient la même
+ * table au même instant, et qu'un invité arrive simplement en saisissant le code.
  */
 import { MAX_PLAYERS, type BotDifficulty } from '@rf/engine'
 import backgroundUrl from '~/assets/images/ui/captain-quartier.webp'
 import panelUrl from '~/assets/images/ui/panel-menu.webp'
-
-const MAX_SEATS = MAX_PLAYERS
-const MIN_PLAYERS = 2
 
 const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
   { value: 'easy', label: 'Facile' },
@@ -121,107 +114,39 @@ const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
   { value: 'hard', label: 'Difficile' }
 ]
 
-interface Seat {
-  name: string
-  avatar: string
-  bot: boolean
-  ready: boolean
-  /** L'hôte règle la partie ; en local, c'est le premier humain assis. */
-  host: boolean
-}
-
 const router = useRouter()
-const tableSetup = useTableSetup()
+const room = useRoom()
 const { botAvatar } = useAvatars()
 
-const difficulty = ref<BotDifficulty>('medium')
-const seats = ref<(Seat | null)[]>(Array.from({ length: MAX_SEATS }, () => null))
-const openSeatIndex = ref<number | null>(null)
+const lobby = room.lobby
 
-/** Code de partie factice, remplacé par celui du serveur le moment venu. */
-const roomCode = ref(
-  Array.from(
-    { length: 4 },
-    () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]
-  ).join('')
-)
-
-const filled = computed(() => seats.value.filter((s): s is Seat => s !== null))
-const humans = computed(() => filled.value.filter((s) => !s.bot))
-
-/** En local, l'hôte existe dès qu'un humain s'est assis : c'est lui qui règle. */
-const isHost = computed(() => humans.value.length > 0)
-
+const humans = computed(() => lobby.value?.seats.filter((s) => !s.bot) ?? [])
 const canStart = computed(
   () =>
-    filled.value.length >= MIN_PLAYERS &&
+    (lobby.value?.seats.length ?? 0) >= 2 &&
     humans.value.length > 0 &&
     humans.value.every((s) => s.ready)
 )
 
-const hint = computed(function buildHint() {
-  if (filled.value.length < MIN_PLAYERS) return `Il faut au moins ${MIN_PLAYERS} pirates à bord.`
-  if (humans.value.length === 0) return 'Prends un siège avant de lever l’ancre.'
+const hint = computed(() => {
+  if (!lobby.value) return ''
+  if (lobby.value.seats.length < 2) return 'Partage le code : il faut au moins 2 pirates à bord.'
   if (!humans.value.every((s) => s.ready)) return 'Tout l’équipage doit se déclarer paré.'
+  if (!room.isHost.value) return 'L’équipage est paré — l’hôte peut lever l’ancre.'
   return 'L’équipage est au complet — en route !'
 })
 
-function openSeat(index: number): void {
-  openSeatIndex.value = index
-}
-
-function takeSeat(pirate: { name: string; avatar: string }): void {
-  const i = openSeatIndex.value
-  if (i === null) return
-  seats.value[i] = {
-    ...pirate,
-    bot: false,
-    ready: false,
-    // Le premier humain assis devient l'hôte.
-    host: humans.value.length === 0
-  }
-  seats.value = [...seats.value]
-  openSeatIndex.value = null
-}
-
-function addBot(index: number): void {
-  const n = filled.value.filter((s) => s.bot).length + 1
-  seats.value[index] = {
-    name: `Corsaire ${n}`,
-    avatar: botAvatar,
-    bot: true,
-    ready: true,
-    host: false
-  }
-  seats.value = [...seats.value]
-}
-
-function removeSeat(index: number): void {
-  seats.value[index] = null
-  seats.value = [...seats.value]
-}
-
-function toggleReady(index: number): void {
-  const seat = seats.value[index]
-  if (!seat) return
-  seats.value[index] = { ...seat, ready: !seat.ready }
-  seats.value = [...seats.value]
-}
-
-/** Transmet la table composée à la partie, puis y navigue. */
-function startGame(): void {
-  if (!canStart.value) return
-  tableSetup.value = {
-    difficulty: difficulty.value,
-    roster: filled.value.map((seat, i) => ({
-      id: `p${i}`,
-      name: seat.name,
-      bot: seat.bot,
-      avatar: seat.avatar
-    }))
-  }
-  router.push('/game?mode=multi')
-}
+/**
+ * Le départ n'est pas décidé ici : le serveur l'annonce, et TOUS les joueurs
+ * basculent ensemble. Attendre un clic de chacun les désynchroniserait.
+ */
+watch(
+  () => room.status.value,
+  (status) => {
+    if (status === 'playing') router.push('/game?mode=multi')
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped lang="scss">
@@ -234,14 +159,10 @@ function startGame(): void {
   background-size: cover;
   background-repeat: no-repeat;
 
-  // Trame du wireframe : titre à gauche, code au centre, réglage IA à droite,
-  // le panneau des sièges en pleine largeur, puis retour et CTA en pied.
   // La planche impose sa hauteur par son ratio : on borne donc la LARGEUR de la
   // grille pour que l'ensemble tienne à l'écran, plutôt que d'écraser l'image.
+  // La réserve de 12rem couvre les rangées qui l'entourent.
   &__grid {
-    // La réserve de 12rem couvre les trois rangées qui entourent la planche —
-    // titre, retour/CTA, indice — plus les gouttières. Mesurée en 1280x720, où
-    // la contrainte de hauteur est la plus serrée.
     width: min(1340px, 94vw, calc((96dvh - 12rem) * 1708 / 985));
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -319,8 +240,7 @@ function startGame(): void {
   }
 
   // Le ratio de la planche est VERROUILLÉ : c'est une pièce dessinée, l'étirer
-  // déformait le laiton du cadre. `container-type` permet de dimensionner le
-  // contenu en proportion d'elle, quelle que soit sa taille à l'écran.
+  // déformerait le laiton du cadre.
   &__crew {
     grid-area: crew;
     position: relative;
@@ -351,6 +271,11 @@ function startGame(): void {
     font-family: var(--font-body);
     text-align: center;
     text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
+
+    &--error {
+      color: var(--danger-edge);
+      font-weight: 600;
+    }
   }
 
   &__start {
@@ -360,7 +285,6 @@ function startGame(): void {
 }
 
 // Bois utile sous le cartouche, mesuré à x 78..1637 et y 390..915 sur 1708x985.
-// Les tailles sont en unités de conteneur : les sièges suivent la planche.
 .crew {
   position: absolute;
   left: 6%;
@@ -421,7 +345,6 @@ function startGame(): void {
     }
   }
 
-  // Le siège vide occupe toute la ligne : c'est une cible de clic, pas un label.
   &__empty {
     flex: 1;
     padding: var(--space-2);
