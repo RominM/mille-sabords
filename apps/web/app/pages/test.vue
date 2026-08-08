@@ -6,9 +6,8 @@
     </header>
 
     <p class="lab__intro">
-      Prototype isolé : le cube 3D CSS tombe sur une face <strong>imposée</strong>, comme le
-      fera le vrai jeu où le moteur (ou le serveur) a déjà tiré le résultat.
-      Cliquer le dé le relance.
+      Prototype isolé : le cube 3D CSS tombe sur une face <strong>imposée</strong>, comme le fera le vrai jeu
+      où le moteur (ou le serveur) a déjà tiré le résultat. Cliquer le dé le relance.
     </p>
 
     <!-- Comparaison : le cube d'un côté, la tuile plate actuelle de l'autre. -->
@@ -60,9 +59,7 @@
         >
           {{ FACE_LABEL[face] }}
         </button>
-        <button v-click-sound type="button" class="lab__face" @click="rollSingle()">
-          au hasard
-        </button>
+        <button v-click-sound type="button" class="lab__face" @click="rollSingle()">au hasard</button>
       </div>
     </section>
 
@@ -70,23 +67,33 @@
       <h2 class="lab__legend">Réglages</h2>
       <div class="lab__knobs">
         <label class="lab__knob">
-          <span>Durée du vol <b>{{ duration }} ms</b></span>
+          <span
+            >Durée du vol <b>{{ duration }} ms</b></span
+          >
           <input v-model.number="duration" type="range" min="400" max="2400" step="50" />
         </label>
         <label class="lab__knob">
-          <span>Tours minimum <b>{{ turns }}</b></span>
+          <span
+            >Tours minimum <b>{{ turns }}</b></span
+          >
           <input v-model.number="turns" type="range" min="1" max="5" step="1" />
         </label>
         <label class="lab__knob">
-          <span>Inclinaison au repos — X <b>{{ tiltX }}°</b></span>
+          <span
+            >Inclinaison au repos — X <b>{{ tiltX }}°</b></span
+          >
           <input v-model.number="tiltX" type="range" min="-35" max="35" step="1" />
         </label>
         <label class="lab__knob">
-          <span>Inclinaison au repos — Y <b>{{ tiltY }}°</b></span>
+          <span
+            >Inclinaison au repos — Y <b>{{ tiltY }}°</b></span
+          >
           <input v-model.number="tiltY" type="range" min="-35" max="35" step="1" />
         </label>
         <label class="lab__knob">
-          <span>Échelle de la tuile <b>{{ artScale.toFixed(2) }}×</b></span>
+          <span
+            >Échelle de la tuile <b>{{ artScale.toFixed(2) }}×</b></span
+          >
           <input v-model.number="artScale" type="range" min="1" max="1.8" step="0.01" />
         </label>
         <label class="lab__knob lab__knob--check">
@@ -95,8 +102,8 @@
         </label>
       </div>
       <p class="lab__hint">
-        Inclinaison à 0/0 : la face demandée est bien à plat, très lisible, mais le dé
-        redevient un carré. Autour de −14/−18, il reste un objet en volume.
+        Inclinaison à 0/0 : la face demandée est bien à plat, très lisible, mais le dé redevient un carré.
+        Autour de −14/−18, il reste un objet en volume.
       </p>
     </section>
 
@@ -124,35 +131,45 @@
 
       <div class="lab__knobs">
         <label class="lab__knob">
-          <span>Convergence au bord (yaw) <b>{{ perspective.yaw }}°</b></span>
-          <input v-model.number="perspective.yaw" type="range" min="0" max="30" step="0.5" />
+          <span
+            >Convergence au bord (yaw) <b>{{ perspective.yaw }}°</b></span
+          >
+          <input v-model.number="perspective.yaw" type="range" min="0" max="50" step="0.5" />
         </label>
         <label class="lab__knob">
-          <span>Plongée en HAUT du plateau <b>{{ perspective.pitchTop }}°</b></span>
+          <span
+            >Plongée en HAUT du plateau <b>{{ perspective.pitchTop }}°</b></span
+          >
           <input v-model.number="perspective.pitchTop" type="range" min="0" max="25" step="0.5" />
         </label>
         <label class="lab__knob">
-          <span>Plongée en BAS du plateau <b>{{ perspective.pitchBottom }}°</b></span>
+          <span
+            >Plongée en BAS du plateau <b>{{ perspective.pitchBottom }}°</b></span
+          >
           <input v-model.number="perspective.pitchBottom" type="range" min="0" max="25" step="0.5" />
         </label>
         <label class="lab__knob">
-          <span>Roulis au bord <b>{{ perspective.roll }}°</b></span>
+          <span
+            >Roulis au bord <b>{{ perspective.roll }}°</b></span
+          >
           <input v-model.number="perspective.roll" type="range" min="-30" max="30" step="0.5" />
         </label>
         <label class="lab__knob">
-          <span>Relief des dés rangés <b>×{{ perspective.seatedRelief }}</b></span>
+          <span
+            >Relief des dés rangés <b>×{{ perspective.seatedRelief }}</b></span
+          >
           <input v-model.number="perspective.seatedRelief" type="range" min="-3" max="3" step="0.05" />
         </label>
         <label class="lab__knob">
-          <span>Relief carte &amp; points <b>×{{ perspective.flatRelief }}</b></span>
-          <input v-model.number="perspective.flatRelief" type="range" min="-2" max="2" step="0.05" />
-        </label>
-        <label class="lab__knob">
-          <span>Enfoncement dans le cadre <b>{{ seatDrop }} %</b></span>
+          <span
+            >Enfoncement dans le cadre <b>{{ seatDrop }} %</b></span
+          >
           <input v-model.number="seatDrop" type="range" min="0" max="16" step="0.5" />
         </label>
         <label class="lab__knob">
-          <span>Taille des dés rangés <b>{{ seatSize }} cqw</b></span>
+          <span
+            >Taille des dés rangés <b>{{ seatSize }} cqw</b></span
+          >
           <input v-model.number="seatSize" type="range" min="3.2" max="5.4" step="0.1" />
         </label>
       </div>
@@ -161,11 +178,60 @@
       <!-- Le labo ne sert à rien s'il faut ensuite retranscrire les valeurs à la
            main : il rend directement le morceau de code à coller. -->
       <p class="lab__hint">
-        Quand ça te va, colle ceci dans <code>BOARD_PERSPECTIVE</code>
-        (<code>app/utils/boardTilt.ts</code>) — le plateau le reprend tel quel.
-        Les deux dernières valeurs sont en CSS, dans <code>pages/game.vue</code>.
+        Quand ça te va, colle ceci dans <code>BOARD_PERSPECTIVE</code> (<code>app/utils/boardTilt.ts</code>) —
+        le plateau le reprend tel quel. Les deux dernières valeurs sont en CSS, dans
+        <code>pages/game.vue</code>.
       </p>
       <pre class="lab__code">{{ recipe }}</pre>
+    </section>
+
+    <!-- La carte et les points ont une place FIXE dans le décor : leurs angles
+         se donnent en clair, ils ne se déduisent pas du modèle des dés. -->
+    <section class="lab__panel">
+      <h2 class="lab__legend">Carte Pirate &amp; points en jeu</h2>
+      <div class="lab__board" :style="{ backgroundImage: `url(${layoutUrl})` }">
+        <div class="lab__zone lab__zone--live" :style="zoneStyle(live)">
+          <LiveScore :score="500" />
+        </div>
+        <div class="lab__zone lab__zone--card" :style="zoneStyle(card)">
+          <PirateCard :card="{ type: 'guardian' }" :skulls="1" />
+        </div>
+      </div>
+
+      <div class="lab__knobs">
+        <button
+          v-for="z in ZONES"
+          :key="z.key"
+          v-click-sound
+          type="button"
+          class="lab__face"
+          :class="{ 'lab__face--on': tuned === z.key }"
+          @click="tuned = z.key"
+        >
+          {{ z.label }}
+        </button>
+      </div>
+
+      <div class="lab__knobs">
+        <label v-for="k in ZONE_KNOBS" :key="k.field" class="lab__knob">
+          <span>
+            {{ k.label }} <b>{{ current[k.field] }}{{ k.unit }}</b>
+          </span>
+          <input
+            v-model.number="current[k.field]"
+            type="range"
+            :min="k.min"
+            :max="k.max"
+            :step="k.step"
+          />
+        </label>
+      </div>
+      <p class="lab__hint">
+        Les quatre premiers curseurs placent le bloc dans son cadre, les trois
+        derniers l'y couchent. Pour aligner les arêtes sur le cadre dessiné,
+        commence par le <strong>roulis</strong> seul, les autres à 0.
+      </p>
+      <pre class="lab__code">{{ zoneRecipe }}</pre>
     </section>
 
     <!-- Le vrai test du plateau : huit dés, égrenés, à la taille réelle. -->
@@ -189,7 +255,9 @@
       </div>
       <div class="lab__knobs">
         <label class="lab__knob">
-          <span>Décalage entre dés <b>{{ stagger }} ms</b></span>
+          <span
+            >Décalage entre dés <b>{{ stagger }} ms</b></span
+          >
           <input v-model.number="stagger" type="range" min="0" max="220" step="10" />
         </label>
       </div>
@@ -213,7 +281,7 @@ const FACE_LABEL: Record<DieFace, string> = {
   monkey: 'singe',
   parrot: 'perroquet',
   coin: 'pièce',
-  diamond: 'diamant',
+  diamond: 'diamant'
 }
 
 const duration = ref(1100)
@@ -240,9 +308,7 @@ function rollSingle(face?: DieFace): void {
   single.roll += 1
 }
 
-const volley = reactive(
-  Array.from({ length: 8 }, () => ({ face: draw(), roll: 0 }))
-)
+const volley = reactive(Array.from({ length: 8 }, () => ({ face: draw(), roll: 0 })))
 
 function rollVolley(): void {
   for (const die of volley) {
@@ -266,8 +332,7 @@ export const BOARD_PERSPECTIVE: BoardPerspective = {
   pitchTop: ${perspective.pitchTop},
   pitchBottom: ${perspective.pitchBottom},
   roll: ${perspective.roll},
-  seatedRelief: ${perspective.seatedRelief},
-  flatRelief: ${perspective.flatRelief}
+  seatedRelief: ${perspective.seatedRelief}
 }
 
 // app/pages/game.vue — .zone-slots .die-cell
@@ -284,6 +349,46 @@ function rollBoard(): void {
     die.roll += 1
   }
 }
+
+// ── Carte et points : des blocs à place FIXE ─────────────────────────────────
+/** Copies modifiables, pour tourner les boutons sans toucher au jeu. */
+const card = reactive({ ...CARD_ZONE })
+const live = reactive({ ...LIVE_ZONE, height: LIVE_ZONE.height ?? 8 })
+
+const ZONES = [
+  { key: 'card' as const, label: 'Carte Pirate' },
+  { key: 'live' as const, label: 'Points en jeu' }
+]
+const tuned = ref<'card' | 'live'>('card')
+const current = computed(() => (tuned.value === 'card' ? card : live))
+
+/**
+ * Les mêmes réglages pour les deux blocs : quatre pour la place, trois pour
+ * l'inclinaison. Une table plutôt que quatorze curseurs écrits à la main — on
+ * ne veut pas les corriger deux fois le jour où une borne change.
+ */
+const ZONE_KNOBS = [
+  { field: 'left', label: 'Gauche', unit: ' %', min: 55, max: 95, step: 0.1 },
+  { field: 'top', label: 'Haut', unit: ' %', min: 2, max: 70, step: 0.1 },
+  { field: 'width', label: 'Largeur', unit: ' %', min: 5, max: 35, step: 0.1 },
+  { field: 'height', label: 'Hauteur', unit: ' %', min: 3, max: 60, step: 0.1 },
+  { field: 'tiltX', label: 'Plongée (X)', unit: '°', min: -30, max: 30, step: 0.5 },
+  { field: 'tiltY', label: 'Lacet (Y)', unit: '°', min: -30, max: 30, step: 0.5 },
+  { field: 'tiltZ', label: 'Roulis (Z)', unit: '°', min: -20, max: 20, step: 0.5 }
+] as const
+
+const zoneRecipe = computed(
+  () => `// app/utils/boardZones.ts
+export const CARD_ZONE: BoardZone = {
+  left: ${card.left}, top: ${card.top}, width: ${card.width}, height: ${card.height},
+  tiltX: ${card.tiltX}, tiltY: ${card.tiltY}, tiltZ: ${card.tiltZ}
+}
+
+export const LIVE_ZONE: BoardZone = {
+  left: ${live.left}, top: ${live.top}, width: ${live.width},
+  tiltX: ${live.tiltX}, tiltY: ${live.tiltY}, tiltZ: ${live.tiltZ}
+}`
+)
 
 const boardEl = ref<HTMLElement | null>(null)
 
@@ -524,6 +629,23 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     grid-template-columns: repeat(8, 1fr);
     gap: 1.76%;
     place-items: center;
+  }
+
+  // Mêmes règles que sur le plateau : la perspective sur le parent, la rotation
+  // sur l'enfant — sinon il n'y a pas de profondeur, juste une projection plate.
+  &__zone {
+    position: absolute;
+    perspective: 90cqw;
+
+    > * {
+      transform: rotateZ(var(--tilt-z, 0deg)) rotateX(var(--tilt-x, 0deg))
+        rotateY(var(--tilt-y, 0deg));
+    }
+
+    &--card > * {
+      width: 100%;
+      height: 100%;
+    }
   }
 
   &__board-slot {

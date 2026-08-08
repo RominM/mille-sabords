@@ -134,30 +134,24 @@ function applyBoardTilt(): void {
   const board = plateau.getBoundingClientRect()
   if (!board.width) return
 
-  // Les dés, mais aussi la carte et les points : tout ce qui est POSÉ sur la
-  // table doit partager sa perspective, sinon chaque bloc dessine la sienne.
-  const items = [...plateau.querySelectorAll<HTMLElement>('.die-cell, .zone-card, .zone-live')]
-  const kindOf = (item: HTMLElement): 'die' | 'seated' | 'flat' => {
-    if (!item.classList.contains('die-cell')) return 'flat'
-    // Les dés des huit cadres ne se règlent pas comme ceux jetés sur la table :
-    // petits, encastrés, ils demandent leur propre dosage.
-    return item.closest('.zone-slots') ? 'seated' : 'die'
-  }
-
-  const tilts = items.map((item) => {
-    const box = item.getBoundingClientRect()
+  // Les dés seulement : la carte et les points ont une place fixe, donc des
+  // angles fixes (cf. `boardZones`). Seul ce qui BOUGE a besoin d'être recalculé.
+  const cells = [...plateau.querySelectorAll<HTMLElement>('.die-cell')]
+  const tilts = cells.map((cell) => {
+    const box = cell.getBoundingClientRect()
     return boardTilt(
       (box.left + box.width / 2 - board.left) / board.width,
       (box.top + box.height / 2 - board.top) / board.height,
       BOARD_PERSPECTIVE,
-      { kind: kindOf(item) }
+      // Les dés des huit cadres ne se règlent pas comme ceux jetés sur la
+      // table : petits et encastrés, ils demandent leur propre dosage.
+      { kind: cell.closest('.zone-slots') ? 'seated' : 'die' }
     )
   })
-  items.forEach((item, i) => {
-    const prefix = item.classList.contains('die-cell') ? '--die-tilt' : '--tilt'
-    item.style.setProperty(`${prefix}-x`, `${tilts[i]!.x}deg`)
-    item.style.setProperty(`${prefix}-y`, `${tilts[i]!.y}deg`)
-    item.style.setProperty(`${prefix}-z`, `${tilts[i]!.z}deg`)
+  cells.forEach((cell, i) => {
+    cell.style.setProperty('--die-tilt-x', `${tilts[i]!.x}deg`)
+    cell.style.setProperty('--die-tilt-y', `${tilts[i]!.y}deg`)
+    cell.style.setProperty('--die-tilt-z', `${tilts[i]!.z}deg`)
   })
 }
 
@@ -188,9 +182,7 @@ const isDefeat = computed(function detectDefeat() {
  * boutons actifs pendant le tour des autres, et le serveur devrait refuser des
  * actions que l'écran n'aurait jamais dû proposer.
  */
-const isMySeat = computed(() =>
-  isSolo ? !isBotTurn.value : currentPlayer.value?.id === room.youId.value
-)
+const isMySeat = computed(() => (isSolo ? !isBotTurn.value : currentPlayer.value?.id === room.youId.value))
 
 /** Les cachets restent affichés en permanence ; ils sont grisés hors de notre tour. */
 const myTurn = computed(() => isMySeat.value && !rolling.value && turn.value?.phase !== 'ended')
@@ -273,24 +265,12 @@ watch(isDefeat, async (value) => {
   <!-- En multi, la partie vit sur le serveur : entre l'entrée sur la page et la
        première réponse, il n'y a rien à dessiner. On réutilise le chargeur du
        jeu plutôt que de laisser un fond nu. -->
-  <AppLoader
-    v-if="waitingForTable"
-    :loaded="0"
-    :total="0"
-    :progress="0"
-    hint="Connexion à la table…"
-  />
+  <AppLoader v-if="waitingForTable" :loaded="0" :total="0" :progress="0" hint="Connexion à la table…" />
 
   <div v-else-if="mode !== 'start'" class="stage">
     <div ref="plateauEl" class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
       <!-- Rappel des règles, calé dans le creux entre le crâne et la lanterne gauche -->
-      <button
-        v-click-sound
-        class="rules-link"
-        type="button"
-        aria-label="Règles"
-        @click="showRules = true"
-      >
+      <button v-click-sound class="rules-link" type="button" aria-label="Règles" @click="showRules = true">
         <img :src="rulesIcon" alt="" class="rules-link__icon" />
         <span class="rules-link__label">Règles</span>
       </button>
@@ -312,12 +292,14 @@ watch(isDefeat, async (value) => {
 
       <!-- Points en jeu, juste au-dessus de la carte : le joueur doit pouvoir
            arbitrer « je relance ou j'encaisse » sans quitter le plateau des yeux. -->
-      <div v-if="potentialScore !== null" class="zone-live">
+      <div v-if="potentialScore !== null" class="zone-live" :style="zoneStyle(LIVE_ZONE)">
         <LiveScore :score="potentialScore" />
       </div>
 
-      <!-- Carte Pirate : cadre à droite -->
-      <div v-if="turn" class="zone-card">
+      <!-- Carte Pirate : dans le cadre dessiné à droite. Place et inclinaison
+           viennent de `boardZones` — un seul objet, une seule place, des angles
+           donnés en clair plutôt que déduits du modèle des dés. -->
+      <div v-if="turn" class="zone-card" :style="zoneStyle(CARD_ZONE)">
         <PirateCard :card="turn.card" :skulls="skulls" />
       </div>
 
@@ -515,12 +497,11 @@ watch(isDefeat, async (value) => {
 // d'aplomb — il PENCHE, comme tout ce que ce grand angle a photographié —, d'où
 // le léger retrait : on se cale au milieu du quadrilatère, et c'est la
 // rotation ci-dessous qui rattrape l'inclinaison.
+// Place, taille et inclinaison viennent de `CARD_ZONE` (app/utils/boardZones.ts),
+// posées en style en ligne : elles se règlent à l'œil dans le labo, et le CSS
+// n'a plus qu'à savoir COMMENT appliquer une inclinaison, pas laquelle.
 .zone-card {
   position: absolute;
-  left: 77.3%;
-  top: 28.6%;
-  width: 15.6%;
-  height: 40.3%;
   perspective: 90cqw;
 
   > * {
@@ -536,9 +517,6 @@ watch(isDefeat, async (value) => {
 // même table.
 .zone-live {
   position: absolute;
-  left: 77.3%;
-  top: 21.2%;
-  width: 15.6%;
   z-index: 2;
   perspective: 90cqw;
 
@@ -593,7 +571,8 @@ watch(isDefeat, async (value) => {
 // liseré doré du décor doit rester visible tout autour, sinon le dé a l'air
 // posé DEVANT son logement plutôt que dedans.
 .zone-slots .die-cell {
-  --die-size: 4cqw;
+  --die-size: 4.3cqw;
+  --die-seat-drop: 0%;
   width: 100%;
   height: 100%;
 }

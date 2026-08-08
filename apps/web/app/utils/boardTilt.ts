@@ -40,14 +40,6 @@ export interface BoardPerspective {
    */
   seatedRelief: number
   /**
-   * Multiplicateur des objets PLATS et grands — le cadre de la carte, le
-   * bandeau des points. Les valeurs ci-dessus sont réglées pour que des cubes
-   * de 40 px se lisent : appliquées telles quelles à une carte de 250 px, elles
-   * la coucheraient. Un objet plus grand a besoin de moins d'exagération, pas
-   * de plus.
-   */
-  flatRelief: number
-  /**
    * ROULIS au bord du plateau, en degrés — la rotation dans le PLAN de l'image.
    *
    * C'est le terme qui manquait, et le seul qui puisse rendre les arêtes d'un
@@ -64,18 +56,14 @@ export interface BoardPerspective {
  * ce qu'un cube isolé supporte : l'inclinaison du plateau est faible, et un dé
  * plus incliné que la table qui le porte se voit immédiatement.
  */
+// app/utils/boardTilt.ts
+// app/utils/boardTilt.ts
 export const BOARD_PERSPECTIVE: BoardPerspective = {
-  yaw: 28,
-  pitchTop: 14,
-  pitchBottom: 12,
-  // Négatif, et c'est voulu : réglé à l'écran, le contre-champ est ce qui fait
-  // entrer les dés dans leurs cadres. Le signe n'a rien d'évident ici — le
-  // décor est une photo, pas une projection qu'on pourrait déduire.
-  seatedRelief: -1,
-  // Une carte de 250 px n'a pas besoin de l'exagération qui rend un cube de
-  // 40 px lisible : on amortit.
-  flatRelief: 0.45,
-  roll: 14
+  yaw: 46.5,
+  pitchTop: 18,
+  pitchBottom: 17.5,
+  roll: 10.5,
+  seatedRelief: -0.75
 }
 
 /**
@@ -87,11 +75,11 @@ export function boardTilt(
   x: number,
   y: number,
   perspective: BoardPerspective = BOARD_PERSPECTIVE,
-  { kind = 'die' }: { kind?: 'die' | 'seated' | 'flat' } = {}
+  { kind = 'die' }: { kind?: 'die' | 'seated' } = {}
 ): { x: number; y: number; z: number } {
   const clamp = (v: number) => Math.min(1, Math.max(0, v))
-  const { yaw, pitchTop, pitchBottom, seatedRelief, flatRelief, roll } = perspective
-  const gain = kind === 'seated' ? seatedRelief : kind === 'flat' ? flatRelief : 1
+  const { yaw, pitchTop, pitchBottom, seatedRelief, roll } = perspective
+  const gain = kind === 'seated' ? seatedRelief : 1
 
   // De -1 au bord gauche à +1 au bord droit.
   const ecart = (clamp(x) - 0.5) * 2
