@@ -37,6 +37,23 @@ export interface BoardZone {
  * photographié. On se cale au milieu du quadrilatère et c'est l'inclinaison qui
  * rattrape le reste.
  */
+/**
+ * Les quatre coins du cadre de la carte, en % du plateau.
+ *
+ * Quatre points et non trois angles : le cadre dessiné est un quadrilatère
+ * quelconque, qu'aucune rotation ne peut égaler (cf. `utils/quad.ts`). On pose
+ * les coins là où le décor les met, et la carte y entre exactement.
+ *
+ * Départ mesuré sur `ui/layout-game.webp` : liseré doré à x 1275..1550 en haut,
+ * 1289..1571 en bas, y 261..659 — puis affiné à la souris dans le labo.
+ */
+export const CARD_QUAD: Quad = {
+  topLeft: { x: 75.9, y: 27.7 },
+  topRight: { x: 92.1, y: 27.7 },
+  bottomRight: { x: 94.6, y: 70 },
+  bottomLeft: { x: 77.5, y: 70 },
+}
+
 export const CARD_ZONE: BoardZone = {
   left: 78,
   top: 28.2,

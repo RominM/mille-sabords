@@ -80,6 +80,12 @@ export interface TurnRecord {
   reason: TurnEndReason | 'timeout'
   /** Malus subi par chaque adversaire, pour expliquer un score qui baisse. */
   opponentPenalty: number
+  /**
+   * Le décompte, tel que le moteur l'a fait. C'est ce qui permet de refaire
+   * l'addition — « 3 pièces → 100 + 300 de bonus » — au lieu de subir un total.
+   * Nul quand il n'y a rien à détailler : minuteur expiré, tour perdu.
+   */
+  breakdown: ScoreBreakdown | null
 }
 
 export interface ScoreBreakdown {

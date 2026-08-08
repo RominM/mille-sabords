@@ -119,6 +119,7 @@ const waitingForTable = computed(() => !isSolo && !turn.value)
 
 // ── Perspective des dés ──────────────────────────────────────────────────────
 const plateauEl = ref<HTMLElement | null>(null)
+const cardEl = ref<HTMLElement | null>(null)
 
 /**
  * Chaque dé prend l'inclinaison de SA place sur le plateau (cf. `boardTilt`).
@@ -154,6 +155,10 @@ function applyBoardTilt(): void {
     cell.style.setProperty('--die-tilt-y', `${tilts[i]!.y}deg`)
     cell.style.setProperty('--die-tilt-z', `${tilts[i]!.z}deg`)
   })
+
+  // La carte, elle, n'est pas inclinée mais PROJETÉE sur les quatre coins du
+  // cadre dessiné : aucune rotation ne peut égaler un quadrilatère quelconque.
+  if (cardEl.value) applyQuad(cardEl.value, CARD_QUAD)
 }
 
 // Les dés se déplacent à chaque rendu — un dé gardé quitte le centre pour un
@@ -300,7 +305,7 @@ watch(isDefeat, async (value) => {
       <!-- Carte Pirate : dans le cadre dessiné à droite. Place et inclinaison
            viennent de `boardZones` — un seul objet, une seule place, des angles
            donnés en clair plutôt que déduits du modèle des dés. -->
-      <div v-if="turn" class="zone-card" :style="zoneStyle(CARD_ZONE)">
+      <div v-if="turn" ref="cardEl" class="zone-card">
         <PirateCard :card="turn.card" :skulls="skulls" />
       </div>
 
@@ -502,14 +507,16 @@ watch(isDefeat, async (value) => {
 // Place, taille et inclinaison viennent de `CARD_ZONE` (app/utils/boardZones.ts),
 // posées en style en ligne : elles se règlent à l'œil dans le labo, et le CSS
 // n'a plus qu'à savoir COMMENT appliquer une inclinaison, pas laquelle.
+// Place et forme viennent de `CARD_QUAD` : `applyQuad` pose la boîte englobante
+// puis la matrice qui l'envoie sur les quatre coins du cadre dessiné. L'origine
+// doit être le coin haut-gauche — la matrice part de là, pas du centre.
 .zone-card {
   position: absolute;
-  perspective: 90cqw;
+  transform-origin: 0 0;
 
   > * {
     width: 100%;
     height: 100%;
-    transform: rotateZ(var(--tilt-z, 0deg)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   }
 }
 

@@ -1,6 +1,10 @@
 <template>
   <Teleport to="body">
-    <div class="side" :class="{ 'side--open': isOpen }" :style="{ '--tab-top': `${tabTop}%` }">
+    <div
+      class="side"
+      :class="{ 'side--open': isOpen }"
+      :style="{ '--side-top': `${top}%`, '--tab-top': `${tabTop}%` }"
+    >
       <img :src="panelUrl" alt="" class="side__img" />
 
       <!-- La languette dépasse seule quand le panneau est rentré : c'est la
@@ -30,8 +34,9 @@
  * languette dépasse au repos.
  *
  * Extrait du barème le jour où l'historique en a demandé un second. Les deux
- * s'empilent comme des onglets de dossier : c'est `tabTop` qui décale la
- * languette le long de la planche, et donc l'une sous l'autre à l'écran.
+ * planches vivent l'une SOUS l'autre — d'où `top`, qui les sépare vraiment.
+ * Décaler seulement les languettes ne suffisait pas : les planches se
+ * recouvraient et la seconde masquait la première.
  *
  * `Teleport` vers le body : `.plateau` déclare `container-type: size`, ce qui
  * piégerait un `position: fixed` à l'intérieur.
@@ -44,10 +49,12 @@ withDefaults(
     label: string
     /** Titre du contenu, quand il doit être plus long que la languette. */
     title?: string
-    /** Hauteur de la languette sur la planche, en % — c'est elle qui empile. */
+    /** Centre vertical de la planche, en % de la fenêtre. */
+    top?: number
+    /** Hauteur de la languette sur la planche, en %. */
     tabTop?: number
   }>(),
-  { title: undefined, tabTop: 40.5 }
+  { title: undefined, top: 50, tabTop: 40.5 }
 )
 
 const isOpen = ref(false)
@@ -61,9 +68,11 @@ const isOpen = ref(false)
 .side {
   position: fixed;
   left: 0;
-  top: 70%;
+  top: var(--side-top, 50%);
   z-index: 60; // au-dessus du plateau, sous les modales (100)
-  height: min(55dvh, 720px);
+  // Volontairement plus courte qu'une planche seule : il en tient DEUX dans la
+  // hauteur, l'une sous l'autre, sans qu'aucune ne déborde de l'écran.
+  height: min(42dvh, 500px);
   aspect-ratio: 772 / 1060;
   transform: translate(-87.7%, -50%);
   transition: transform 0.32s ease;

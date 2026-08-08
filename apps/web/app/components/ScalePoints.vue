@@ -1,5 +1,5 @@
 <template>
-  <SidePanel label="Barème" title="Barème des points">
+  <SidePanel label="Barème" title="Barème des points" :top="28">
     <ul class="bareme__list">
       <li v-for="line in COMBOS" :key="line.label">{{ line.label }} — {{ line.points }}</li>
     </ul>

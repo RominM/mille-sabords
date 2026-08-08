@@ -1,15 +1,16 @@
 import { buildDeck, shuffle } from './deck'
 import { applyAction, createTurn } from './turn'
-import type { PirateCard, RollFn, TurnAction, TurnRecord, TurnState } from './types'
+import type { PirateCard, RollFn, ScoreBreakdown, TurnAction, TurnRecord, TurnState } from './types'
 
 /**
  * Nombre de tours gardés dans l'historique.
  *
- * L'état part en entier à chaque diffusion en multijoueur : une partie longue
- * traînerait sinon des centaines d'entrées derrière chaque coup de dés. Vingt
- * tours suffisent à comprendre d'où viennent les scores.
+ * L'état part en entier à chaque diffusion en multijoueur, et chaque entrée
+ * porte son décompte détaillé : une partie longue traînerait sinon des
+ * kilo-octets derrière chaque coup de dés. Douze tours couvrent largement ce
+ * qu'on relit — les derniers échanges, pas la partie entière.
  */
-export const HISTORY_LENGTH = 20
+export const HISTORY_LENGTH = 12
 
 export const WINNING_SCORE = 6000
 
@@ -213,8 +214,19 @@ export class Game {
    * tour — l'arbitrage normal et l'expiration du minuteur —, jamais ailleurs :
    * un tour doit laisser exactement une trace.
    */
-  private record(reason: TurnRecord['reason'], score: number, opponentPenalty: number): void {
-    this.state.history.push({ playerId: this.currentPlayer.id, score, reason, opponentPenalty })
+  private record(
+    reason: TurnRecord['reason'],
+    score: number,
+    opponentPenalty: number,
+    breakdown: ScoreBreakdown | null = null
+  ): void {
+    this.state.history.push({
+      playerId: this.currentPlayer.id,
+      score,
+      reason,
+      opponentPenalty,
+      breakdown
+    })
     if (this.state.history.length > HISTORY_LENGTH) this.state.history.shift()
   }
 
@@ -223,7 +235,7 @@ export class Game {
     const outcome = turn.outcome!
     this.currentPlayer.score += outcome.score
     this.applyOpponentPenalty(outcome.opponentPenalty)
-    this.record(outcome.reason, outcome.score, outcome.opponentPenalty)
+    this.record(outcome.reason, outcome.score, outcome.opponentPenalty, outcome.breakdown)
 
     // « Magie pirate » : 9 symboles identiques emportent la partie sur-le-champ,
     // sans dernière manche ni comparaison des scores.
