@@ -245,6 +245,15 @@
         derniers l'y couchent. Pour aligner les arêtes sur le cadre dessiné,
         commence par le <strong>roulis</strong> seul, les autres à 0.
       </p>
+      <label class="lab__knob lab__knob--check">
+        <input v-model="fitted" type="checkbox" />
+        <span>Carte posée dans le cadre (décochée : carte redressée)</span>
+      </label>
+      <p class="lab__hint">
+        Les illustrations ne sont jamais retouchées : la déformation est calculée
+        à l'affichage, et se retire en décochant. Rien à refaire, jamais.
+      </p>
+
       <pre class="lab__code">{{ quadRecipe }}</pre>
       <pre class="lab__code">{{ zoneRecipe }}</pre>
     </section>
@@ -425,11 +434,28 @@ function drag(event: PointerEvent): void {
 const round1 = (v: number): number => Math.round(v * 10) / 10
 const release = (): void => void (held.value = null)
 
+/**
+ * Comparatif honnête : la carte redressée contre la carte posée dans le cadre.
+ * Le seul moyen de trancher « est-ce que ça abîme mes illustrations ? » est de
+ * voir les deux, pas d'en discuter.
+ */
+const fitted = ref(true)
+
 function paintQuad(): void {
-  if (quadCardEl.value) applyQuad(quadCardEl.value, quad)
+  const el = quadCardEl.value
+  if (!el) return
+  if (fitted.value) return applyQuad(el, quad)
+
+  // Redressée : on garde la place, on jette la déformation.
+  const bounds = quadBounds(quad)
+  el.style.left = `${bounds.left}%`
+  el.style.top = `${bounds.top}%`
+  el.style.width = `${bounds.width}%`
+  el.style.height = `${bounds.height}%`
+  el.style.transform = 'none'
 }
 
-watch(quad, paintQuad, { flush: 'post', deep: true })
+watch([quad, fitted], paintQuad, { flush: 'post', deep: true })
 onMounted(() => {
   paintQuad()
   window.addEventListener('pointermove', drag)
