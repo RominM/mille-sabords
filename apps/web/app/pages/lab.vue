@@ -109,8 +109,12 @@
 
     <!-- Réglage de la perspective, SUR le vrai décor : c'est le seul endroit où
          l'on peut juger si un dé est posé sur la table ou flotte au-dessus. -->
+    <!-- UNE seule maquette pour tout le plateau : dés, emplacements, carte,
+         points et ambiance. Deux vues séparées obligeaient à régler chaque
+         élément sans voir ce que faisaient les autres, alors que c'est
+         justement leur cohabitation qu'on juge. -->
     <section class="lab__panel">
-      <h2 class="lab__legend">Perspective du plateau</h2>
+      <h2 class="lab__legend">Le plateau</h2>
       <div ref="boardEl" class="lab__board" :style="{ backgroundImage: `url(${layoutUrl})` }">
         <div class="lab__board-center">
           <div v-for="(die, i) in board" :key="i" class="lab__board-cell">
@@ -127,6 +131,36 @@
             <DieCube :face="slots[i - 1]!.face" :roll="0" seated />
           </div>
         </div>
+
+        <div class="lab__zone lab__zone--live" :style="zoneStyle(live)">
+          <LiveScore :score="500" />
+        </div>
+        <div ref="quadCardEl" class="lab__quad">
+          <PirateCard :card="{ type: 'guardian' }" :skulls="1" />
+        </div>
+
+        <!-- Une poignée par coin : on les pose sur ceux du cadre dessiné, et la
+             carte y entre exactement. Régler quatre points à la souris bat
+             n'importe quel jeu de curseurs d'angles. -->
+        <button
+          v-for="corner in CORNERS"
+          :key="corner"
+          type="button"
+          class="lab__handle"
+          :class="{ 'lab__handle--held': held === corner }"
+          :style="{ left: `${quad[corner].x}%`, top: `${quad[corner].y}%` }"
+          :aria-label="`Coin ${corner}`"
+          @pointerdown="grab(corner, $event)"
+        />
+
+        <IslandAmbience
+          v-if="island"
+          :style="{
+            '--island-hue': `${islandHue}deg`,
+            '--island-saturation': islandSaturation,
+            '--island-brightness': islandBrightness
+          }"
+        />
       </div>
 
       <div class="lab__knobs">
@@ -189,28 +223,6 @@
          se donnent en clair, ils ne se déduisent pas du modèle des dés. -->
     <section class="lab__panel">
       <h2 class="lab__legend">Carte Pirate &amp; points en jeu</h2>
-      <div ref="quadBoardEl" class="lab__board" :style="{ backgroundImage: `url(${layoutUrl})` }">
-        <div class="lab__zone lab__zone--live" :style="zoneStyle(live)">
-          <LiveScore :score="500" />
-        </div>
-        <div ref="quadCardEl" class="lab__quad">
-          <PirateCard :card="{ type: 'guardian' }" :skulls="1" />
-        </div>
-
-        <!-- Une poignée par coin : on les pose sur ceux du cadre dessiné, et la
-             carte y entre exactement. Régler quatre points à la souris bat
-             n'importe quel jeu de curseurs d'angles. -->
-        <button
-          v-for="corner in CORNERS"
-          :key="corner"
-          type="button"
-          class="lab__handle"
-          :class="{ 'lab__handle--held': held === corner }"
-          :style="{ left: `${quad[corner].x}%`, top: `${quad[corner].y}%` }"
-          :aria-label="`Coin ${corner}`"
-          @pointerdown="grab(corner, $event)"
-        />
-      </div>
 
       <div class="lab__knobs">
         <button
@@ -256,6 +268,37 @@
 
       <pre class="lab__code">{{ quadRecipe }}</pre>
       <pre class="lab__code">{{ zoneRecipe }}</pre>
+    </section>
+
+    <!-- L'Île sort rarement au tirage : on ne peut pas juger son ambiance en
+         attendant qu'elle tombe. -->
+    <section class="lab__panel">
+      <h2 class="lab__legend">Ambiance de l’Île de la Tête-de-Mort</h2>
+      <label class="lab__knob lab__knob--check">
+        <input v-model="island" type="checkbox" />
+        <span>Allumer l’ambiance sur le plateau ci-dessus</span>
+      </label>
+
+      <div class="lab__knobs">
+        <label class="lab__knob">
+          <span>Rotation de teinte <b>{{ islandHue }}°</b></span>
+          <input v-model.number="islandHue" type="range" min="-180" max="180" step="1" />
+        </label>
+        <label class="lab__knob">
+          <span>Saturation <b>×{{ islandSaturation }}</b></span>
+          <input v-model.number="islandSaturation" type="range" min="0" max="3" step="0.05" />
+        </label>
+        <label class="lab__knob">
+          <span>Luminosité <b>×{{ islandBrightness }}</b></span>
+          <input v-model.number="islandBrightness" type="range" min="0.3" max="1.5" step="0.02" />
+        </label>
+      </div>
+      <p class="lab__hint">
+        Le décor garde son image : c'est un <code>backdrop-filter</code>, il
+        retouche ce qui est déjà dessiné dessous. Un <code>filter</code>
+        aplatirait la scène 3D des dés.
+      </p>
+      <pre class="lab__code">{{ islandRecipe }}</pre>
     </section>
 
     <!-- Le vrai test du plateau : huit dés, égrenés, à la taille réelle. -->
@@ -411,7 +454,6 @@ const quad = reactive({
   bottomLeft: { ...CARD_QUAD.bottomLeft }
 })
 
-const quadBoardEl = ref<HTMLElement | null>(null)
 const quadCardEl = ref<HTMLElement | null>(null)
 const held = ref<(typeof CORNERS)[number] | null>(null)
 
@@ -424,7 +466,7 @@ function grab(corner: (typeof CORNERS)[number], event: PointerEvent): void {
 
 function drag(event: PointerEvent): void {
   const corner = held.value
-  const board = quadBoardEl.value
+  const board = boardEl.value
   if (!corner || !board) return
   const box = board.getBoundingClientRect()
   quad[corner].x = round1(((event.clientX - box.left) / box.width) * 100)
@@ -489,6 +531,19 @@ export const LIVE_ZONE: BoardZone = {
   left: ${live.left}, top: ${live.top}, width: ${live.width},
   tiltX: ${live.tiltX}, tiltY: ${live.tiltY}, tiltZ: ${live.tiltZ}
 }`
+)
+
+/** Ambiance de l'Île, allumée à la demande : elle sort trop rarement au tirage. */
+const island = ref(false)
+const islandHue = ref(-18)
+const islandSaturation = ref(1.45)
+const islandBrightness = ref(0.82)
+
+const islandRecipe = computed(
+  () => `// components/IslandAmbience.vue
+--island-hue: ${islandHue.value}deg;
+--island-saturation: ${islandSaturation.value};
+--island-brightness: ${islandBrightness.value};`
 )
 
 const boardEl = ref<HTMLElement | null>(null)

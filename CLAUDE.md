@@ -117,4 +117,9 @@ Géométrie des assets, en pixels du fichier source :
   ×2 puis ~250 ms) — sinon on lit le DOM avant que Vue n'ait purgé sa file.
 - Le buffer console d'un onglet est cumulatif, même après rechargement : pour
   juger des erreurs, ouvrir un onglet neuf.
+- **Rien qui dépende du temps de rendu n'avance** dans cet onglet invisible :
+  une animation CSS reste à `@0ms` (`getAnimations()` le montre), une `<video>`
+  refuse de démarrer. Ne pas conclure au bug — mesurer l'état STATIQUE
+  (`backdrop-filter` calculé, `playbackRate`, classes) et faire juger le
+  mouvement par Romin.
 - Grouper `npm test`, `typecheck` et `build` dans un seul appel shell.

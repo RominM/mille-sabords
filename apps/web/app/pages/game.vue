@@ -118,6 +118,10 @@
       <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
         Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.
       </p>
+
+      <!-- Île de la Tête-de-Mort : la lumière du plateau tourne au braise. La
+           phase la plus dangereuse du jeu ne se distinguait par rien. -->
+      <IslandAmbience v-if="isIsland" />
     </div>
   </div>
 
@@ -344,6 +348,12 @@ const skulls = computed(() => {
   return t.dice.filter((d) => d.face === 'skull').length + (t.card.type === 'skulls' ? t.card.count : 0)
 })
 const isBotTurn = computed(() => !!currentPlayer.value?.bot)
+
+/**
+ * Sur l'Île : la relance est forcée tant que des têtes sortent, et chaque tête
+ * coûte des points à TOUS les adversaires. C'est la phase à faire sentir.
+ */
+const isIsland = computed(() => turn.value?.phase === 'island-roll')
 
 /** Tour perdu : les yeux du crâne du plateau s'embrasent. */
 const isDefeat = computed(function detectDefeat() {
