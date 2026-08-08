@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@rf/engine": "*",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "@rf/protocol": "*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

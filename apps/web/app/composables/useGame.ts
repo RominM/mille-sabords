@@ -21,9 +21,10 @@ export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-export function useGame() {
-  const transport = createLocalTransport()
+export function useGame(transport: GameTransport = createLocalTransport()) {
   const snapshot = transport.state
+  /** Vrai quand le serveur pilote le déroulement : on obéit au lieu de mener. */
+  const remote = transport.remote
 
   const mode = ref<Mode>('start')
   const difficulty = ref<BotDifficulty>('medium')
@@ -70,6 +71,9 @@ export function useGame() {
     // L'IA joue seule et sans délibérer : lui opposer un minuteur n'aurait pas
     // de sens, et pourrait lui couper un tour en cours.
     if (currentPlayer.value?.bot) return
+    // En distant, c'est le serveur qui expire les décisions — le décompte
+    // affiché se déduit de l'échéance qu'il diffuse (voir plus bas).
+    if (remote) return
     timerId = setInterval(() => {
       secondsLeft.value = Math.max(0, secondsLeft.value - 1)
       if (secondsLeft.value > 0) return
@@ -91,10 +95,38 @@ export function useGame() {
     }, 2500)
   }
 
+  /** Ticker d'AFFICHAGE du mode distant, distinct du minuteur local. */
+  let remoteTickId: ReturnType<typeof setInterval> | null = null
+
   onScopeDispose(() => {
     stopTimer()
+    if (remoteTickId) clearInterval(remoteTickId)
     transport.close()
   })
+
+  /**
+   * En distant, l'écran SUIT l'état reçu : le serveur ouvre les tours, expire
+   * les décisions et joue les IA. On se contente d'en déduire l'affichage — d'où
+   * un `watch` plutôt que des appels, qui entreraient en course avec lui.
+   */
+  if (remote) {
+    watch(snapshot, (s) => {
+      if (!s) return
+      turnActor.value = s.players[s.currentPlayerIndex]?.name ?? ''
+      mode.value =
+        s.phase === 'finished' ? 'finished' : s.turn?.phase === 'ended' ? 'turnEnd' : 'playing'
+    })
+
+    // Le décompte se déduit de l'échéance diffusée. Les horloges des deux
+    // machines peuvent différer de quelques secondes : ce n'est qu'un affichage,
+    // l'expiration réelle reste arbitrée par le serveur.
+    remoteTickId = setInterval(() => {
+      const deadline = snapshot.value?.decisionDeadline
+      secondsLeft.value = deadline
+        ? Math.max(0, Math.round((deadline - Date.now()) / 1000))
+        : TURN_SECONDS
+    }, 500)
+  }
 
   /**
    * Ce que le joueur encaisserait s'il s'arrêtait MAINTENANT.
@@ -145,14 +177,20 @@ export function useGame() {
     transient.value = ''
     selected.value = new Set()
     guardianDie.value = null
-    transport.send({ type: 'start-turn' })
+    // Le serveur ouvre les tours de lui-même : le lui demander serait au mieux
+    // ignoré, au pire une course avec sa propre horloge.
+    if (!remote) transport.send({ type: 'start-turn' })
     turnActor.value = currentPlayer.value?.name ?? ''
     mode.value = 'playing'
     restartTimer()
-    if (currentPlayer.value?.bot) void runBot()
+    if (!remote && currentPlayer.value?.bot) void runBot()
   }
 
   function afterAction(): void {
+    // En distant, l'état n'est pas encore revenu du serveur au moment où l'on
+    // passe ici : le lire donnerait une réponse périmée. Le `watch` ci-dessus
+    // fait le travail quand la réponse arrive.
+    if (remote) return
     // On NE vide PAS la sélection : les dés gardés le restent d'une relance à
     // l'autre (on ne relance que ceux laissés au centre).
     if (turn.value?.phase === 'ended') {
@@ -280,6 +318,12 @@ export function useGame() {
   function continueGame(): void {
     if (gamePhase.value === 'finished') {
       mode.value = 'finished'
+      return
+    }
+    // En distant on ne fait que masquer le récapitulatif : le serveur a déjà
+    // programmé le tour suivant, et l'état à venir rouvrira l'écran de jeu.
+    if (remote) {
+      mode.value = 'playing'
       return
     }
     startTurn()

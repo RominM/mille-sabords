@@ -73,6 +73,7 @@ import oldPirate from '~/assets/images/character/chara_old-pirate.webp'
 import pirate from '~/assets/images/character/chara_pirate.webp'
 import youngMan from '~/assets/images/character/chara_men-young.webp'
 import youngWoman from '~/assets/images/character/chara_women-young.webp'
+import axeImpact from '~/assets/sounds/axe-impact.mp3'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -93,6 +94,7 @@ const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
 
 const router = useRouter()
 const tableSetup = useTableSetup()
+const { play } = useSfx()
 
 const name = ref('Barbe-Rousse')
 const avatar = ref(AVATARS[0]!.src)
@@ -102,6 +104,9 @@ const canStart = computed(() => name.value.trim().length > 0)
 
 function start(): void {
   if (!canStart.value) return
+
+  play(axeImpact)
+
   tableSetup.value = {
     difficulty: difficulty.value,
     roster: [

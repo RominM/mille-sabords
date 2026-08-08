@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Room, RECAP_MS, LOBBY_GRACE_MS } from '../src/room.js'
-import type { LobbyView, ServerMessage } from '../src/protocol.js'
+import type { LobbyView, ServerMessage } from '@rf/protocol'
 
 /** Salle instrumentée : on capture ce qu'elle émet, à qui. */
 function makeRoom() {

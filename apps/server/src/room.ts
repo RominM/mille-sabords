@@ -15,7 +15,7 @@ import {
   MIN_PLAYERS,
   type BotDifficulty
 } from '@rf/engine'
-import type { ClientMessage, LobbyView, SeatView, ServerMessage } from './protocol.js'
+import type { ClientMessage, LobbyView, SeatView, ServerMessage } from '@rf/protocol'
 
 /** Temps laissé au récapitulatif de fin de tour avant d'enchaîner. */
 export const RECAP_MS = 3_500

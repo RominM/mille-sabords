@@ -7,7 +7,7 @@
  */
 import { WebSocketServer, type WebSocket } from 'ws'
 import { Room } from './room.js'
-import type { ClientMessage, ServerMessage } from './protocol.js'
+import type { ClientMessage, ServerMessage } from '@rf/protocol'
 
 const PORT = Number(process.env.PORT ?? 8787)
 /** Cadence du battement : assez fine pour un minuteur à la seconde. */

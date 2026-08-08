@@ -29,6 +29,14 @@ export interface GameTransport {
   state: ShallowRef<GameState | null>
   /** Dernière commande refusée par l'autorité, en clair pour le joueur. */
   lastError: Ref<string>
+  /**
+   * Vrai quand l'autorité est DISTANTE et pilote elle-même le déroulement :
+   * enchaînement des tours, expiration des décisions, coups des IA. Le client
+   * se contente alors d'obéir à ce qu'il reçoit.
+   *
+   * Faux en local : c'est l'onglet qui doit faire tourner la partie.
+   */
+  remote: boolean
   send: (cmd: GameCommand) => void
   close: () => void
 }
@@ -81,6 +89,7 @@ export const createLocalTransport = (): GameTransport => {
   return {
     state,
     lastError,
+    remote: false,
     send,
     close: () => {
       game = null
@@ -88,3 +97,21 @@ export const createLocalTransport = (): GameTransport => {
     }
   }
 }
+
+/**
+ * Autorité distante : le serveur détient la partie. Le client n'émet plus que
+ * des ACTIONS de jeu — ouvrir la table, enchaîner les tours et expirer les
+ * décisions sont devenus des décisions du serveur, et n'ont donc plus
+ * d'équivalent ici.
+ */
+export const createNetworkTransport = (room: ReturnType<typeof useRoom>): GameTransport => ({
+  state: room.gameState,
+  lastError: room.error,
+  remote: true,
+  send: (cmd) => {
+    if (cmd.type === 'act') room.send({ t: 'act', action: cmd.action })
+    // Les autres commandes sont volontairement ignorées : les émettre serait
+    // demander au serveur ce qu'il fait déjà de lui-même.
+  },
+  close: () => room.close()
+})
