@@ -198,7 +198,6 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
       }
       knownFaces = faces
       lockedNow = t ? t.dice.filter((d) => d.locked).map((d) => d.id) : []
-      }
     },
     { immediate: true }
   )
