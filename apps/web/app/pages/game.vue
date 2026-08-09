@@ -32,8 +32,23 @@
       <!-- Joueurs : colonne de 5 slots à gauche -->
       <div class="zone-players">
         <!-- Un slot par joueur RÉEL, et non cinq cases fixes : la table monte
-             désormais à huit, et la colonne défile plutôt que de déborder. -->
-        <PlayerSlot
+            désormais à huit, et la colonne défile plutôt que de déborder. -->
+        <div v-for="(p, i) in players" class="gamer-wrapper">
+          <GamerSlot
+            size="100%"
+            :player="p"
+            :key="p.id"
+            :avatar="portraitOf(p.id)"
+            :current="gamePhase === 'playing' && i === currentIndex"
+          />
+          <PlayerTimer
+            v-if="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
+            class="pslot__timer"
+            :seconds="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
+            :total="TURN_SECONDS ?? 60"
+          />
+        </div>
+        <!-- <PlayerSlot
           v-for="(p, i) in players"
           :key="p.id"
           :player="p"
@@ -41,7 +56,7 @@
           :current="gamePhase === 'playing' && i === currentIndex"
           :seconds="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
           :total-seconds="TURN_SECONDS"
-        />
+        /> -->
       </div>
 
       <!-- Points en jeu, juste au-dessus de la carte : le joueur doit pouvoir
@@ -67,6 +82,7 @@
           :class="{ 'die-cell--held': heldDie === d.id, grabbable: clickable }"
           @pointerdown="clickable && grab(d.id, $event)"
         >
+          <!-- :style="scatterStyle(d.id)" -->
           <DieView
             :die="d"
             :clickable="clickable"
@@ -181,14 +197,14 @@
   <div v-if="isDefeat">
     <SkullEyes />
     <!-- Pas d'`autoplay` : la lecture passe par le watcher, qui applique le
-         réglage « Ambiance ». L'attribut jouerait le son même réglage coupé. -->
+        réglage « Ambiance ». L'attribut jouerait le son même réglage coupé. -->
     <audio ref="darkLaughAudio" :src="darkLaugh" />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { BotDifficulty, DieFace } from '@rf/engine'
-import layoutUrl from '~/assets/images/ui/layout-game.webp'
+import layoutUrl from '~/assets/images/ui/layout-game.png'
 import ctaUrl from '~/assets/images/ui/main-cta.webp'
 import { Cog } from 'lucide-vue-next'
 import stopSeal from '~/assets/images/ui/wax-seal-stop.webp'
@@ -579,30 +595,23 @@ watch(isDefeat, async (value) => {
   }
 }
 
-// Colonne des joueurs : calée sur l'échelle dessinée dans layout-game.webp
-// (mesurée : barreaux entre y 270 et 718 px sur 941, x 99..347 sur 1672).
-// La colonne ne suit plus les cinq barreaux dessinés : elle défile. Les cartes
-// gardent leur taille, seule leur nombre varie — jusqu'à huit.
 .zone-players {
   position: absolute;
-  left: 5.8%;
-  top: 28.79%;
-  width: 14.9%;
-  height: 47.6%;
+  left: 0;
+  bottom: 2%;
+  transform: translate(-50%s, 50%s);
+  width: 100%;
   overflow-y: auto;
-  // La barre de défilement mangerait la largeur utile d'une carte joueur.
   scrollbar-width: none;
-
-  // Sans hauteur fixe, les rangées se partageraient la colonne en flex et
-  // s'écraseraient à huit joueurs au lieu de la faire défiler. 9cqh = la part
-  // qu'occupait un barreau quand ils étaient cinq : la carte garde sa taille.
-  :deep(.pslot-row) {
-    flex: 0 0 auto;
-    height: 9cqh;
-  }
   display: flex;
-  flex-direction: column;
-  gap: 0.74cqh; // = l'écart réel entre deux barreaux
+  justify-content: center;
+  gap: 12px;
+  padding: 0 12px;
+
+  .gamer-wrapper {
+    flex: 1 1 0;
+    max-width: 180px;
+  }
 }
 // Cadre de la carte, mesuré sur le nouveau décor (1672×941) : liseré doré à
 // x 1275..1550 en haut, 1289..1571 en bas, y 261..659. Le cadre n'est pas

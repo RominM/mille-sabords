@@ -231,8 +231,8 @@
         <!-- Le labo ne sert à rien s'il faut ensuite retranscrire les valeurs à
              la main : il rend directement le morceau de code à coller. -->
         <p class="lab__hint">
-          Quand ça te va, colle ceci dans <code>BOARD_PERSPECTIVE</code> (<code>app/utils/boardTilt.ts</code>) —
-          le plateau le reprend tel quel. Les deux dernières valeurs sont en CSS, dans
+          Quand ça te va, colle ceci dans <code>BOARD_PERSPECTIVE</code> (<code>app/utils/boardTilt.ts</code>)
+          — le plateau le reprend tel quel. Les deux dernières valeurs sont en CSS, dans
           <code>pages/game.vue</code>.
         </p>
         <pre class="lab__code">{{ recipe }}</pre>
@@ -260,27 +260,21 @@
             <span>
               {{ k.label }} <b>{{ current[k.field] }}{{ k.unit }}</b>
             </span>
-            <input
-              v-model.number="current[k.field]"
-              type="range"
-              :min="k.min"
-              :max="k.max"
-              :step="k.step"
-            />
+            <input v-model.number="current[k.field]" type="range" :min="k.min" :max="k.max" :step="k.step" />
           </label>
         </div>
         <p class="lab__hint">
-          Les quatre premiers curseurs placent le bloc dans son cadre, les trois
-          derniers l'y couchent. Pour aligner les arêtes sur le cadre dessiné,
-          commence par le <strong>roulis</strong> seul, les autres à 0.
+          Les quatre premiers curseurs placent le bloc dans son cadre, les trois derniers l'y couchent. Pour
+          aligner les arêtes sur le cadre dessiné, commence par le <strong>roulis</strong> seul, les autres à
+          0.
         </p>
         <label class="lab__knob lab__knob--check">
           <input v-model="fitted" type="checkbox" />
           <span>Carte posée dans le cadre (décochée : carte redressée)</span>
         </label>
         <p class="lab__hint">
-          Les illustrations ne sont jamais retouchées : la déformation est calculée
-          à l'affichage, et se retire en décochant. Rien à refaire, jamais.
+          Les illustrations ne sont jamais retouchées : la déformation est calculée à l'affichage, et se
+          retire en décochant. Rien à refaire, jamais.
         </p>
 
         <pre class="lab__code">{{ quadRecipe }}</pre>
@@ -297,21 +291,27 @@
 
         <div class="lab__knobs">
           <label class="lab__knob">
-            <span>Rotation de teinte <b>{{ islandHue }}°</b></span>
+            <span
+              >Rotation de teinte <b>{{ islandHue }}°</b></span
+            >
             <input v-model.number="islandHue" type="range" min="-180" max="180" step="1" />
           </label>
           <label class="lab__knob">
-            <span>Saturation <b>×{{ islandSaturation }}</b></span>
+            <span
+              >Saturation <b>×{{ islandSaturation }}</b></span
+            >
             <input v-model.number="islandSaturation" type="range" min="0" max="3" step="0.05" />
           </label>
           <label class="lab__knob">
-            <span>Luminosité <b>×{{ islandBrightness }}</b></span>
+            <span
+              >Luminosité <b>×{{ islandBrightness }}</b></span
+            >
             <input v-model.number="islandBrightness" type="range" min="0.3" max="1.5" step="0.02" />
           </label>
         </div>
         <p class="lab__hint">
-          Le décor garde son image : c'est un <code>backdrop-filter</code>, il
-          retouche ce qui est déjà dessiné dessous. Un <code>filter</code>
+          Le décor garde son image : c'est un <code>backdrop-filter</code>, il retouche ce qui est déjà
+          dessiné dessous. Un <code>filter</code>
           aplatirait la scène 3D des dés.
         </p>
         <pre class="lab__code">{{ islandRecipe }}</pre>
@@ -353,34 +353,42 @@
 
       <div class="lab__knobs">
         <label class="lab__knob">
-          <span>Distance parcourue <b>{{ throwing.travel }} côtés</b></span>
+          <span
+            >Distance parcourue <b>{{ throwing.travel }} côtés</b></span
+          >
           <input v-model.number="throwing.travel" type="range" min="1" max="16" step="1" />
         </label>
         <label class="lab__knob">
-          <span>Direction <b>{{ throwing.heading }}°</b></span>
+          <span
+            >Direction <b>{{ throwing.heading }}°</b></span
+          >
           <input v-model.number="throwing.heading" type="range" min="-180" max="180" step="1" />
         </label>
         <label class="lab__knob">
-          <span>Durée <b>{{ throwing.duration }} ms</b></span>
+          <span
+            >Durée <b>{{ throwing.duration }} ms</b></span
+          >
           <input v-model.number="throwing.duration" type="range" min="400" max="2600" step="50" />
         </label>
         <label class="lab__knob">
-          <span>Écart entre les dés <b>{{ throwing.spread }}°</b></span>
+          <span
+            >Écart entre les dés <b>{{ throwing.spread }}°</b></span
+          >
           <input v-model.number="throwing.spread" type="range" min="0" max="120" step="2" />
         </label>
         <label class="lab__knob">
-          <span>Décalage de départ <b>{{ throwing.stagger }} ms</b></span>
+          <span
+            >Décalage de départ <b>{{ throwing.stagger }} ms</b></span
+          >
           <input v-model.number="throwing.stagger" type="range" min="0" max="200" step="5" />
         </label>
       </div>
       <PlateButton @click="rollRace">Lancer les deux</PlateButton>
       <p class="lab__hint">
-        La distance est en <strong>côtés de dé</strong>, et c'est volontaire : un
-        cube fait exactement un quart de tour par côté parcouru. C'est ce
-        rapport qui fait « rouler » — le nombre de tours ne se règle plus, il se
-        déduit du trajet. L'<strong>écart</strong>, lui, ne se juge que sur la
-        volée de huit, plus bas : à zéro, les dés arrivent tous sur le même
-        vecteur.
+        La distance est en <strong>côtés de dé</strong>, et c'est volontaire : un cube fait exactement un
+        quart de tour par côté parcouru. C'est ce rapport qui fait « rouler » — le nombre de tours ne se règle
+        plus, il se déduit du trajet. L'<strong>écart</strong>, lui, ne se juge que sur la volée de huit, plus
+        bas : à zéro, les dés arrivent tous sur le même vecteur.
       </p>
       <pre class="lab__code">{{ throwRecipe }}</pre>
     </section>
@@ -416,6 +424,36 @@
       </div>
       <PlateButton @click="rollVolley">Lancer les 8</PlateButton>
     </section>
+
+    <section class="lab__panel">
+      <h2 class="lab__legend">Joueur</h2>
+      <div class="gamers-list">
+        <div class="gamer-wrapper">
+          <GamerSlot size="100%" :player="player" :avatar="avatarUrl" />
+        </div>
+        <div class="gamer-wrapper">
+          <GamerSlot size="100%" :player="player" :avatar="avatarUrl" current />
+        </div>
+        <div class="gamer-wrapper">
+          <GamerSlot size="100%" :player="player" :avatar="avatarUrl" />
+        </div>
+        <div class="gamer-wrapper">
+          <GamerSlot size="100%" :player="player" :avatar="avatarUrl" />
+        </div>
+        <div class="gamer-wrapper">
+          <GamerSlot size="100%" :player="player" :avatar="avatarUrl" />
+        </div>
+        <div class="gamer-wrapper">
+          <GamerSlot size="100%" :player="player" :avatar="avatarUrl" />
+        </div>
+        <div class="gamer-wrapper">
+          <GamerSlot size="100%" :player="player" :avatar="avatarUrl" />
+        </div>
+        <div class="gamer-wrapper">
+          <GamerSlot size="100%" :player="player" :avatar="avatarUrl" />
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -425,8 +463,12 @@
  * direction artistique — le cube 3D remplace-t-il la tuile plate ? — avant de
  * toucher au plateau. Rien ici ne doit être réutilisé tel quel.
  */
-import { FACES, type DieFace } from '@rf/engine'
-import layoutUrl from '~/assets/images/ui/layout-game.webp'
+import { FACES, type DieFace, type Player } from '@rf/engine'
+import layoutUrl from '~/assets/images/ui/layout-game.png'
+import avatarUrl from '~/assets/images/character/chara_pirate.webp'
+
+const { musicEnabled } = useSoundSettings()
+musicEnabled.value = false
 
 const FACE_LABEL: Record<DieFace, string> = {
   sabre: 'sabre',
@@ -435,6 +477,13 @@ const FACE_LABEL: Record<DieFace, string> = {
   parrot: 'perroquet',
   coin: 'pièce',
   diamond: 'diamant'
+}
+
+const player: Player = {
+  id: 'xxx',
+  name: 'Barbossa',
+  score: 3900,
+  bot: false
 }
 
 const duration = ref(1100)
@@ -950,8 +999,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     perspective: 90cqw;
 
     > * {
-      transform: rotateZ(var(--tilt-z, 0deg)) rotateX(var(--tilt-x, 0deg))
-        rotateY(var(--tilt-y, 0deg));
+      transform: rotateZ(var(--tilt-z, 0deg)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
     }
 
     &--card > * {
@@ -1042,6 +1090,18 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
 
   &__volley-die {
     --die-size: 82px;
+  }
+
+  .gamers-list {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+
+    .gamer-wrapper {
+      flex: 1 1 0;
+      max-width: 220px;
+    }
   }
 }
 </style>
