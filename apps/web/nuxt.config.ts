@@ -35,13 +35,8 @@ export default defineNuxtConfig({
     }
   },
 
-  vite: {
-    css: {
-      preprocessorOptions: {
-        scss: { api: 'modern-compiler' },
-      },
-    },
-  },
+  // `preprocessorOptions.scss.api` a disparu des options : depuis Vite 7,
+  // `modern-compiler` est le seul mode et n'a plus à être demandé.
 
   app: {
     head: {

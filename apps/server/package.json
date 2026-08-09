@@ -11,14 +11,14 @@
   },
   "dependencies": {
     "@rf/engine": "*",
-    "ws": "^8.18.0",
-    "@rf/protocol": "*"
+    "@rf/protocol": "*",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.12",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
-    "vitest": "^2.0.0"
+    "vitest": "^4.1.10"
   }
 }
