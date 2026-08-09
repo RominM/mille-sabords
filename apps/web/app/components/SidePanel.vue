@@ -93,6 +93,12 @@ const open = computed(() => isOpen(props.id))
   transform: translate(-87.7%, calc(-50% + var(--side-shift, 0%)));
   transition: transform 0.32s ease;
 
+  // La planche est presque entièrement HORS de l'écran, mais sa boîte, elle,
+  // reste pleine grandeur : sans cette ligne, la planche du dessus recouvrait
+  // la languette de celle du dessous et lui volait clics et survol. Seuls les
+  // morceaux réellement manipulables reprennent les événements.
+  pointer-events: none;
+
   &--open {
     transform: translate(0, calc(-50% + var(--side-shift, 0%)));
     // Un tiroir ouvert passe devant celui qui ne l'est pas, sans quoi la
@@ -129,6 +135,7 @@ const open = computed(() => isOpen(props.id))
     border: 0;
     background: none;
     cursor: pointer;
+    pointer-events: auto; // la planche les a coupés, la poignée les reprend
   }
 
   // Une icône plutôt qu'un mot : la languette est étroite, et un libellé
@@ -165,6 +172,8 @@ const open = computed(() => isOpen(props.id))
     pointer-events: none;
   }
 
+  // Ouvert, le contenu redevient lisible ET manipulable — c'est là qu'on
+  // défile le barème ou qu'on déplie une ligne d'historique.
   &--open &__content {
     opacity: 1;
     pointer-events: auto;

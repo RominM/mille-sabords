@@ -126,6 +126,8 @@
   </div>
 
   <!-- Overlays ─────────────────────────────────────────────────────────────── -->
+  <!-- La main revient : on le dit, sans rien bloquer. -->
+  <TurnCall v-if="announcing && mode === 'playing'" />
   <!-- Résultat du tour : en grand, par-dessus le plateau, sans rien masquer et
        sans rien demander. `turn.outcome` est nul après un minuteur expiré sans
        le moindre lancer — il n'y a alors rien à annoncer, on enchaîne. -->
@@ -367,6 +369,33 @@ const isDefeat = computed(function detectDefeat() {
  * actions que l'écran n'aurait jamais dû proposer.
  */
 const isMySeat = computed(() => (isSolo ? !isBotTurn.value : currentPlayer.value?.id === room.youId.value))
+
+/**
+ * « À toi de jouer », le temps d'un clin d'œil au début de NOTRE tour.
+ *
+ * Le déclencheur est la phase qui repasse à `first-roll` : c'est la seule
+ * marque d'un tour qui s'OUVRE. Se fier au changement de joueur courant
+ * l'afficherait trop tôt — la rotation a lieu à la fin du tour précédent,
+ * pendant que son résultat est encore à l'écran.
+ */
+const TURN_CALL_MS = 2_500
+const announcing = ref(false)
+let callTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  () => turn.value?.phase,
+  (phase, before) => {
+    if (phase !== 'first-roll' || phase === before) return
+    if (!isMySeat.value || gamePhase.value === 'finished') return
+    if (callTimer) clearTimeout(callTimer)
+    announcing.value = true
+    callTimer = setTimeout(() => (announcing.value = false), TURN_CALL_MS)
+  }
+)
+
+onBeforeUnmount(() => {
+  if (callTimer) clearTimeout(callTimer)
+})
 
 /** Les cachets restent affichés en permanence ; ils sont grisés hors de notre tour. */
 const myTurn = computed(() => isMySeat.value && !rolling.value && turn.value?.phase !== 'ended')
