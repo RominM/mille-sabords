@@ -80,6 +80,15 @@ const props = withDefaults(
     /** Nombre minimum de tours complets pendant le vol. */
     turns?: number
     /**
+     * `tumble` : le dé culbute sur place, comme jusqu'ici.
+     * `roll` : il ROULE — il traverse la table, et tourne parce qu'il avance.
+     */
+    motion?: 'tumble' | 'roll'
+    /** Distance parcourue en roulant, exprimée en CÔTÉS de dé. */
+    travel?: number
+    /** Direction du roulé, en degrés : 0 = vers la droite, 90 = vers le bas. */
+    heading?: number
+    /**
      * Inclinaison au repos. Laissées vides, elles sont HÉRITÉES : sur le
      * plateau, c'est un ancêtre qui pose `--die-tilt-x` / `--die-tilt-y` selon
      * la place du dé, pour que chaque dé épouse la perspective du décor.
@@ -101,6 +110,11 @@ const props = withDefaults(
     duration: 1100,
     delay: 0,
     turns: 2,
+    // `tumble` par défaut : le plateau garde son animation tant que le roulé
+    // n'a pas été jugé à l'écran.
+    motion: 'tumble',
+    travel: 4,
+    heading: -28,
     tiltX: undefined,
     tiltY: undefined,
     seated: false,
@@ -169,7 +183,115 @@ function settle(target: { x: number; y: number; z: number }): void {
   if (cubeEl.value) cubeEl.value.style.transform = transform(current)
 }
 
+/**
+ * ROULER, par opposition à culbuter sur place.
+ *
+ * Ce qui distingue les deux n'est pas la physique mais un COUPLAGE : un dé qui
+ * roule tourne PARCE QU'IL AVANCE. Un cube de côté `s` fait un quart de tour
+ * par côté parcouru — l'angle se déduit de la distance, il ne se choisit pas.
+ * Sans cela on obtient une culbute sur place, ce qui n'est pas la même chose.
+ *
+ * Le couplage tient tout au long du vol sans calcul par image : déplacement et
+ * rotation partagent la MÊME courbe d'accélération, donc l'angle reste
+ * proportionnel à la distance à chaque instant.
+ *
+ * Reste l'atterrissage exact. La distance est arrondie à un nombre ENTIER de
+ * quarts de tour, puis on choisit l'orientation de DÉPART — le dé arrive de
+ * hors-champ, personne ne l'a vue — pour que le compte tombe juste :
+ *
+ *     départ = (rotation du trajet)⁻¹ × orientation voulue
+ *
+ * D'où les deux `rotate3d` de même axe dans la transformation : le premier
+ * anime le trajet, le second annule son total. Rien n'est truqué à l'arrivée,
+ * c'est le point de départ qui a été choisi en conséquence.
+ */
+function rollAcross(face: DieFace): void {
+  const cube = cubeEl.value
+  const hop = hopEl.value
+  const ground = groundEl.value
+  const slot = SLOTS.find((s) => s.face === face)
+  if (!cube || !hop || !ground || !slot) return
+
+  stop()
+
+  const size = cube.getBoundingClientRect().width || 1
+  const heading = (props.heading * Math.PI) / 180
+  const ux = Math.cos(heading)
+  const uy = Math.sin(heading)
+
+  // Un quart de tour par côté parcouru : la distance se mesure en côtés, et
+  // s'arrondit pour que le dé retombe à plat et non sur une arête.
+  const quarters = Math.max(1, Math.round(props.travel))
+  const total = quarters * 90
+  const dx = -ux * quarters * size
+  const dy = -uy * quarters * size
+
+  // L'axe est perpendiculaire au déplacement, dans le plan de la table.
+  const ax = -uy
+  const ay = ux
+
+  const tail = `rotate3d(${ax}, ${ay}, 0, ${-total}deg) rotateX(${slot.land.x}deg) rotateY(${slot.land.y}deg)`
+  const at = (progress: number, tip = 0): string =>
+    `translate3d(${dx * (1 - progress)}px, ${dy * (1 - progress)}px, 0) ` +
+    `rotate3d(${ax}, ${ay}, 0, ${total * progress + tip}deg) ${tail}`
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    cube.style.transform = at(1)
+    current.x = slot.land.x
+    current.y = slot.land.y
+    current.z = 0
+    emit('settled')
+    return
+  }
+
+  const { duration, delay } = props
+  /**
+   * Une même courbe pour tout le vol : c'est elle qui garantit le couplage.
+   *
+   * Et pas n'importe laquelle — celle d'un objet qui FREINE régulièrement,
+   * dont la distance parcourue vaut 1−(1−t)². Une courbe plus creusée avale
+   * les trois quarts du trajet dans le premier quart du temps : le dé se
+   * téléporte puis rampe, ce qui ne ressemble à rien.
+   */
+  const ease = 'cubic-bezier(0.5, 1, 0.89, 1)'
+
+  flights = [
+    cube.animate(
+      [
+        { transform: at(0), easing: ease },
+        // Dernier basculement : le dé dépasse d'un cheveu puis se rabat sur sa
+        // face, comme un vrai dé qui perd son élan sur une arête.
+        { transform: at(1, 9), offset: 0.86, easing: 'cubic-bezier(.3,0,.4,1)' },
+        { transform: at(1) },
+      ],
+      { duration, delay, fill: 'forwards' }
+    ),
+    // L'ombre reste sous le dé : elle ne bouge pas, c'est le cube qui voyage.
+    ground.animate(
+      [
+        { opacity: 0.3, transform: 'translateX(-50%) scale(1.1)' },
+        { opacity: 0.55, transform: 'translateX(-50%) scale(1)' },
+      ],
+      { duration, delay, easing: ease, fill: 'forwards' }
+    ),
+  ]
+
+  if (!props.silent) soundTimer = setTimeout(() => play(diceRoll, 0.7), delay)
+
+  const [spin] = flights
+  spin!.onfinish = () => {
+    cube.style.transform = at(1)
+    current.x = slot.land.x
+    current.y = slot.land.y
+    current.z = 0
+    stop()
+    emit('settled')
+  }
+}
+
 function rollTo(face: DieFace): void {
+  if (props.motion === 'roll') return rollAcross(face)
+
   const cube = cubeEl.value
   const hop = hopEl.value
   const ground = groundEl.value

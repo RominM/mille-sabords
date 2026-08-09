@@ -318,6 +318,62 @@
       </template>
     </section>
 
+    <!-- La question du moment : rouler, ou culbuter sur place. Côte à côte,
+         sur la même piste, pour que la différence saute aux yeux. -->
+    <section class="lab__panel">
+      <h2 class="lab__legend">Rouler vs culbuter</h2>
+      <div class="lab__track">
+        <div class="lab__lane">
+          <p class="lab__caption">Roulé — il tourne parce qu'il avance</p>
+          <div class="lab__runner">
+            <DieCube
+              :face="race.face"
+              :roll="race.roll"
+              motion="roll"
+              :duration="raceDuration"
+              :travel="raceTravel"
+              :heading="raceHeading"
+              :silent="!sound"
+            />
+          </div>
+        </div>
+        <div class="lab__lane">
+          <p class="lab__caption">Culbute sur place — l'animation actuelle</p>
+          <div class="lab__runner">
+            <DieCube
+              :face="race.face"
+              :roll="race.roll"
+              :duration="raceDuration"
+              :turns="turns"
+              silent
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="lab__knobs">
+        <label class="lab__knob">
+          <span>Distance parcourue <b>{{ raceTravel }} côtés</b></span>
+          <input v-model.number="raceTravel" type="range" min="1" max="10" step="1" />
+        </label>
+        <label class="lab__knob">
+          <span>Direction <b>{{ raceHeading }}°</b></span>
+          <input v-model.number="raceHeading" type="range" min="-180" max="180" step="1" />
+        </label>
+        <label class="lab__knob">
+          <span>Durée <b>{{ raceDuration }} ms</b></span>
+          <input v-model.number="raceDuration" type="range" min="400" max="2600" step="50" />
+        </label>
+      </div>
+      <PlateButton @click="rollRace">Lancer les deux</PlateButton>
+      <p class="lab__hint">
+        La distance est en <strong>côtés de dé</strong>, et c'est volontaire : un
+        cube fait exactement un quart de tour par côté parcouru. C'est ce
+        rapport qui fait « rouler » — le nombre de tours ne se règle plus, il se
+        déduit du trajet.
+      </p>
+    </section>
+
     <!-- Le vrai test du plateau : huit dés, égrenés, à la taille réelle. -->
     <section class="lab__panel">
       <h2 class="lab__legend">Volée de huit — comme au plateau</h2>
@@ -574,6 +630,17 @@ const islandRecipe = computed(
 --island-saturation: ${islandSaturation.value};
 --island-brightness: ${islandBrightness.value};`
 )
+
+// ── Rouler contre culbuter ───────────────────────────────────────────────────
+const race = reactive({ face: draw(), roll: 0 })
+const raceTravel = ref(4)
+const raceHeading = ref(-28)
+const raceDuration = ref(1100)
+
+function rollRace(): void {
+  race.face = draw()
+  race.roll += 1
+}
 
 const boardEl = ref<HTMLElement | null>(null)
 
@@ -909,6 +976,36 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     place-items: center;
     width: 100%;
     height: 100%;
+  }
+
+  // ── Piste de comparaison ─────────────────────────────────────────────────
+  // Le dé roulé arrive de HORS de sa case : la piste lui laisse la place, et
+  // ne masque pas ce qui déborde.
+  &__track {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    border: 1px solid rgba(201, 162, 39, 0.25);
+    border-radius: var(--cut);
+    background: rgba(24, 14, 8, 0.35);
+  }
+
+  &__lane {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__runner {
+    --die-size: 96px;
+
+    display: grid;
+    place-items: center;
+    width: 22rem;
+    height: 9rem;
   }
 
   // Taille volontairement proche de celle du plateau : un cube joli en grand
