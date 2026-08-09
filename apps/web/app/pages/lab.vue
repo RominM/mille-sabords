@@ -330,9 +330,9 @@
               :face="race.face"
               :roll="race.roll"
               motion="roll"
-              :duration="raceDuration"
-              :travel="raceTravel"
-              :heading="raceHeading"
+              :duration="throwing.duration"
+              :travel="throwing.travel"
+              :heading="throwing.heading"
               :silent="!sound"
             />
           </div>
@@ -343,7 +343,7 @@
             <DieCube
               :face="race.face"
               :roll="race.roll"
-              :duration="raceDuration"
+              :duration="throwing.duration"
               :turns="turns"
               silent
             />
@@ -353,16 +353,24 @@
 
       <div class="lab__knobs">
         <label class="lab__knob">
-          <span>Distance parcourue <b>{{ raceTravel }} côtés</b></span>
-          <input v-model.number="raceTravel" type="range" min="1" max="10" step="1" />
+          <span>Distance parcourue <b>{{ throwing.travel }} côtés</b></span>
+          <input v-model.number="throwing.travel" type="range" min="1" max="16" step="1" />
         </label>
         <label class="lab__knob">
-          <span>Direction <b>{{ raceHeading }}°</b></span>
-          <input v-model.number="raceHeading" type="range" min="-180" max="180" step="1" />
+          <span>Direction <b>{{ throwing.heading }}°</b></span>
+          <input v-model.number="throwing.heading" type="range" min="-180" max="180" step="1" />
         </label>
         <label class="lab__knob">
-          <span>Durée <b>{{ raceDuration }} ms</b></span>
-          <input v-model.number="raceDuration" type="range" min="400" max="2600" step="50" />
+          <span>Durée <b>{{ throwing.duration }} ms</b></span>
+          <input v-model.number="throwing.duration" type="range" min="400" max="2600" step="50" />
+        </label>
+        <label class="lab__knob">
+          <span>Écart entre les dés <b>{{ throwing.spread }}°</b></span>
+          <input v-model.number="throwing.spread" type="range" min="0" max="120" step="2" />
+        </label>
+        <label class="lab__knob">
+          <span>Décalage de départ <b>{{ throwing.stagger }} ms</b></span>
+          <input v-model.number="throwing.stagger" type="range" min="0" max="200" step="5" />
         </label>
       </div>
       <PlateButton @click="rollRace">Lancer les deux</PlateButton>
@@ -370,8 +378,11 @@
         La distance est en <strong>côtés de dé</strong>, et c'est volontaire : un
         cube fait exactement un quart de tour par côté parcouru. C'est ce
         rapport qui fait « rouler » — le nombre de tours ne se règle plus, il se
-        déduit du trajet.
+        déduit du trajet. L'<strong>écart</strong>, lui, ne se juge que sur la
+        volée de huit, plus bas : à zéro, les dés arrivent tous sur le même
+        vecteur.
       </p>
+      <pre class="lab__code">{{ throwRecipe }}</pre>
     </section>
 
     <!-- Le vrai test du plateau : huit dés, égrenés, à la taille réelle. -->
@@ -384,9 +395,11 @@
           class="lab__volley-die"
           :face="die.face"
           :roll="die.roll"
-          :duration="duration"
-          :turns="turns"
-          :delay="i * stagger"
+          motion="roll"
+          :duration="throwing.duration"
+          :travel="throwing.travel"
+          :heading="headingFor(i, volley.length, throwing)"
+          :delay="i * throwing.stagger"
           :tilt-x="tiltX"
           :tilt-y="tiltY"
           :art-scale="artScale"
@@ -632,15 +645,25 @@ const islandRecipe = computed(
 )
 
 // ── Rouler contre culbuter ───────────────────────────────────────────────────
+/** Copie modifiable du réglage du jeu, pour tourner les boutons sans rien casser. */
+const throwing = reactive({ ...DICE_THROW })
 const race = reactive({ face: draw(), roll: 0 })
-const raceTravel = ref(4)
-const raceHeading = ref(-28)
-const raceDuration = ref(1100)
 
 function rollRace(): void {
   race.face = draw()
   race.roll += 1
 }
+
+const throwRecipe = computed(
+  () => `// app/utils/diceThrow.ts
+export const DICE_THROW: DiceThrow = {
+  travel: ${throwing.travel},
+  heading: ${throwing.heading},
+  duration: ${throwing.duration},
+  spread: ${throwing.spread},
+  stagger: ${throwing.stagger}
+}`
+)
 
 const boardEl = ref<HTMLElement | null>(null)
 

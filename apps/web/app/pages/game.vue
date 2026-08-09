@@ -54,8 +54,11 @@
             :die="d"
             :clickable="clickable"
             :roll="rollSeq"
-            :delay="i * DIE_STAGGER_MS"
-            :duration="DIE_FLIGHT_MS"
+            motion="roll"
+            :travel="DICE_THROW.travel"
+            :heading="headingFor(i, centerDice.length)"
+            :delay="i * DICE_THROW.stagger"
+            :duration="DICE_THROW.duration"
             :silent="i > 0"
             @click="toggleDie(d.id)"
           />

@@ -21,10 +21,6 @@ import { RECAP_MS } from '@rf/protocol'
 
 export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
 
-/** Durée du vol d'un dé. */
-export const DIE_FLIGHT_MS = 750
-/** Décalage entre deux dés d'une même volée : ils ne partent pas au cordeau. */
-export const DIE_STAGGER_MS = 35
 /** Nombre maximum de dés en l'air, pour borner l'attente de la volée. */
 const MAX_DICE = 8
 
@@ -92,8 +88,10 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   const transient = ref('')
   /** Vrai pendant le jet de dés : les boutons d'action sont alors inactifs. */
   const rolling = ref(false)
-  /** Le temps que la volée entière retombe — dernier dé compris. */
-  const ROLL_MS = DIE_FLIGHT_MS + (MAX_DICE - 1) * DIE_STAGGER_MS
+  // Le temps que la volée entière retombe, dernier dé compris. Il se déduit du
+  // réglage du jet : une seule source, sinon les cachets se rallument sous des
+  // dés encore en train de rouler.
+  const ROLL_MS = DICE_THROW.duration + (MAX_DICE - 1) * DICE_THROW.stagger
 
   // Lectures réactives (sur l'état publié par le transport).
   const turn = computed<TurnState | null>(() => snapshot.value?.turn ?? null)

@@ -21,6 +21,9 @@
       :duration="duration"
       :silent="silent"
       :seated="seated"
+      :motion="motion"
+      :travel="travel"
+      :heading="heading"
     />
   </button>
 </template>
@@ -51,6 +54,12 @@ const props = defineProps<{
   silent?: boolean
   /** Dé rangé dans un des huit cadres du bas, par opposition à jeté sur la table. */
   seated?: boolean
+  /** `roll` = il traverse la table ; `tumble` = il culbute sur place. */
+  motion?: 'tumble' | 'roll'
+  /** Distance du roulé, en côtés de dé. */
+  travel?: number
+  /** Direction du roulé, en degrés. */
+  heading?: number
 }>()
 const emit = defineEmits<{ click: [] }>()
 
