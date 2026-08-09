@@ -111,10 +111,16 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
       .filter(
         (d) =>
           d.face !== null &&
-          // Une tête verrouillée reste au CENTRE le temps du vol : c'est la face
-          // qu'on veut voir tomber, elle ne doit pas sauter dans son cadre avant
-          // d'avoir fini de rouler.
-          ((d.locked && !rolling.value) || d.banked || selected.value.has(d.id))
+          (d.banked ||
+            selected.value.has(d.id) ||
+            // Une tête de mort QUI VIENT DE SORTIR reste au centre le temps du
+            // vol : c'est la face qu'on veut voir tomber, elle ne doit pas
+            // sauter dans son cadre avant d'avoir fini de rouler.
+            //
+            // Celles des tours précédents, elles, ne bougent plus : sans cette
+            // distinction, chaque relance faisait ressortir de leur cadre des
+            // têtes déjà rangées, pour les y remettre une seconde plus tard.
+            (d.locked && (!rolling.value || lockedBeforeThrow.value.includes(d.id))))
       )
       .map((d) => d.id)
   })
@@ -137,6 +143,21 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   const rollSeq = ref(0)
   let knownFaces: (DieFace | null)[] = []
   let facesSeen = false
+
+  /**
+   * Têtes de mort déjà verrouillées AVANT le jet en cours.
+   *
+   * Il faut la photo d'AVANT : quand on l'apprend, l'état porte déjà les
+   * nouvelles têtes, et rien ne distingue plus celle qui vient de tomber de
+   * celle qui dort dans son cadre depuis deux relances.
+   *
+   * `ref` et non une simple variable : `keptIds` la lit, et un `computed` ne se
+   * recalcule que sur ses dépendances RÉACTIVES. En variable ordinaire, la
+   * valeur utilisée était celle du dernier recalcul — donc périmée une fois sur
+   * deux, et les têtes déjà rangées ressortaient quand même.
+   */
+  const lockedBeforeThrow = ref<number[]>([])
+  let lockedNow: number[] = []
 
   /**
    * Arme le drapeau « des dés sont en l'air ».
@@ -169,10 +190,15 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
       // retombé sur la même face passerait inaperçu ici — mais ses voisins,
       // non : on anime la volée entière, pas dé par dé.
       if (faces.some((face, i) => face !== null && face !== knownFaces[i])) {
+        // On retient le verrouillage tel qu'il était AVANT ce jet : c'est lui
+        // qui dit quelles têtes restent dans leur cadre pendant le vol.
+        lockedBeforeThrow.value = lockedNow
         rollSeq.value += 1
         markRolling()
       }
       knownFaces = faces
+      lockedNow = t ? t.dice.filter((d) => d.locked).map((d) => d.id) : []
+      }
     },
     { immediate: true }
   )

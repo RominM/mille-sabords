@@ -245,6 +245,19 @@ function rollAcross(face: DieFace): void {
   }
 
   const { duration, delay } = props
+
+  /**
+   * La PRISE EN MAIN est immédiate, seul le lancer est égrené.
+   *
+   * Une animation retardée ne s'applique pas pendant son retard : le dé restait
+   * donc posé à son ancienne place jusqu'à ce que son tour vienne, et la table
+   * se vidait dé par dé — alors qu'on ramasse une poignée de dés d'un seul
+   * geste. On les emmène tous hors champ sur-le-champ, et c'est de là qu'ils
+   * repartent, l'un après l'autre.
+   */
+  cube.style.transform = at(0)
+  ground.style.opacity = '0'
+
   /**
    * Une même courbe pour tout le vol : c'est elle qui garantit le couplage.
    *
@@ -281,6 +294,9 @@ function rollAcross(face: DieFace): void {
   const [spin] = flights
   spin!.onfinish = () => {
     cube.style.transform = at(1)
+    // `stop()` retire les animations : sans cette remise à zéro, l'ombre
+    // resterait sur l'opacité nulle posée à la prise en main.
+    ground.style.opacity = ''
     current.x = slot.land.x
     current.y = slot.land.y
     current.z = 0

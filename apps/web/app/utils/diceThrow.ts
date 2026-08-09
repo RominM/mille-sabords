@@ -30,8 +30,8 @@ export const DICE_THROW: DiceThrow = {
   travel: 10,
   heading: -161,
   duration: 1200,
-  spread: 0,
-  stagger: 35,
+  spread: 62,
+  stagger: 70
 }
 
 /**

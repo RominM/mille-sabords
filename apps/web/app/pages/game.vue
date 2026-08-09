@@ -6,11 +6,28 @@
 
   <div v-else-if="mode !== 'start'" class="stage">
     <div ref="plateauEl" class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
-      <!-- Rappel des règles, calé dans le creux entre le crâne et la lanterne gauche -->
-      <button v-click-sound class="rules-link" type="button" aria-label="Règles" @click="showRules = true">
-        <img :src="rulesIcon" alt="" class="rules-link__icon" />
-        <span class="rules-link__label">Règles</span>
-      </button>
+      <div class="zone-action-layout">
+        <button
+          v-click-sound
+          v-tooltip="'Règles'"
+          type="button"
+          class="zone-action-layout__rules btn"
+          aria-label="Règles"
+          @click="showRules = true"
+        >
+          <img :src="rulesIcon" alt="" class="zone-action-layout__rules__icon" />
+        </button>
+
+        <button class="btn" v-tooltip="'Paramètres'" aria-label="Paramètres">
+          <component
+            :is="Cog"
+            class="zone-action-layout__tab-icon"
+            :size="40"
+            :stroke-width="1.75"
+            color="#c9a227"
+          />
+        </button>
+      </div>
 
       <!-- Joueurs : colonne de 5 slots à gauche -->
       <div class="zone-players">
@@ -121,6 +138,7 @@
       <p v-else-if="turn && !isBotTurn && turn.phase === 'island-roll'" class="zone-hint">
         Île de la Tête-de-Mort : relance forcée tant que des têtes sortent.
       </p>
+      <p v-else-if="turn && !isBotTurn && canRoll" class="zone-hint">Lance les dés</p>
 
       <!-- Île de la Tête-de-Mort : la lumière du plateau tourne au braise. La
            phase la plus dangereuse du jeu ne se distinguait par rien. -->
@@ -134,11 +152,7 @@
   <!-- Résultat du tour : en grand, par-dessus le plateau, sans rien masquer et
        sans rien demander. `turn.outcome` est nul après un minuteur expiré sans
        le moindre lancer — il n'y a alors rien à annoncer, on enchaîne. -->
-  <TurnFlash
-    v-if="mode === 'turnEnd' && turn?.outcome"
-    :outcome="turn.outcome"
-    :actor="turnActor"
-  />
+  <TurnFlash v-if="mode === 'turnEnd' && turn?.outcome" :outcome="turn.outcome" :actor="turnActor" />
 
   <GameOverModal
     v-if="mode === 'finished'"
@@ -176,6 +190,7 @@
 import type { BotDifficulty, DieFace } from '@rf/engine'
 import layoutUrl from '~/assets/images/ui/layout-game.webp'
 import ctaUrl from '~/assets/images/ui/main-cta.webp'
+import { Cog } from 'lucide-vue-next'
 import stopSeal from '~/assets/images/ui/wax-seal-stop.webp'
 import rulesIcon from '~/assets/images/ui/icon-rules.webp'
 import darkLaugh from '~/assets/sounds/soundscrate-evil-chuckle-02.mp3'
@@ -536,40 +551,31 @@ watch(isDefeat, async (value) => {
 // pour suivre le plateau au redimensionnement.
 // Le libellé est posé SUR l'icône : le débordement est assumé, il donne au
 // bouton l'allure d'un cachet plutôt que d'une vignette légendée.
-.rules-link {
+.zone-action-layout {
   position: absolute;
   top: 2.5%;
-  right: 13%;
+  right: 2%;
   z-index: 2;
-  display: grid;
-  place-items: center;
+  display: flex;
   padding: 0;
   border: 0;
   background: none;
   cursor: pointer;
   transition: transform 0.12s ease;
-
-  &:hover {
-    transform: scale(1.06);
+  .btn {
+    background-color: transparent;
+    box-shadow: none;
+    &:hover {
+      transform: scale(1.06);
+    }
   }
-
-  &__icon {
-    grid-area: 1 / 1;
-    width: 5cqw;
-    height: auto;
-    filter: drop-shadow(0 2px 4px rgba(24, 14, 8, 0.8));
-  }
-
-  &__label {
-    grid-area: 1 / 1;
-    // Sur un parchemin clair : de l'encre, pas la couleur de texte du jeu.
-    color: #1c1208;
-    font-family: var(--font-display);
-    font-size: 1.5cqw;
-    line-height: 1;
-    white-space: nowrap;
-    // Un halo clair détache les lettres des zones sombres du dessin.
-    text-shadow: 0 0 0.35cqw rgba(237, 224, 200, 0.9);
+  &__rules {
+    &__icon {
+      grid-area: 1 / 1;
+      width: 5cqw;
+      height: auto;
+      filter: drop-shadow(0 2px 4px rgba(24, 14, 8, 0.8));
+    }
   }
 }
 
