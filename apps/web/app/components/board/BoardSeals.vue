@@ -47,7 +47,6 @@ const emit = defineEmits<{ roll: []; stop: [] }>()
   &__roll,
   &__stop {
     position: absolute;
-    left: 74.3%;
     translate: -50% -50%;
 
     :deep(.wax) {
@@ -57,16 +56,22 @@ const emit = defineEmits<{ roll: []; stop: [] }>()
     }
   }
 
+  // Dans le couloir entre la rangée d'emplacements (droite : 74,3 %) et la
+  // carte (gauche : 78 %), au-dessus de la rangée.
   &__roll {
-    top: 62%;
-    width: 7cqw;
-    height: 7cqw;
+    left: 74.2%;
+    top: 60%;
+    width: 8.6cqw;
+    height: 8.6cqw;
   }
 
+  // Sous la carte (bas : 82,9 %), dans sa colonne : c'est le seul coin du
+  // plateau que ni les dés, ni la rangée, ni le gouvernail n'occupent.
   &__stop {
-    top: 86%;
-    width: 6cqw;
-    height: 6cqw;
+    left: 82%;
+    top: 89%;
+    width: 6.4cqw;
+    height: 6.4cqw;
   }
 
   &__bot {

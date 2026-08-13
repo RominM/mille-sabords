@@ -1,6 +1,6 @@
 <template>
   <div class="pitch">
-    <h2 class="pitch__title">{{ title }}</h2>
+    <!-- <h2 class="pitch__title">{{ title }}</h2> -->
     <p class="pitch__text">{{ text }}</p>
     <PlateButton @click="emit('embark')">Embarquer</PlateButton>
   </div>
@@ -41,6 +41,5 @@ const emit = defineEmits<{ embark: [] }>()
     font-family: var(--font-body);
     font-size: 1.4rem;
   }
-
 }
 </style>

@@ -4,7 +4,13 @@
       <HomeMenu :entries="TABS" :current="activeTab" @select="activeTab = $event as TabId" />
 
       <section class="home__panel" :style="{ backgroundImage: `url(${panelUrl})` }" role="tabpanel">
-        <img class="home__panel-title" :src="titleUrl" alt="Reckless Fathoms" />
+        <!-- <img class="home__panel-title" :src="titleUrl" alt="Reckless Fathoms" /> -->
+        <h1 v-if="activeTab === 'play' || activeTab === 'multi'" class="home__panel-title">
+          {{ pitch.title }}
+        </h1>
+
+        <h1 v-else-if="activeTab === 'rules'" class="home__panel-title">Règle</h1>
+        <h1 v-else class="home__panel-title">Paramètres</h1>
 
         <div class="home__panel-content">
           <GamePitch
@@ -51,7 +57,7 @@ const activeTab = ref<TabId>('play')
 /** Les deux modes partagent la même accroche : titre, description, action. */
 const pitch = computed(() =>
   activeTab.value === 'multi'
-    ? { title: 'L’Équipage', text: 'Créer votre équipage, que le meilleur gagne !' }
+    ? { title: 'L’Équipage', text: 'Créer ou rejoingez un équipage, que le meilleur gagne !' }
     : { title: 'Contre le Corsaire', text: 'Créer une partie rapide contre le corsaire.' }
 )
 

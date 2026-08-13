@@ -17,6 +17,16 @@ import type { BotDifficulty, GameState, TurnAction } from '@rf/engine'
  */
 export const RECAP_MS = 5_000
 
+/**
+ * Cadence de l'IA : le temps qu'elle laisse entre deux de ses gestes.
+ *
+ * Partagé pour la même raison que `RECAP_MS` : le serveur l'applique, le front
+ * l'observe. Il doit rester SUPÉRIEUR à la durée d'un jet de dés, sinon l'IA
+ * relance par-dessus ses propres dés encore en vol et personne ne voit jamais
+ * ce qu'elle a obtenu.
+ */
+export const BOT_STEP_MS = 2_600
+
 /** Un siège tel que le voient tous les joueurs pendant la salle d'attente. */
 export interface SeatView {
   id: string

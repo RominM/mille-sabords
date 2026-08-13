@@ -24,6 +24,11 @@ export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
 /** Nombre maximum de dés en l'air, pour borner l'attente de la volée. */
 const MAX_DICE = 8
 
+/** Le temps que l'IA « prend sa décision » avant son premier geste du tour. */
+const BOT_THINK_MS = 900
+/** Le temps qu'elle laisse au joueur pour lire les dés, une fois posés. */
+const BOT_READ_MS = 1_100
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export function useGame(transport: GameTransport = createLocalTransport()) {
@@ -530,13 +535,27 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
    * commandes qu'un joueur : le jour où elle tournera côté serveur, seul
    * l'endroit d'où partent ces commandes changera.
    */
+  /**
+   * Attend que les dés soient POSÉS.
+   *
+   * L'IA décide en une microseconde ; le joueur, lui, regarde. Sans cette
+   * attente elle relançait par-dessus ses propres dés encore en vol, et on ne
+   * voyait jamais ce qu'elle avait obtenu.
+   */
+  async function waitForDice(): Promise<void> {
+    while (rolling.value) await sleep(80)
+  }
+
   async function runBot(): Promise<void> {
     botThinking.value = true
-    await sleep(650)
+    await sleep(BOT_THINK_MS)
     let guard = 0
     while (turn.value && turn.value.phase !== 'ended' && guard++ < 200) {
       act(decideAction(turn.value, { difficulty: difficulty.value }))
-      await sleep(750)
+      await waitForDice()
+      // Un temps APRÈS que les dés se sont posés : c'est là qu'on lit le
+      // résultat, et l'IA doit avoir l'air d'y réfléchir avant d'enchaîner.
+      await sleep(BOT_READ_MS)
     }
     botThinking.value = false
     mode.value = 'turnEnd'

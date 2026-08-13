@@ -21,6 +21,9 @@ const DELAY_MS = 260
 /** Distance entre l'élément et la bulle. */
 const GAP_PX = 10
 
+/** Texte courant de chaque élément équipé, tenu à jour par `updated`. */
+const texts = new WeakMap<HTMLElement, string>()
+
 let bubble: HTMLElement | null = null
 let timer: ReturnType<typeof setTimeout> | null = null
 
@@ -69,8 +72,14 @@ const textOf = (value: unknown): string => (typeof value === 'string' ? value.tr
 
 export const tooltipDirective: Directive<HTMLElement, string | undefined> = {
   mounted(el, binding) {
+    // Le texte est rangé À PART, et non lu depuis `binding` : l'objet reçu au
+    // montage n'est jamais remis à jour, si bien qu'une infobulle liée à une
+    // valeur qui change — la carte du tour, par exemple — resterait figée sur
+    // ce qu'elle disait au premier rendu. C'est `updated` qui la rafraîchit.
+    texts.set(el, textOf(binding.value))
+
     const show = (): void => {
-      const text = textOf(binding.value)
+      const text = texts.get(el) ?? ''
       if (!text) return
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => place(el, text), DELAY_MS)
@@ -90,9 +99,12 @@ export const tooltipDirective: Directive<HTMLElement, string | undefined> = {
     el.addEventListener('pointerdown', hide)
   },
 
+  updated(el, binding) {
+    texts.set(el, textOf(binding.value))
+  },
+
   unmounted(el) {
-    const handlers = (el as HTMLElement & { _tooltip?: { show: () => void; hide: () => void } })
-      ._tooltip
+    const handlers = (el as HTMLElement & { _tooltip?: { show: () => void; hide: () => void } })._tooltip
     if (!handlers) return
     el.removeEventListener('mouseenter', handlers.show)
     el.removeEventListener('focus', handlers.show)
