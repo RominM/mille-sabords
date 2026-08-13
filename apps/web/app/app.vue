@@ -3,6 +3,8 @@
     <NuxtPage />
     <AppLoader v-if="!ready" :progress="progress" />
     <StartupPrompts v-else />
+
+    <SmallScreenGuard />
   </div>
 </template>
 

@@ -47,6 +47,7 @@ Toute règle de jeu vit dans `packages/engine`, **jamais** dans l'UI.
 | `ScalePoints` / `TurnLog` | Contenus des deux tiroirs : barème, historique des tours. |
 | `TurnFlash` | Résultat du tour en grand, transparent, sans action. Remplace l'ancienne modale. |
 | `WaxSeal`, `PirateCard`, `PlayerSlot`, `SkullEyes`, `AppLoader` | Plateau. |
+| `SmallScreenGuard` | Barre l'application sous 740 px. Tout en CSS, aucune mesure en JS. |
 
 Composables : `useGame`, `useTableSetup`, `useRules`, `useSoundSettings`,
 `useBackgroundMusic` (musique de fond), `useSfx` (bruitages ponctuels),
