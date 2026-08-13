@@ -22,7 +22,7 @@
           />
 
           <RulesPanel v-else-if="activeTab === 'rules'" />
-          <SoundSettings v-else />
+          <AppSettings v-else />
         </div>
       </section>
     </div>

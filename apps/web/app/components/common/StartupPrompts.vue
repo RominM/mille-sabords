@@ -4,6 +4,7 @@
       <p class="startup__text">
         🎮 Pour une meilleure expérience, passez en plein écran. <strong>(F11)</strong>
       </p>
+      <p class="startup__text">Vous le retrouverez à tout moment dans les Paramètres.</p>
       <div class="startup__actions">
         <button v-click-sound class="btn" type="button" @click="goFullscreen">
           Passer en plein écran
@@ -47,6 +48,8 @@ const ABOUT_SEEN_KEY = 'rf-about-seen'
 
 type Step = 'fullscreen' | 'about' | 'done'
 
+const { enter } = useFullscreen()
+
 const step = ref<Step>('fullscreen')
 
 /** Passe au message suivant, en sautant « à propos » s'il a déjà été lu. */
@@ -56,13 +59,9 @@ function next(): void {
 }
 
 async function goFullscreen(): Promise<void> {
-  // Le refus du navigateur (geste jugé insuffisant, permission refusée) ne doit
-  // pas bloquer l'accueil : on enchaîne dans tous les cas.
-  try {
-    await document.documentElement.requestFullscreen()
-  } catch {
-    /* le joueur reste en fenêtré, F11 lui est rappelé */
-  }
+  // Le refus du navigateur ne doit pas bloquer l'accueil : `enter` l'absorbe,
+  // le joueur reste en fenêtré et F11 lui est rappelé. On enchaîne toujours.
+  await enter()
   next()
 }
 

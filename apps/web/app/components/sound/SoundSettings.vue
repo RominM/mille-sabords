@@ -28,11 +28,6 @@ const { musicEnabled, musicVolume, sfxEnabled, sfxVolume } = useSoundSettings()
 
 <style scoped lang="scss">
 .sound-settings {
-  // Le panneau qui l'accueille a une hauteur fixe : le réglage porte son propre
-  // défilement plutôt que de déborder sur le décor.
-  height: 100%;
-  overflow-y: auto;
-
   display: flex;
   flex-direction: column;
   gap: var(--space-4);

@@ -1,7 +1,7 @@
 <template>
   <Modal show-cross title="Paramètres" @close="emit('close')">
     <div class="settings">
-      <SoundSettings />
+      <AppSettings />
 
       <div class="settings__leave">
         <p class="settings__warning">

@@ -32,6 +32,8 @@ Toute règle de jeu vit dans `packages/engine`, **jamais** dans l'UI.
 |---|---|
 | `Modal` | Socle de modale sur parchemin. Titre fixe, `close` par croix/Échap/fond. |
 | `RulesModal` / `RulesPanel` | Règles, en surcouche (plateau) ou à plat (accueil). |
+| `AppSettings` | Tous les réglages (affichage + son) : mêmes à l'accueil et en partie. |
+| `DisplaySettings` | Réglages d'écran — aujourd'hui le plein écran. |
 | `SoundSettings` / `SoundSettingGroup` | Réglages son ; le groupe est agnostique (2 `v-model`). |
 | `HomeMenu` | Navigation de l'accueil. Change de vue au SURVOL. |
 | `EmbarkForm` | Cadre d'un formulaire d'accueil : corps qui défile, plaque en bas. |
@@ -48,7 +50,8 @@ Toute règle de jeu vit dans `packages/engine`, **jamais** dans l'UI.
 
 Composables : `useGame`, `useTableSetup`, `useRules`, `useSoundSettings`,
 `useBackgroundMusic` (musique de fond), `useSfx` (bruitages ponctuels),
-`useSidePanels` (quel tiroir est ouvert), `useDiceDrag` (saisir un dé).
+`useSidePanels` (quel tiroir est ouvert), `useDiceDrag` (saisir un dé),
+`useFullscreen` (plein écran, suivi par `fullscreenchange`).
 
 Utilitaires (`app/utils`) : `boardTilt` (inclinaison d'un dé selon sa place),
 `boardZones` (blocs à place fixe), `quad` (homographie à 4 points pour la carte),
