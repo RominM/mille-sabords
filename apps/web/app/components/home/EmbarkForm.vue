@@ -55,6 +55,8 @@ function submit(): void {
     flex-direction: column;
     gap: var(--space-3);
     padding-right: var(--space-3);
+    padding-bottom: 85px;
+    height: 47cqh;
     overflow-y: auto;
   }
 

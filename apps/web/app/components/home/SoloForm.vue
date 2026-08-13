@@ -56,7 +56,6 @@ const you = previous?.roster.find((seat) => !seat.bot)
 const name = ref(you?.name ?? '')
 const avatar = ref(you?.avatar ?? defaultAvatar)
 const difficulty = ref<BotDifficulty>(previous?.difficulty ?? 'medium')
-
 /**
  * La case existe, RIEN ne la suit encore : le tutoriel reste à écrire, et son
  * choix n'est donc ni transmis à la table ni mémorisé. Volontaire — la case

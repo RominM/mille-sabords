@@ -27,6 +27,23 @@ export const RECAP_MS = 5_000
  */
 export const BOT_STEP_MS = 2_600
 
+/**
+ * Codes de salle : sans I, O, 0 ni 1 — ils se dictent à l'oral sans ambiguïté.
+ *
+ * Partagé, car les deux bouts en tirent : le serveur quand il ouvre une salle
+ * lui-même, le front quand l'hôte génère son code AVANT d'embarquer pour
+ * pouvoir le partager. Deux alphabets qui divergeraient donneraient des codes
+ * que l'un des deux ne saurait pas lire.
+ */
+export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+export const ROOM_CODE_LENGTH = 4
+
+export const makeRoomCode = (): string =>
+  Array.from(
+    { length: ROOM_CODE_LENGTH },
+    () => ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)]
+  ).join('')
+
 /** Un siège tel que le voient tous les joueurs pendant la salle d'attente. */
 export interface SeatView {
   id: string
@@ -52,8 +69,12 @@ export type ClientMessage =
    * Sans `code`, on crée une salle ; avec, on la rejoint. Le `token` identifie
    * le joueur d'une session à l'autre : c'est lui qui rend sa place après un
    * rechargement.
+   *
+   * `create` accompagne un code TIRÉ par l'hôte : il ouvre la salle à ce
+   * code-là au lieu de la rejoindre. Sans lui, un code inconnu reste une faute
+   * de frappe — et non une invitation à ouvrir une salle par mégarde.
    */
-  | { t: 'join'; code?: string; token: string; name: string; avatar: string }
+  | { t: 'join'; code?: string; create?: boolean; token: string; name: string; avatar: string }
   | { t: 'ready'; ready: boolean }
   | { t: 'add-bot' }
   | { t: 'remove-seat'; seatId: string }

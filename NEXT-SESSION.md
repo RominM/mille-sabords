@@ -103,30 +103,47 @@ Fait :
 
 Puis normaliser les ~30 composants restants : props runtime, ordre du script, BEM.
 
-## 4. Reste à faire — demandes de Romin, non commencées
+## 4. Reste à faire — demandes de Romin
 
-### Parcours d'entrée — refonte
+### Parcours d'entrée — refonte ✅ fait le 2026-08-13
 
-- [ ] **Supprimer les étapes intermédiaires.** Plus de modale avant le lobby ni
-      avant la partie solo : le formulaire va DIRECTEMENT dans le cadre dynamique
-      de l'accueil. Romin a déjà modifié le panneau en ce sens.
-- [ ] Le **titre du panneau** va dans le slot du haut.
-- [ ] Le bouton **« Embarquer » en sticky**, seul le formulaire défile.
-- [ ] « Embarquer » a une vraie valeur : **on commence la partie, direct**.
-- [ ] Bouton **désactivé (grayscale)** tant que le formulaire est incomplet.
-- [ ] Même chose pour le multi : on renseigne son perso (ou le code) depuis
-      l'accueil, puis on embarque vers le lobby.
-- [ ] **Logo `main-title` en haut à gauche**, au-dessus de la liste des sections.
-- [ ] Dans le formulaire solo : petite case **« Activer le tutoriel »**.
-      **Ne rien implémenter derrière** — Romin a une idée précise pour plus tard.
+Le formulaire est DANS le cadre dynamique de l'accueil : plus de modale avant
+la partie solo ni avant le lobby. `EmbarkForm` tient le cadre (seul le corps
+défile, la plaque reste en bas), `PirateIdentity` porte le nom et le portrait
+des deux modes, `SoloForm` compose la table et part sur `/game`, `CrewForm`
+crée ou rejoint puis passe la main à la page. Le titre est dans le cartouche du
+haut, la plaque passe en grisaille tant que le formulaire est incomplet, et
+elle se mesure sur la planche (`--plate-w`) au lieu d'une largeur fixe.
 
-### Écrans et confort
+En équipage, **un seul code, deux rôles** : on le TIRE (« Générer un code » —
+on ouvre la salle, on l'annonce à ses amis) ou on le SAISIT (on rejoint la
+leur). L'action se renomme d'elle-même, « Embarquer » ou « Rejoindre ». Le
+code tiré est un VRAI code : le message `join` porte désormais `create`, et le
+serveur ouvre la salle à ce code-là — ou refuse s'il est déjà pris. L'alphabet
+sans I, O, 0 ni 1 vit dans `@rf/protocol`, d'où les deux bouts le tirent.
 
-- [ ] **Plein écran depuis les paramètres.**
-- [ ] **Page de chargement (même factice)** entre `/` et `/game` à l'embarquement.
-- [ ] Idem entre `/lobby` et `/game` — et **le bouton manquant** côté lobby.
-- [ ] **Garde-fou mobile en CSS** : sous **740 px**, on bloque. Le responsive
-      actuel ne tient pas à ce format, et le jeu n'y est pas jouable.
+Le logo `main-title` occupe la bande au-dessus des sections, son encre calée
+sur la zone utile du fichier. La case « Activer le tutoriel » existe dans le
+formulaire solo — **rien derrière**, le choix n'est ni transmis ni mémorisé.
+
+`SoloSetupModal`, `RoomEntry`, `GamePitch` et `SeatSetupModal` ont disparu.
+
+### Écrans et confort — fait le 2026-08-13, sauf un point
+
+- [x] **Plein écran depuis les paramètres.** `useFullscreen` suit
+      `fullscreenchange` ; `AppSettings` (affichage + son) sert l'accueil ET la
+      partie. Réserve : le plein écran de la touche F11 n'est pas celui de
+      l'API, la case reste alors décochée.
+- [x] **Écran de chargement à l'embarquement**, posé sur `/game` : il couvre
+      les deux provenances (accueil et lobby) et enchaîne sans coupure sur
+      l'attente réelle du serveur en multi. `AppLoader` accepte un `progress`
+      nul — la jauge balaie au lieu d'inventer un pourcentage.
+- [ ] **Le bouton manquant côté lobby** — À PRÉCISER. Vérifié en salle : l'hôte
+      a bien sa plaque « Lever l'ancre » (grisée tant que l'équipage n'est pas
+      prêt), l'invité n'a que « Je suis paré » et « ← Retour ». Reste à savoir
+      lequel manque.
+- [x] **Garde-fou mobile en CSS** : sous **740 px**, `SmallScreenGuard` barre
+      tout. Requête de média seule, aucune mesure en JavaScript.
 
 ### Bloquant pour jouer vraiment
 

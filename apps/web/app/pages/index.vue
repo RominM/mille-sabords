@@ -55,8 +55,8 @@ const room = useRoom()
  * n'a rien à montrer avant, et l'y envoyer d'abord obligeait à y refaire la
  * saisie du pirate.
  */
-function enterRoom(pirate: Pirate, code?: string): void {
-  room.connect(pirate, code)
+function enterRoom(pirate: Pirate, code: string, hosting: boolean): void {
+  room.connect(pirate, code, hosting)
   router.push('/lobby')
 }
 </script>

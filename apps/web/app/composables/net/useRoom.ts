@@ -131,8 +131,11 @@ export const useRoom = () => {
   /**
    * Ouvre la connexion et demande une place. Sans `roomCode`, le serveur crée
    * une salle et renvoie son code ; avec, il fait rejoindre — ou refuse.
+   *
+   * `create` dit que le code vient de l'hôte lui-même : la salle est alors
+   * ouverte à ce code-là, qu'il a pu partager avant même d'embarquer.
    */
-  function connect(pirate: Pirate, roomCode?: string): void {
+  function connect(pirate: Pirate, roomCode?: string, create = false): void {
     close()
     status.value = 'connecting'
     error.value = ''
@@ -142,6 +145,7 @@ export const useRoom = () => {
       send({
         t: 'join',
         ...(roomCode ? { code: roomCode.toUpperCase() } : {}),
+        ...(create ? { create: true } : {}),
         token: playerToken(),
         name: pirate.name,
         avatar: pirate.avatar

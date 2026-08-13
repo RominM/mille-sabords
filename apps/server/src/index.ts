@@ -8,7 +8,7 @@
 import { WebSocketServer, type WebSocket } from 'ws'
 import { Room } from './room.js'
 import { loadRooms, saveRooms } from './store.js'
-import type { ClientMessage, ServerMessage } from '@rf/protocol'
+import { makeRoomCode, type ClientMessage, type ServerMessage } from '@rf/protocol'
 
 const PORT = Number(process.env.PORT ?? 8787)
 /** Cadence du battement : assez fine pour un minuteur à la seconde. */
@@ -21,11 +21,6 @@ const SAVE_MS = 5_000
  * On laisse donc le temps de revenir avant de rendre le code.
  */
 const EMPTY_GRACE_MS = 10 * 60 * 1_000
-
-/** Codes sans I, O, 0 ni 1 : ils se dictent à l'oral sans ambiguïté. */
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-const makeCode = (): string =>
-  Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('')
 
 const rooms = new Map<string, Room>()
 /** Sockets d'une salle, par identifiant de siège. */
@@ -55,8 +50,8 @@ function emitFor(code: string) {
 }
 
 function freshCode(): string {
-  let code = makeCode()
-  while (rooms.has(code)) code = makeCode()
+  let code = makeRoomCode()
+  while (rooms.has(code)) code = makeRoomCode()
   return code
 }
 
@@ -94,12 +89,20 @@ wss.on('connection', (ws) => {
       const code = msg.code?.toUpperCase() ?? freshCode()
       let room = rooms.get(code)
       if (!room) {
-        // On ne crée que pour celui qui n'a pas donné de code : un code inconnu
-        // est une faute de frappe, pas une invitation à ouvrir une salle.
-        if (msg.code) return send(ws, { t: 'error', message: 'Aucune salle avec ce code' })
+        // On ne crée que pour celui qui n'a pas donné de code, ou qui en PROPOSE
+        // un (l'hôte tire le sien avant d'embarquer, pour pouvoir le partager) :
+        // un code inconnu reste une faute de frappe, pas une invitation à ouvrir
+        // une salle.
+        if (msg.code && !msg.create) {
+          return send(ws, { t: 'error', message: 'Aucune salle avec ce code' })
+        }
         room = new Room(code, emitFor(code))
         rooms.set(code, room)
         sockets.set(code, new Map())
+      } else if (msg.create) {
+        // Le code proposé est déjà pris. On ne le rejoint pas en douce : l'hôte
+        // croirait ouvrir sa table et atterrirait chez des inconnus.
+        return send(ws, { t: 'error', message: 'Ce code est déjà pris — tires-en un autre' })
       }
 
       // Le socket est associé au siège AVANT que la salle n'émette quoi que ce
