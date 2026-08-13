@@ -28,7 +28,7 @@
   place-items: center;
   pointer-events: none;
 
-  // Même calcul que .plateau → les yeux tombent pile sur le crâne
+  // Même calcul que .game__board → les yeux tombent pile sur le crâne
   &__frame {
     position: relative;
     width: min(100dvw, calc(100dvh * 1672 / 941));

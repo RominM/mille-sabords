@@ -38,7 +38,7 @@
  * L'affichage est piloté par le parent (`v-if`) : la modale ne fait que
  * DEMANDER sa fermeture via `close` — croix, clic sur le fond, ou Échap.
  *
- * Le `Teleport` vers le body n'est pas cosmétique. Sur le plateau, `.plateau`
+ * Le `Teleport` vers le body n'est pas cosmétique. Sur le plateau, `.game__board`
  * déclare `container-type: size`, ce qui en fait le bloc conteneur des éléments
  * `position: fixed` : rendue sur place, la modale serait calée sur le plateau et
  * rognée par son `overflow: hidden`.

@@ -121,7 +121,7 @@ function onEmbark(mode: TabId): void {
   // les décalages ci-dessous recentrent l'encre sur le creux du cartouche.
   &__panel-title {
     position: absolute;
-    left: 37%;
+    left: 37.5%;
     top: 10.2%;
     width: 24.8%;
     height: auto;

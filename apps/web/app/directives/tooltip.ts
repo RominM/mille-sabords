@@ -6,7 +6,7 @@
  * autour de chaque bouton — l'infobulle doit pouvoir se poser sur N'IMPORTE
  * QUEL élément sans toucher à sa structure. Une directive est exactement l'outil.
  *
- * La bulle est écrite dans `body`, pas à côté de son élément : `.plateau`
+ * La bulle est écrite dans `body`, pas à côté de son élément : `.game__board`
  * déclare `container-type: size`, et une bulle posée dedans serait rognée par
  * la première zone à `overflow: hidden` — le tiroir latéral, par exemple.
  *

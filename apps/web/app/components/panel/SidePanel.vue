@@ -40,7 +40,7 @@
  * l'ouverture exclusive — deux planches ouvertes au même endroit se
  * masqueraient (cf. `useSidePanels`).
  *
- * `Teleport` vers le body : `.plateau` déclare `container-type: size`, ce qui
+ * `Teleport` vers le body : `.game__board` déclare `container-type: size`, ce qui
  * piégerait un `position: fixed` à l'intérieur.
  */
 import type { Component } from 'vue'

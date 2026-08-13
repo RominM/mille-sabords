@@ -51,7 +51,7 @@ export function useDiceDrag(onDrop: (drop: DiceDrop) => void) {
     const slot = el.closest<HTMLElement>('[data-slot]')
     if (slot) return Number(slot.dataset.slot)
     // Le centre du plateau reprend le dé : c'est le geste inverse du rangement.
-    return el.closest('.zone-center') ? null : undefined
+    return el.closest('.board-dice') ? null : undefined
   }
 
   function move(event: PointerEvent): void {
