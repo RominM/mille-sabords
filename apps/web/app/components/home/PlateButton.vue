@@ -49,8 +49,11 @@ function onClick(): void {
     transform: translateY(1px);
   }
 
+  // Hors d'usage : la plaque perd son or plutôt que sa présence. Le geste reste
+  // visible et lisible — il manque juste quelque chose pour l'accomplir.
   &:disabled {
-    opacity: 0.5;
+    filter: grayscale(1);
+    opacity: 0.7;
     cursor: not-allowed;
   }
 

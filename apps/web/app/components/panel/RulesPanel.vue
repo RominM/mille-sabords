@@ -1,6 +1,5 @@
 <template>
   <div class="rules-panel">
-    <h2 class="rules-panel__title">Règles</h2>
     <div>
       <h3>🎯 But du jeu</h3>
       <p>
@@ -85,12 +84,6 @@ const { rules } = useRules()
   flex-direction: column;
   gap: var(--space-3);
   align-content: start;
-
-  &__title {
-    color: var(--accent);
-    font-family: var(--font-display);
-    font-size: 2.6rem;
-  }
 
   &__list {
     margin: 0;

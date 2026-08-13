@@ -32,10 +32,12 @@ Toute règle de jeu vit dans `packages/engine`, **jamais** dans l'UI.
 |---|---|
 | `Modal` | Socle de modale sur parchemin. Titre fixe, `close` par croix/Échap/fond. |
 | `RulesModal` / `RulesPanel` | Règles, en surcouche (plateau) ou à plat (accueil). |
-| `SoloSetupModal` | Nom, portrait, difficulté → compose la table et part sur `/game`. |
 | `SoundSettings` / `SoundSettingGroup` | Réglages son ; le groupe est agnostique (2 `v-model`). |
 | `HomeMenu` | Navigation de l'accueil. Change de vue au SURVOL. |
-| `GamePitch` | Accroche d'un mode : titre, texte, CTA. Émet `embark`. |
+| `EmbarkForm` | Cadre d'un formulaire d'accueil : corps qui défile, plaque en bas. |
+| `PirateIdentity` | Nom et portrait, en 2 `v-model`. Commun au solo et à l'équipage. |
+| `SoloForm` | Mise en place solo → compose la table et part sur `/game`. |
+| `CrewForm` | Créer ou rejoindre un équipage. Émet `embark`, ne connaît pas le réseau. |
 | `PlateButton` | CTA principal (plaque de bois). Joue `axe-impact`. |
 | `DieView` | Un dé : son ÉTAT et son clic (verrou, réserve, Gardienne). Délègue le rendu à `DieCube`. |
 | `DieCube` | Rendu d'un dé : cube 3D CSS qui tombe sur une face IMPOSÉE. Aucune règle. |
