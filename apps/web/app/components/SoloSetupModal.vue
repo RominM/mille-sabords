@@ -1,5 +1,7 @@
 <template>
-  <Modal show-cross title="Contre le Corsaire" @close="emit('close')">
+  <!-- Rouleau COUCHÉ : nom, portraits et difficulté tiennent alors sans faire
+       défiler le parchemin, ce que la version verticale imposait. -->
+  <Modal size="wide" show-cross title="Contre le Corsaire" @close="emit('close')">
     <form class="solo-setup" @submit.prevent="start">
       <label class="solo-setup__field">
         <span class="solo-setup__label">Ton nom de pirate</span>

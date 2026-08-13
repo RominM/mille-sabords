@@ -47,6 +47,7 @@
               <span v-if="!seat.connected" class="crew__tag">déconnecté</span>
             </span>
 
+            <span v-if="!seat.ready" class="crew__loader">🛞</span>
             <span class="crew__state" :class="{ 'crew__state--ready': seat.ready }">
               {{ seat.ready ? 'Paré' : 'En attente' }}
             </span>
@@ -122,10 +123,7 @@ const lobby = room.lobby
 
 const humans = computed(() => lobby.value?.seats.filter((s) => !s.bot) ?? [])
 const canStart = computed(
-  () =>
-    (lobby.value?.seats.length ?? 0) >= 2 &&
-    humans.value.length > 0 &&
-    humans.value.every((s) => s.ready)
+  () => (lobby.value?.seats.length ?? 0) >= 2 && humans.value.length > 0 && humans.value.every((s) => s.ready)
 )
 
 const hint = computed(() => {
@@ -335,6 +333,11 @@ watch(
     font-size: 1.1cqw;
   }
 
+  &__loader {
+    display: inline-block;
+    animation: rotate 2s linear infinite;
+  }
+
   &__state {
     color: var(--text-dim);
     font-family: var(--font-body);
@@ -366,6 +369,15 @@ watch(
     flex: 0 0 auto;
     padding: 0.6cqh 1.2cqw;
     font-size: 1.2cqw;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

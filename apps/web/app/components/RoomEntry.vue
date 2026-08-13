@@ -1,7 +1,10 @@
 <template>
-  <div class="entry panel">
-    <h2 class="entry__title">Rejoindre l’équipage</h2>
-
+  <!-- Rouleau COUCHÉ : nom, portraits et les deux chemins tiennent alors
+       sans faire défiler le parchemin. -->
+  <Modal size="wide" title="Rejoindre l’équipage">
+    <!-- Deux colonnes : QUI tu es à gauche, COMMENT tu embarques à droite.
+         C'est ce que le rouleau couché permet, et ce qui supprime le défilement. -->
+    <div class="entry__cols">
     <label class="entry__field">
       <span class="entry__label">Ton nom de pirate</span>
       <input
@@ -32,8 +35,6 @@
       </div>
     </fieldset>
 
-    <hr class="rope entry__rope" />
-
     <!-- Deux chemins, un seul écran : l'hôte crée et dicte le code, les autres
          le saisissent. Rien ne distingue les deux joueurs à ce stade. -->
     <div class="entry__ways">
@@ -63,10 +64,11 @@
         </button>
       </div>
     </div>
+    </div>
 
     <p v-if="!named" class="entry__hint">Choisis un nom pour embarquer.</p>
     <p v-if="error" class="entry__error">{{ error }}</p>
-  </div>
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -105,11 +107,25 @@ function join(): void {
 </script>
 
 <style scoped lang="scss">
+// Le parchemin est clair : tout le texte doit être sombre, et les champs
+// posés dessus doivent s'éclaircir plutôt que de creuser un trou noir.
+$ink: #2a1c0e;
+
 .entry {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  width: min(30rem, 100%);
+  color: $ink;
+
+  // Deux colonnes dès qu'il y a la place — c'est le gain du rouleau couché.
+  &__cols {
+    display: grid;
+    // 13rem : le seuil sous lequel une colonne ne tient plus ni un nom ni une
+    // rangée de portraits. Au-dessus, le rouleau couché en loge deux.
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-4) var(--space-5);
+    align-items: start;
+  }
 
   &__title {
     color: var(--accent);
@@ -132,7 +148,7 @@ function join(): void {
 
   &__label {
     padding: 0;
-    color: var(--text);
+    color: $ink;
     font-family: var(--font-body);
     font-weight: 600;
   }
@@ -142,8 +158,9 @@ function join(): void {
     padding: var(--space-2);
     border: 1px solid var(--border);
     border-radius: var(--radius-btn);
-    background: rgba(24, 14, 8, 0.5);
-    color: var(--text);
+    background: rgba(255, 250, 235, 0.55);
+    border-color: rgba(42, 28, 14, 0.45);
+    color: $ink;
     font-family: var(--font-body);
     font-size: 1.05rem;
 
@@ -178,7 +195,7 @@ function join(): void {
     padding: 0;
     border: 2px solid transparent;
     border-radius: var(--radius-btn);
-    background: rgba(24, 14, 8, 0.35);
+    background: rgba(42, 28, 14, 0.12);
     cursor: pointer;
     transition:
       border-color 0.15s ease,
@@ -223,14 +240,14 @@ function join(): void {
   }
 
   &__hint {
-    color: var(--text-dim);
+    color: rgba(42, 28, 14, 0.75);
     font-family: var(--font-body);
     font-size: var(--fs-body-s);
     text-align: center;
   }
 
   &__error {
-    color: var(--danger-edge);
+    color: #8c2f2f;
     font-family: var(--font-body);
     font-weight: 600;
     text-align: center;

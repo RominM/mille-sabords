@@ -18,7 +18,14 @@
           <img :src="rulesIcon" alt="" class="zone-action-layout__rules__icon" />
         </button>
 
-        <button class="btn" v-tooltip="'Paramètres'" aria-label="Paramètres">
+        <button
+          v-click-sound
+          v-tooltip="'Paramètres — son, et quitter la partie'"
+          class="btn"
+          type="button"
+          aria-label="Paramètres"
+          @click="showSettings = true"
+        >
           <component
             :is="Cog"
             class="zone-action-layout__tab-icon"
@@ -41,11 +48,14 @@
             :avatar="portraitOf(p.id)"
             :current="gamePhase === 'playing' && i === currentIndex"
           />
+          <!-- Le minuteur ne s'affiche que pour le siège actif : c'est SA
+               décision qu'on décompte. La même condition sert de garde et de
+               valeur, sinon `seconds` pourrait arriver vide. -->
           <PlayerTimer
-            v-if="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
+            v-if="gamePhase === 'playing' && i === currentIndex"
             class="pslot__timer"
-            :seconds="gamePhase === 'playing' && i === currentIndex ? secondsLeft : undefined"
-            :total="TURN_SECONDS ?? 60"
+            :seconds="secondsLeft"
+            :total="TURN_SECONDS"
           />
         </div>
         <!-- <PlayerSlot
@@ -80,9 +90,9 @@
           :key="d.id"
           class="die-cell die-cell--big"
           :class="{ 'die-cell--held': heldDie === d.id, grabbable: clickable }"
+          :style="scatterStyle(d.id)"
           @pointerdown="clickable && grab(d.id, $event)"
         >
-          <!-- :style="scatterStyle(d.id)" -->
           <DieView
             :die="d"
             :clickable="clickable"
@@ -189,6 +199,12 @@
 
   <RulesModal v-if="showRules" @close="showRules = false" />
 
+  <GameSettingsModal
+    v-if="showSettings"
+    @close="showSettings = false"
+    @quit="leaveGame"
+  />
+
   <ScalePoints />
   <!-- Sous le barème, comme un second onglet de dossier : d'où viennent les
        scores, et pourquoi un tour s'est mal terminé. -->
@@ -278,6 +294,18 @@ const FACE: Record<DieFace, string> = {
 
 const darkLaughAudio = ref<HTMLAudioElement | null>(null)
 const showRules = ref(false)
+const showSettings = ref(false)
+
+/**
+ * Quitter la partie. En multi, on FERME la connexion avant de partir : sans
+ * cela le siège resterait occupé par un joueur qui ne reviendra pas, et la
+ * table attendrait ses décisions jusqu'à expiration du minuteur.
+ */
+function leaveGame(): void {
+  showSettings.value = false
+  if (!isSolo) room.close()
+  router.push('/')
+}
 
 const { sfxGain } = useSoundSettings()
 
@@ -473,6 +501,23 @@ const slotDice = computed(() =>
   slots.value.map((id) => (id === null ? null : (turn.value?.dice[id] ?? null)))
 )
 
+/**
+ * Où chaque dé s'immobilise, et comment il est tourné.
+ *
+ * La grille place les dés ; ceci les DÉRANGE. Sans elle, ils roulent bien mais
+ * retombent au cordeau sur leurs cases, ce qui trahit l'animation — une poignée
+ * de dés jetée s'éparpille.
+ *
+ * `translate` et `rotate` séparément, jamais `transform` : celui-ci aplatirait
+ * la scène 3D des cubes (cf. `CLAUDE.md`). Le tirage est reproductible, indexé
+ * sur le numéro du jet : au hasard à chaque rendu, les dés vibreraient à chaque
+ * seconde du minuteur.
+ */
+function scatterStyle(dieId: number): Record<string, string> {
+  const { x, y, angle } = scatterFor(dieId, rollSeq.value)
+  return { translate: `${x}% ${y}%`, rotate: `${angle}deg` }
+}
+
 // ── Saisir un dé ─────────────────────────────────────────────────────────────
 const { heldDie, hovered, at, grab } = useDiceDrag(({ slot, dieId }) => {
   const kept = keptIds.value.includes(dieId)
@@ -666,7 +711,7 @@ watch(isDefeat, async (value) => {
 // tire la profondeur de ses faces (translateZ = la moitié). Une longueur, donc,
 // jamais un pourcentage.
 .die-cell--big {
-  --die-size: 5.8cqw;
+  --die-size: 5cqw;
   width: var(--die-size);
   height: var(--die-size);
 }

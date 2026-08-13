@@ -2,7 +2,12 @@
   <Teleport to="body">
     <div class="modal-mask" @click.self="emit('close')">
       <div class="modal-dialog" :class="`modal-dialog--${size}`" role="dialog" aria-modal="true">
-        <img class="modal-dialog__img" src="./../assets/images/ui/parchemin.webp" alt="" />
+        <!-- Le rouleau vit dans son propre cadre : c'est LUI qu'on fait pivoter
+             d'un quart de tour pour la variante horizontale, sans toucher au
+             contenu, qui doit rester droit. -->
+        <div class="modal-dialog__frame">
+          <img class="modal-dialog__img" src="./../assets/images/ui/parchemin.webp" alt="" />
+        </div>
         <div class="modal-dialog__content">
           <header class="modal-dialog__header">
             <h2 class="modal-dialog__title">{{ title }}</h2>
@@ -48,7 +53,12 @@ withDefaults(
      * Encombrement du rouleau. `sm` pour un contenu court — un récapitulatif de
      * fin de tour n'a pas à occuper tout l'écran.
      */
-    size?: 'sm' | 'md'
+    /**
+     * `wide` couche le rouleau : les enroulements passent à gauche et à droite,
+     * et la surface d'écriture devient une bande horizontale. Beaucoup plus de
+     * place pour un formulaire, qui n'a alors plus à défiler.
+     */
+    size?: 'sm' | 'md' | 'wide'
   }>(),
   { showCross: false, title: '', size: 'md' }
 )
@@ -98,6 +108,50 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
     // Le titre suit l'échelle : à 2,5rem il mangerait le tiers du rouleau.
     --modal-title: 1.6rem;
     --modal-cross: 2rem;
+  }
+
+  // Cadre du rouleau. Neutre à la verticale ; c'est lui qui pivote en `wide`.
+  &__frame {
+    position: absolute;
+    inset: 0;
+  }
+
+  // ── Rouleau couché ────────────────────────────────────────────────────────
+  // On ne déforme pas l'image : on la fait PIVOTER. Les enroulements, dessinés
+  // en haut et en bas, viennent donc à gauche et à droite — ce qu'on veut d'un
+  // parchemin horizontal. Les constantes mesurées du fichier restent valables
+  // telles quelles, puisqu'elles s'appliquent au cadre avant sa rotation.
+  //
+  // `container-type: size` sert à ça : `100cqh` donne la HAUTEUR du dialogue,
+  // qui devient la largeur du cadre une fois couché. Sans lui, il n'y a aucun
+  // moyen en CSS de rendre une dimension à l'autre.
+  &--wide {
+    --modal-cap: 1120px;
+    --modal-vh: 86dvh;
+
+    container-type: size;
+    width: min(94vw, calc(var(--modal-vh) * 953 / 815), var(--modal-cap));
+    aspect-ratio: 953 / 815;
+
+    .modal-dialog__frame {
+      inset: auto;
+      left: 50%;
+      top: 50%;
+      width: 100cqh;
+      height: 100cqw;
+      translate: -50% -50%;
+      rotate: 90deg;
+    }
+
+    // Surface d'écriture : la bande plate entre les deux enroulements, qui
+    // sont désormais latéraux. Mesures du fichier — zone plate y 168..865 sur
+    // un rouleau qui va de 32 à 984 — soit 14,3 % à 87,5 % de sa longueur.
+    .modal-dialog__content {
+      left: 14.5%;
+      top: 6%;
+      width: 72.5%;
+      height: 88%;
+    }
   }
 
   &__img {
