@@ -30,38 +30,21 @@ export interface BoardZone {
 }
 
 /**
- * Cadre de la carte, mesuré sur `ui/layout-game.webp` (1672×941) : liseré doré
- * à x 1275..1550 en haut, 1289..1571 en bas, y 261..659.
+ * Emplacement de la carte Pirate.
  *
- * Le cadre n'est pas d'aplomb — il penche, comme tout ce que ce grand angle a
- * photographié. On se cale au milieu du quadrilatère et c'est l'inclinaison qui
- * rattrape le reste.
+ * À PLAT depuis que le décor ne dessine plus de cadre pour l'accueillir : il
+ * n'y a plus de quadrilatère auquel se conformer, donc plus de raison de
+ * déformer la carte. Elle se détache par une ombre portée, pas par une
+ * perspective — c'est un objet posé sur la table, pas encastré dedans.
  */
-/**
- * Les quatre coins du cadre de la carte, en % du plateau.
- *
- * Quatre points et non trois angles : le cadre dessiné est un quadrilatère
- * quelconque, qu'aucune rotation ne peut égaler (cf. `utils/quad.ts`). On pose
- * les coins là où le décor les met, et la carte y entre exactement.
- *
- * Départ mesuré sur `ui/layout-game.webp` : liseré doré à x 1275..1550 en haut,
- * 1289..1571 en bas, y 261..659 — puis affiné à la souris dans le labo.
- */
-export const CARD_QUAD: Quad = {
-  topLeft: { x: 77.1, y: 29.9 },
-  topRight: { x: 92.2, y: 29.6 },
-  bottomRight: { x: 92.8, y: 43.6 },
-  bottomLeft: { x: 77.7, y: 43.9 }
-}
-
 export const CARD_ZONE: BoardZone = {
   left: 78,
   top: 28.2,
   width: 13.3,
   height: 54.7,
-  tiltX: 9,
-  tiltY: 16,
-  tiltZ: -5
+  tiltX: 0,
+  tiltY: 0,
+  tiltZ: 0
 }
 
 /**

@@ -74,7 +74,7 @@
       <!-- Carte Pirate : dans le cadre dessiné à droite. Place et inclinaison
            viennent de `boardZones` — un seul objet, une seule place, des angles
            donnés en clair plutôt que déduits du modèle des dés. -->
-      <div v-if="turn" ref="cardEl" class="zone-card">
+      <div v-if="turn" class="zone-card" :style="zoneStyle(CARD_ZONE)">
         <PirateCard :card="turn.card" :skulls="skulls" />
       </div>
 
@@ -351,7 +351,6 @@ const waitingForTable = computed(() => !isSolo && !turn.value)
 
 // ── Perspective des dés ──────────────────────────────────────────────────────
 const plateauEl = ref<HTMLElement | null>(null)
-const cardEl = ref<HTMLElement | null>(null)
 
 /**
  * Chaque dé prend l'inclinaison de SA place sur le plateau (cf. `boardTilt`).
@@ -388,9 +387,6 @@ function applyBoardTilt(): void {
     cell.style.setProperty('--die-tilt-z', `${tilts[i]!.z}deg`)
   })
 
-  // La carte, elle, n'est pas inclinée mais PROJETÉE sur les quatre coins du
-  // cadre dessiné : aucune rotation ne peut égaler un quadrilatère quelconque.
-  if (cardEl.value) applyQuad(cardEl.value, CARD_QUAD)
 }
 
 // Les dés se déplacent à chaque rendu — un dé gardé quitte le centre pour un
@@ -670,13 +666,18 @@ watch(isDefeat, async (value) => {
 // Place et forme viennent de `CARD_QUAD` : `applyQuad` pose la boîte englobante
 // puis la matrice qui l'envoie sur les quatre coins du cadre dessiné. L'origine
 // doit être le coin haut-gauche — la matrice part de là, pas du centre.
+// La carte est POSÉE à plat sur la table : le décor ne dessine plus de cadre
+// pour l'encastrer, donc plus rien à quoi se conformer. C'est l'ombre portée
+// qui la décolle du bois, pas une déformation.
 .zone-card {
   position: absolute;
-  transform-origin: 0 0;
 
   > * {
     width: 100%;
     height: 100%;
+    // `drop-shadow` et non `box-shadow` : la carte a des bords irréguliers, et
+    // une ombre rectangulaire trahirait la boîte au lieu de suivre le dessin.
+    filter: drop-shadow(0 1.2cqh 1.4cqh rgba(24, 14, 8, 0.75));
   }
 }
 
@@ -789,41 +790,55 @@ watch(isDefeat, async (value) => {
 // Zone d'action : bas-droite, au-dessus des slots, à gauche de la carte
 // Zone d'action élargie : « Lancer » calé à gauche, « S'arrêter » à droite.
 // Tailles en cqw → elles suivent le plateau au redimensionnement.
+// Les deux cachets se placent INDÉPENDAMMENT, chacun dans l'angle formé par la
+// rangée d'emplacements (x 24,7..74,3 %, y 69,3..79,5 %) et la carte, qui
+// commence à x 78 %. « Lancer » borde ce coin par le haut, « S'arrêter » par le
+// bas, sous la carte.
 .zone-action {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  right: 18%;
-  bottom: 19%;
-  width: 12cqw;
-  height: 12cqw;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  inset: 0;
+  // Le conteneur couvre tout le plateau : il ne doit rien intercepter.
+  pointer-events: none;
 }
-.zone-action__roll {
-  flex: 0 0 auto;
-  width: 8.7cqw;
-  height: 8.7cqw;
-  margin: 0 auto -18px 0;
-}
-// Le cachet « S'arrêter » est volontairement plus petit que « Lancer ».
+
+.zone-action__roll,
 .zone-action__stop {
-  flex: 0 0 auto;
-  width: 6.5cqw;
-  height: 6.5cqw;
-  margin: 0 0 0 auto;
+  position: absolute;
+  // Au-dessus de la carte, qu'ils débordent faute de place : la bande libre
+  // entre la rangée d'emplacements (fin à 74,3 %) et la carte (début à 78 %)
+  // ne fait que 3,7 %, trop étroite pour un cachet. On mord donc sur la carte,
+  // jamais sur les emplacements — eux reçoivent les dés qu'on fait glisser.
+  z-index: 4;
 }
+
+.zone-action__roll {
+  left: 75%;
+  top: 52%;
+  width: 8.5cqw;
+  height: 8.5cqw;
+}
+
+// Volontairement plus gros qu'avant : s'arrêter est la décision qui clôt le
+// tour, elle ne doit pas se chercher.
+.zone-action__stop {
+  left: 75%;
+  top: 70%;
+  width: 7.6cqw;
+  height: 7.6cqw;
+}
+
 .zone-action .btn {
   font-size: 1.5cqw;
   padding: 0.5cqw 1.2cqw;
 }
 
-// Le cachet remplit la boîte que lui donne .zone-action__roll / __stop
+// Le cachet remplit la boîte, et lui seul reprend le pointeur.
 .zone-action :deep(.wax) {
   width: 100%;
   height: 100%;
+  pointer-events: auto;
 }
+
 .bot-banner {
   display: flex;
   align-items: center;

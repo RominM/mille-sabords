@@ -135,23 +135,11 @@
         <div class="lab__zone lab__zone--live" :style="zoneStyle(live)">
           <LiveScore :score="500" />
         </div>
-        <div ref="quadCardEl" class="lab__quad">
+        <!-- La carte est POSÉE à plat : le décor ne dessine plus de cadre pour
+             l'encastrer, donc plus de quadrilatère à épouser. -->
+        <div class="lab__zone lab__zone--card" :style="zoneStyle(card)">
           <PirateCard :card="{ type: 'guardian' }" :skulls="1" />
         </div>
-
-        <!-- Une poignée par coin : on les pose sur ceux du cadre dessiné, et la
-             carte y entre exactement. Régler quatre points à la souris bat
-             n'importe quel jeu de curseurs d'angles. -->
-        <button
-          v-for="corner in CORNERS"
-          :key="corner"
-          type="button"
-          class="lab__handle"
-          :class="{ 'lab__handle--held': held === corner }"
-          :style="{ left: `${quad[corner].x}%`, top: `${quad[corner].y}%` }"
-          :aria-label="`Coin ${corner}`"
-          @pointerdown="grab(corner, $event)"
-        />
 
         <IslandAmbience
           v-if="island"
@@ -268,16 +256,6 @@
           aligner les arêtes sur le cadre dessiné, commence par le <strong>roulis</strong> seul, les autres à
           0.
         </p>
-        <label class="lab__knob lab__knob--check">
-          <input v-model="fitted" type="checkbox" />
-          <span>Carte posée dans le cadre (décochée : carte redressée)</span>
-        </label>
-        <p class="lab__hint">
-          Les illustrations ne sont jamais retouchées : la déformation est calculée à l'affichage, et se
-          retire en décochant. Rien à refaire, jamais.
-        </p>
-
-        <pre class="lab__code">{{ quadRecipe }}</pre>
         <pre class="lab__code">{{ zoneRecipe }}</pre>
       </template>
 
@@ -578,82 +556,6 @@ const ZONE_KNOBS = [
   { field: 'tiltY', label: 'Lacet (Y)', unit: '°', min: -30, max: 30, step: 0.5 },
   { field: 'tiltZ', label: 'Roulis (Z)', unit: '°', min: -20, max: 20, step: 0.5 }
 ] as const
-
-// ── Les quatre coins de la carte, réglés à la souris ─────────────────────────
-const CORNERS = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'] as const
-
-const quad = reactive({
-  topLeft: { ...CARD_QUAD.topLeft },
-  topRight: { ...CARD_QUAD.topRight },
-  bottomRight: { ...CARD_QUAD.bottomRight },
-  bottomLeft: { ...CARD_QUAD.bottomLeft }
-})
-
-const quadCardEl = ref<HTMLElement | null>(null)
-const held = ref<(typeof CORNERS)[number] | null>(null)
-
-function grab(corner: (typeof CORNERS)[number], event: PointerEvent): void {
-  held.value = corner
-  // La capture suit le pointeur même sorti de la poignée : sans elle, un geste
-  // un peu vif lâche le coin dès qu'on dépasse les quelques pixels du bouton.
-  ;(event.target as HTMLElement).setPointerCapture(event.pointerId)
-}
-
-function drag(event: PointerEvent): void {
-  const corner = held.value
-  const board = boardEl.value
-  if (!corner || !board) return
-  const box = board.getBoundingClientRect()
-  quad[corner].x = round1(((event.clientX - box.left) / box.width) * 100)
-  quad[corner].y = round1(((event.clientY - box.top) / box.height) * 100)
-}
-
-const round1 = (v: number): number => Math.round(v * 10) / 10
-const release = (): void => void (held.value = null)
-
-/**
- * Comparatif honnête : la carte redressée contre la carte posée dans le cadre.
- * Le seul moyen de trancher « est-ce que ça abîme mes illustrations ? » est de
- * voir les deux, pas d'en discuter.
- */
-const fitted = ref(true)
-
-function paintQuad(): void {
-  const el = quadCardEl.value
-  if (!el) return
-  if (fitted.value) return applyQuad(el, quad)
-
-  // Redressée : on garde la place, on jette la déformation.
-  const bounds = quadBounds(quad)
-  el.style.left = `${bounds.left}%`
-  el.style.top = `${bounds.top}%`
-  el.style.width = `${bounds.width}%`
-  el.style.height = `${bounds.height}%`
-  el.style.transform = 'none'
-}
-
-watch([quad, fitted], paintQuad, { flush: 'post', deep: true })
-onMounted(() => {
-  paintQuad()
-  window.addEventListener('pointermove', drag)
-  window.addEventListener('pointerup', release)
-  window.addEventListener('resize', paintQuad)
-})
-onBeforeUnmount(() => {
-  window.removeEventListener('pointermove', drag)
-  window.removeEventListener('pointerup', release)
-  window.removeEventListener('resize', paintQuad)
-})
-
-const quadRecipe = computed(
-  () => `// app/utils/boardZones.ts
-export const CARD_QUAD: Quad = {
-  topLeft: { x: ${quad.topLeft.x}, y: ${quad.topLeft.y} },
-  topRight: { x: ${quad.topRight.x}, y: ${quad.topRight.y} },
-  bottomRight: { x: ${quad.bottomRight.x}, y: ${quad.bottomRight.y} },
-  bottomLeft: { x: ${quad.bottomLeft.x}, y: ${quad.bottomLeft.y} }
-}`
-)
 
 const zoneRecipe = computed(
   () => `// app/utils/boardZones.ts
@@ -1005,38 +907,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     &--card > * {
       width: 100%;
       height: 100%;
-    }
-  }
-
-  // La carte projetée sur ses quatre coins : l'origine doit être le coin
-  // haut-gauche, la matrice part de là.
-  &__quad {
-    position: absolute;
-    transform-origin: 0 0;
-
-    > * {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  &__handle {
-    position: absolute;
-    z-index: 3;
-    width: 18px;
-    height: 18px;
-    translate: -50% -50%;
-    padding: 0;
-    border: 2px solid var(--bg);
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: grab;
-    touch-action: none;
-
-    &--held {
-      background: var(--accent-hi);
-      cursor: grabbing;
-      scale: 1.25;
     }
   }
 

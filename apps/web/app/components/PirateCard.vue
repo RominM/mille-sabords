@@ -5,10 +5,10 @@
          distance il est du tour perdu, dés ET carte confondus. -->
     <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}/3</span>
 
-    <p class="pcard__name">
-      {{ name }}
-      <span v-if="card.type === 'skulls'"> x {{ card.count }} </span>
-    </p>
+    <!-- Pas de libellé sous la carte : l'illustration dit laquelle c'est, et
+         l'infobulle dit ce qu'elle fait. Un nom en plus n'apprenait rien et
+         débordait du cadre depuis que la carte est posée à plat. -->
+    <span v-if="card.type === 'skulls'" class="pcard__count">×{{ card.count }}</span>
   </div>
 </template>
 
@@ -113,13 +113,19 @@ const name = computed(() => NAME[props.card.type])
     font-size: 1.6cqw;
   }
 
-  // Nom de la carte, dans le bandeau libre sous l'illustration
-  &__name {
-    padding: 0 8px;
-    font-family: var(--font-body);
-    font-size: clamp(0.5rem, 18px, 2rem);
-    text-align: center;
-    white-space: nowrap;
+  // Multiplicateur de la carte Tête de Mort — la seule information que
+  // l'illustration ne porte pas d'elle-même.
+  &__count {
+    position: absolute;
+    left: 4%;
+    top: 4%;
+    padding: 0.3cqw 0.8cqw;
+    border-radius: 6px;
+    background: rgba(24, 14, 8, 0.8);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1.6cqw;
   }
 }
 </style>
