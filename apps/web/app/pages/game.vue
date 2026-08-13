@@ -1,6 +1,6 @@
 <template>
   <div class="game">
-    <AppLoader v-if="waitingForTable" :loaded="0" :total="0" :progress="0" hint="Connexion à la table…" />
+    <AppLoader v-if="boarding || waitingForTable" :hint="boardingHint" />
 
     <div v-else-if="mode !== 'start'" class="game__stage">
       <div ref="plateauEl" class="game__board" :style="{ backgroundImage: `url(${layoutUrl})` }">
@@ -149,7 +149,17 @@ const {
   potentialScore
 } = useGame(isSolo ? createLocalTransport() : createNetworkTransport(room))
 
+/**
+ * Le temps de l'embarquement. On ne saute pas de l'accueil au plateau : le
+ * décor, les sièges et la première volée s'installent derrière l'écran de
+ * chargement, et le joueur reçoit une table déjà dressée. Le multi enchaîne
+ * ensuite sur l'attente RÉELLE du serveur, sans coupure entre les deux.
+ */
+const BOARDING_MS = 1600
+let boardingTimer: ReturnType<typeof setTimeout> | undefined
+
 const plateauEl = ref<HTMLElement | null>(null)
+const boarding = ref(true)
 const darkLaughAudio = ref<HTMLAudioElement | null>(null)
 const showRules = ref(false)
 const showSettings = ref(false)
@@ -206,6 +216,10 @@ const skulls = computed(() => {
  * dessiner. En solo la question ne se pose pas : le moteur répond tout de suite.
  */
 const waitingForTable = computed(() => !isSolo && !turn.value)
+
+const boardingHint = computed(() =>
+  waitingForTable.value ? 'Connexion à la table…' : 'On embarque…'
+)
 
 /** Tour perdu : les yeux du crâne du plateau s'embrasent. */
 const isDefeat = computed(() => {
@@ -268,6 +282,12 @@ const hint = useBoardHint({
   botTurn: isBotTurn,
   canRoll
 })
+
+onMounted(function boardTheShip() {
+  boardingTimer = setTimeout(() => (boarding.value = false), BOARDING_MS)
+})
+
+onBeforeUnmount(() => clearTimeout(boardingTimer))
 
 onMounted(function openTable() {
   if (isSolo) {

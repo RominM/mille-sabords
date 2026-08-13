@@ -6,12 +6,16 @@
       <div
         class="app-loader__slot"
         role="progressbar"
-        :aria-valuenow="progress"
+        :aria-valuenow="progress ?? undefined"
         aria-valuemin="0"
         aria-valuemax="100"
       >
-        <span class="app-loader__fill" :style="{ width: progress + '%' }" />
-        <p class="app-loader__hint mono">{{ hint }} {{ progress }}%</p>
+        <span
+          class="app-loader__fill"
+          :class="{ 'app-loader__fill--sweep': progress === null }"
+          :style="progress === null ? undefined : { width: `${progress}%` }"
+        />
+        <p class="app-loader__hint mono">{{ hint }}<span v-if="progress !== null"> {{ progress }}%</span></p>
       </div>
     </div>
   </div>
@@ -25,18 +29,21 @@
  * RENTRER dans la fenêtre plutôt que de l'étirer, exactement comme le plateau.
  * Les éléments sont posés en % de ce cadre, donc ils restent alignés au décor
  * quelle que soit la taille de l'écran.
+ *
+ * Deux usages : le préchargement des assets, qui SAIT où il en est et affiche
+ * son pourcentage ; et les passages d'un écran à l'autre, qui ne mesurent rien —
+ * `progress` vaut alors `null` et la jauge balaie sans mentir sur une avance.
  */
 import titleUrl from '~/assets/images/main-title.webp'
 
 withDefaults(
   defineProps<{
-    loaded: number
-    total: number
-    progress: number
+    /** `null` : chargement sans mesure, la jauge balaie. */
+    progress?: number | null
     title?: string
     hint?: string
   }>(),
-  { title: 'Reckless Fathoms', hint: 'Chargement du trésor…' }
+  { progress: null, title: 'Reckless Fathoms', hint: 'Chargement du trésor…' }
 )
 </script>
 
@@ -92,6 +99,15 @@ withDefaults(
     background: linear-gradient(90deg, var(--color-doubloon), var(--color-doubloon-hi));
     box-shadow: 0 0 1.5cqh rgba(232, 196, 104, 0.55);
     transition: width 0.25s ease;
+
+    // Sans mesure, la jauge ne reste pas figée à zéro : elle va et vient dans
+    // sa rainure. Un balayage dit « ça travaille », un pourcentage inventé
+    // dirait « j'en suis là » — ce serait faux.
+    &--sweep {
+      width: 34%;
+      transition: none;
+      animation: app-loader-sweep 1.3s ease-in-out infinite alternate;
+    }
   }
 
   &__hint {
@@ -104,6 +120,17 @@ withDefaults(
     letter-spacing: 0.04em;
     white-space: nowrap;
     text-shadow: 0 0.2cqh 0.4cqh rgba(0, 0, 0, 0.9);
+  }
+}
+
+// La jauge fait 34 % de la rainure : 194 % de sa propre largeur l'amène
+// exactement bord à bord, sans jamais en sortir.
+@keyframes app-loader-sweep {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(194%);
   }
 }
 </style>
