@@ -31,7 +31,6 @@ const emit = defineEmits<{ close: []; quit: [] }>()
 </script>
 
 <style scoped lang="scss">
-// Le parchemin est clair : tout le texte doit être sombre.
 $ink: #2a1c0e;
 
 .settings {
@@ -41,7 +40,6 @@ $ink: #2a1c0e;
   color: $ink;
   font-family: var(--font-body);
 
-  // Le départ se détache du reste : ce n'est pas un réglage, c'est une sortie.
   &__leave {
     display: flex;
     flex-direction: column;

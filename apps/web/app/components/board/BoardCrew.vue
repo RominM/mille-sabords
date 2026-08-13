@@ -46,7 +46,6 @@ defineProps({
   width: 100%;
   padding: 0 1cqw;
   overflow-x: auto;
-  // La barre de défilement mangerait la hauteur utile d'une carte.
   scrollbar-width: none;
 
   &__seat {

@@ -1,6 +1,4 @@
 <template>
-  <!-- Rouleau COUCHÉ : nom, portraits et difficulté tiennent alors sans faire
-       défiler le parchemin, ce que la version verticale imposait. -->
   <Modal size="wide" show-cross title="Contre le Corsaire" @close="emit('close')">
     <form class="solo-setup" @submit.prevent="start">
       <label class="solo-setup__field">
@@ -121,7 +119,6 @@ function start(): void {
 </script>
 
 <style scoped lang="scss">
-// Le parchemin est clair : tout le texte de cette modale doit être sombre.
 $ink: #2a1c0e;
 
 .solo-setup {
@@ -137,10 +134,6 @@ $ink: #2a1c0e;
     margin: 0;
     padding: 0;
     border: 0;
-    // Le navigateur impose `min-inline-size: min-content` aux `fieldset` : sans
-    // cette remise à zéro, celui des portraits refuse de rétrécir sous la
-    // largeur de sa bande, et c'est tout le panneau qui déborde au lieu de la
-    // laisser défiler seule.
     min-width: 0;
   }
 
@@ -168,8 +161,6 @@ $ink: #2a1c0e;
     }
   }
 
-  // Les portraits ne se replient pas : ils défilent horizontalement plutôt que
-  // de rétrécir, pour rester lisibles.
   &__avatars {
     display: flex;
     gap: var(--space-3);
@@ -193,7 +184,6 @@ $ink: #2a1c0e;
       transform: translateY(-2px);
     }
 
-    // L'or signale le choix retenu, comme partout ailleurs dans le jeu.
     &--picked {
       border-color: var(--accent);
       background: rgba(201, 162, 39, 0.22);

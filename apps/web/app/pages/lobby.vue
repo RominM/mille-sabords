@@ -1,7 +1,5 @@
 <template>
   <main class="lobby" :style="{ backgroundImage: `url(${backgroundUrl})` }">
-    <!-- Tant qu'on n'est pas entré, un seul écran : qui tu es, puis créer ou
-         rejoindre. C'est ici que les invités saisissent le code. -->
     <RoomEntry
       v-if="!room.connected.value"
       :error="room.error.value"
@@ -31,7 +29,6 @@
       </div>
 
       <section class="lobby__crew" :style="{ backgroundImage: `url(${panelUrl})` }">
-        <!-- Le cartouche porte le code : c'est ce qu'on dicte à ses camarades. -->
         <div class="lobby__code">
           <span class="lobby__code-label">Code de la partie</span>
           <strong class="lobby__code-value">{{ room.code.value }}</strong>
@@ -52,8 +49,6 @@
               {{ seat.ready ? 'Paré' : 'En attente' }}
             </span>
 
-            <!-- Chacun ne se déclare paré que pour lui-même ; les IA le sont
-                 d'office, et seul l'hôte peut les retirer. -->
             <button
               v-if="seat.id === room.youId.value"
               v-click-sound
@@ -157,9 +152,6 @@ watch(
   background-size: cover;
   background-repeat: no-repeat;
 
-  // La planche impose sa hauteur par son ratio : on borne donc la LARGEUR de la
-  // grille pour que l'ensemble tienne à l'écran, plutôt que d'écraser l'image.
-  // La réserve de 12rem couvre les rangées qui l'entourent.
   &__grid {
     width: min(1340px, 94vw, calc((96dvh - 12rem) * 1708 / 985));
     display: grid;
@@ -181,8 +173,6 @@ watch(
     text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
   }
 
-  // Calé sur l'ouverture du cartouche mesurée dans panel-menu.webp :
-  // x 580..1107, y 129..337 sur 1708x985.
   &__code {
     position: absolute;
     left: 34%;
@@ -208,8 +198,6 @@ watch(
     font-size: 3.4cqw;
     line-height: 1;
     letter-spacing: 0.22em;
-    // La lettre-espacement ajoute un blanc APRÈS le dernier caractère : sans ça
-    // le code paraît décalé vers la gauche dans son cadre.
     text-indent: 0.22em;
   }
 
@@ -237,8 +225,6 @@ watch(
     font-size: 0.95rem;
   }
 
-  // Le ratio de la planche est VERROUILLÉ : c'est une pièce dessinée, l'étirer
-  // déformerait le laiton du cadre.
   &__crew {
     grid-area: crew;
     position: relative;
@@ -282,7 +268,6 @@ watch(
   }
 }
 
-// Bois utile sous le cartouche, mesuré à x 78..1637 et y 390..915 sur 1708x985.
 .crew {
   position: absolute;
   left: 6%;
@@ -295,13 +280,10 @@ watch(
   margin: 0;
   padding: 0;
   list-style: none;
-  // Jusqu'à huit sièges dans une zone qui en tenait cinq : elle défile.
   overflow-y: auto;
   scrollbar-width: thin;
 
   &__row {
-    // Hauteur fixe, sinon les sièges se partageraient la zone et s'écraseraient
-    // à huit au lieu de la faire défiler.
     flex: 0 0 auto;
     height: 9.4cqh;
     display: flex;

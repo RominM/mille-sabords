@@ -1,7 +1,5 @@
 <template>
   <div class="game">
-    <!-- En multi, la partie vit sur le serveur : entre l'entrée sur la page et
-         la première réponse, il n'y a rien à dessiner. -->
     <AppLoader v-if="waitingForTable" :loaded="0" :total="0" :progress="0" hint="Connexion à la table…" />
 
     <div v-else-if="mode !== 'start'" class="game__stage">
@@ -61,13 +59,10 @@
 
         <BoardHint v-if="hint" :text="hint.text" :tone="hint.tone" />
 
-        <!-- Île de la Tête-de-Mort : la lumière du plateau tourne au braise. La
-             phase la plus dangereuse du jeu ne se distinguait par rien. -->
         <IslandAmbience v-if="isIsland" />
       </div>
     </div>
 
-    <!-- Surcouches ─────────────────────────────────────────────────────────── -->
     <TurnCall v-if="announcing && mode === 'playing'" />
 
     <TurnFlash v-if="mode === 'turnEnd' && turn?.outcome" :outcome="turn.outcome" :actor="turnActor" />
@@ -85,8 +80,6 @@
 
     <GameSettingsModal v-if="showSettings" @close="showSettings = false" @quit="leaveGame" />
 
-    <!-- Le dé en main : le vrai cube, décollé du plateau et suspendu au
-         pointeur. `Teleport` vers le body — `.game__board` piégerait un fixed. -->
     <Teleport to="body">
       <div v-if="heldFace" class="game__held" :style="{ left: `${at.x}px`, top: `${at.y}px` }">
         <DieCube :face="heldFace" :roll="0" />
@@ -96,11 +89,8 @@
     <ScalePoints />
     <TurnLog :history="history" :players="players" />
 
-    <!-- Défaite : le crâne du plateau ouvre des yeux rouges -->
     <div v-if="isDefeat">
       <SkullEyes />
-      <!-- Pas d'`autoplay` : la lecture passe par le watcher, qui applique le
-           réglage « Ambiance ». L'attribut jouerait le son réglage coupé. -->
       <audio ref="darkLaughAudio" :src="darkLaugh" />
     </div>
   </div>
@@ -333,7 +323,6 @@ watch(isDefeat, async (defeated) => {
 
 <style scoped lang="scss">
 .game {
-  // ── Scène : remplit la fenêtre, centre le plateau, letterbox autour ───────
   &__stage {
     position: fixed;
     inset: 0;
@@ -342,8 +331,6 @@ watch(isDefeat, async (defeated) => {
     overflow: hidden;
   }
 
-  // Verrouillé sur le ratio du fond (1672/941) : pas d'étirement, donc carte
-  // non déformée et cachet rond. Les zones en % tombent alors toujours pile.
   &__board {
     position: relative;
     aspect-ratio: 1672 / 941;
@@ -357,8 +344,6 @@ watch(isDefeat, async (defeated) => {
     overflow: hidden;
   }
 
-  // Place, taille et inclinaison viennent de `boardZones` : elles se règlent à
-  // l'œil dans le labo, et le CSS ne sait que COMMENT les appliquer.
   &__live {
     position: absolute;
     z-index: 2;
@@ -370,29 +355,21 @@ watch(isDefeat, async (defeated) => {
     }
   }
 
-  // La carte est POSÉE à plat : le décor ne dessine plus de cadre pour
-  // l'encastrer. C'est l'ombre qui la décolle du bois, pas une déformation.
   &__card {
     position: absolute;
 
     > * {
       width: 100%;
       height: 100%;
-      // `drop-shadow` et non `box-shadow` : la carte a des bords irréguliers,
-      // et une ombre rectangulaire trahirait la boîte au lieu du dessin.
       filter: drop-shadow(0 1.2cqh 1.4cqh rgba(24, 14, 8, 0.75));
     }
   }
 
-  // Le dé saisi, suspendu au pointeur. Taille en pixels et non en `cqw` : il
-  // vit dans le body, hors du conteneur qu'est le plateau.
   &__held {
     --die-size: 76px;
 
     position: fixed;
     z-index: 90;
-    // Pas de `filter` ici, si tentant soit-il pour une ombre portée : il
-    // aplatirait la scène 3D du cube.
     translate: -50% -50%;
     pointer-events: none;
   }

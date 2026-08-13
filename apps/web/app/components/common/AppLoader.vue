@@ -1,10 +1,8 @@
 <template>
   <div class="app-loader">
-    <!-- Cadre au ratio exact de l'image : centré, jamais déformé ni rogné -->
     <div class="app-loader__frame">
       <img :src="titleUrl" :alt="title" class="app-loader__title" />
 
-      <!-- La jauge occupe le cadre ouvragé dessiné en bas de l'illustration -->
       <div
         class="app-loader__slot"
         role="progressbar"
@@ -53,9 +51,6 @@ withDefaults(
   background: var(--color-abyss-900, #180e08);
   container-type: size; // référence des cq* ci-dessous
 
-  // Ratio réel de l'illustration : 1536 × 1024 (3/2).
-  // On se cale sur la boîte du loader (cqw/cqh) et non sur dvw/dvh : ces
-  // dernières ignorent la barre de défilement et feraient déborder le cadre.
   &__frame {
     position: relative;
     width: min(100cqw, calc(100cqh * 1536 / 1024));
@@ -79,7 +74,6 @@ withDefaults(
     filter: drop-shadow(0 1.2cqh 2cqh rgba(0, 0, 0, 0.75));
   }
 
-  // Intérieur du cadre ouvragé, mesuré sur l'illustration
   &__slot {
     position: absolute;
     top: 81.4%;

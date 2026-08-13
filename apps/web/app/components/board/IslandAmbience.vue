@@ -25,8 +25,6 @@
 </script>
 
 <style scoped lang="scss">
-// Les trois nombres de l'ambiance, réunis pour être retouchés d'un coup d'œil.
-// Ils se règlent à l'œil dans le labo (`/lab`).
 .island {
   --island-hue: -166deg;
   --island-saturation: 0.35;
@@ -38,15 +36,9 @@
   pointer-events: none;
   backdrop-filter: hue-rotate(var(--island-hue)) saturate(var(--island-saturation))
     brightness(var(--island-brightness));
-  // La bascule doit se sentir sans arracher l'œil : le décor chauffe, il ne
-  // clignote pas.
   animation: island-in 0.6s ease-out both;
 }
 
-// On n'anime QUE l'opacité. Mettre `backdrop-filter` dans l'image de départ le
-// fait interpoler depuis le filtre identité — et il y reste, neutralisé : le
-// décor ne changeait pas de teinte d'un iota. L'opacité suffit d'ailleurs à
-// faire monter l'effet, puisqu'elle dose le mélange avec le fond.
 @keyframes island-in {
   from {
     opacity: 0;
@@ -56,7 +48,6 @@
   }
 }
 
-// Le mouvement n'apporte rien ici, la teinte porte toute l'information.
 @media (prefers-reduced-motion: reduce) {
   .island {
     animation: none;

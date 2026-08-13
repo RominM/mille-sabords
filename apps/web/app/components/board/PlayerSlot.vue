@@ -1,5 +1,4 @@
 <template>
-  <!-- Rangée de l'échelle : la carte y est centrée, sans déformation -->
   <div class="pslot-row">
     <div
       v-if="player"
@@ -51,7 +50,6 @@ const scoreClass = computed(function pickScoreClass() {
 </script>
 
 <style scoped lang="scss">
-// ── Rangée : centre la carte dans le barreau de l'échelle ───────────────────
 .pslot-row {
   flex: 1;
   min-height: 0;
@@ -60,16 +58,9 @@ const scoreClass = computed(function pickScoreClass() {
   justify-content: center;
 }
 
-// ── Carte joueur ────────────────────────────────────────────────────────────
-// Le PNG source (1024×1536) est surtout du vide orange : le cadre utile n'occupe
-// que la bande y 535..945 px (34.83 % → 61.52 %), de ratio 2.4915. On cadre donc
-// cette bande via overflow + mise à l'échelle, plutôt que d'afficher tout le PNG.
 .pslot {
   position: relative;
   height: 113%; // déborde un peu le barreau pour le remplir visuellement
-  // ⚠️ Doit rester le ratio EXACT de la bande du cadre (mesuré : 1024 × 411 px,
-  // soit 2.4915). Toute autre valeur déforme l'image : un ratio plus petit la
-  // comprime horizontalement, ce qui la fait paraître étirée en hauteur.
   aspect-ratio: 1024 / 411;
   max-width: 100%;
   overflow: hidden;
@@ -110,7 +101,6 @@ const scoreClass = computed(function pickScoreClass() {
     font-size: 14cqh;
     line-height: 22.2cqh; // = hauteur du champ → centrage vertical
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
-    // Débordement coupé proprement (une animation de défilement viendra plus tard)
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -150,7 +140,6 @@ const scoreClass = computed(function pickScoreClass() {
     height: 13.7%;
   }
 
-  // Joueurs en attente : couleur ternie
   &--waiting {
     filter: grayscale(0.7) brightness(0.55);
   }

@@ -90,10 +90,6 @@ const volume = defineModel<number>('volume', { required: true })
     accent-color: var(--accent);
   }
 
-  // Piste en Chêne Vieilli, curseur en Doublon. `appearance: none` impose de
-  // redessiner piste et curseur pour chaque moteur — d'où les deux familles de
-  // sélecteurs, qui ne peuvent pas être regroupées (un sélecteur inconnu
-  // invaliderait toute la règle).
   &__range {
     flex: 1;
     height: 1.25rem;
@@ -116,7 +112,6 @@ const volume = defineModel<number>('volume', { required: true })
       appearance: none;
       width: 1rem;
       height: 1rem;
-      // Recentre le curseur sur une piste de 0.4rem.
       margin-top: -0.3rem;
       border-radius: 50%;
       background: var(--accent);
@@ -137,7 +132,6 @@ const volume = defineModel<number>('volume', { required: true })
       outline-offset: 4px;
     }
 
-    // Famille coupée : le curseur reste lisible mais visiblement inopérant.
     &:disabled {
       opacity: 0.4;
       cursor: not-allowed;

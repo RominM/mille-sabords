@@ -1,13 +1,8 @@
 <template>
   <div v-tooltip="EFFECT[card.type]" class="pcard">
     <img :src="image" :alt="name" class="pcard__img" />
-    <!-- Sur 3, pas juste un nombre : le joueur doit lire d'un coup d'œil à quelle
-         distance il est du tour perdu, dés ET carte confondus. -->
     <span v-if="skulls > 0" class="pcard__skulls">💀 {{ skulls }}/3</span>
 
-    <!-- Pas de libellé sous la carte : l'illustration dit laquelle c'est, et
-         l'infobulle dit ce qu'elle fait. Un nom en plus n'apprenait rien et
-         débordait du cadre depuis que la carte est posée à plat. -->
     <span v-if="card.type === 'skulls'" class="pcard__count">×{{ card.count }}</span>
   </div>
 </template>
@@ -98,7 +93,6 @@ const name = computed(() => NAME[props.card.type])
     filter: drop-shadow(0 6px 16px rgba(24, 14, 8, 0.7));
   }
 
-  // Rappel du nombre de têtes de mort en cours (dés + carte)
   &__skulls {
     position: absolute;
     top: 4%;
@@ -113,8 +107,6 @@ const name = computed(() => NAME[props.card.type])
     font-size: 1.6cqw;
   }
 
-  // Multiplicateur de la carte Tête de Mort — la seule information que
-  // l'illustration ne porte pas d'elle-même.
   &__count {
     position: absolute;
     left: 4%;

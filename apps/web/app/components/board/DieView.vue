@@ -78,8 +78,6 @@ function onClick(): void {
 </script>
 
 <style scoped lang="scss">
-// Le bouton n'est plus qu'une zone de clic et un porte-état : c'est le cube
-// qui occupe la boîte, à la taille que lui donne `--die-size`.
 .die-view {
   position: relative;
   display: grid;
@@ -94,17 +92,11 @@ function onClick(): void {
   &--clickable {
     cursor: inherit;
 
-    // Pas de `transform` sur le bouton : il aplatirait la scène 3D du cube.
-    // On surélève le dé par son propre décalage, qui reste dans le plan.
     &:hover .die-cube {
       translate: 0 -6%;
     }
   }
 
-  // ── États ────────────────────────────────────────────────────────────────
-  // Un liseré plat autour d'un objet en volume jurerait : l'état se dit par un
-  // halo posé au sol, sous le dé. Surtout, un `filter` sur un ancêtre du cube
-  // APLATIRAIT sa scène 3D — d'où cet anneau en pseudo-élément, à part.
   &::before {
     content: '';
     position: absolute;
@@ -133,8 +125,6 @@ function onClick(): void {
     background: radial-gradient(ellipse at center, rgba(47, 110, 104, 0.85), transparent 70%);
   }
 
-  // Tête de mort que la Gardienne peut reprendre : elle doit se distinguer des
-  // autres têtes, sinon le joueur ne devine pas qu'elle est encore jouable.
   &--rescuable {
     cursor: pointer;
 

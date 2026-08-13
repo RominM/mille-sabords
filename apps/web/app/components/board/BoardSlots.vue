@@ -56,10 +56,6 @@ const SLOT_COUNT = 8
 </script>
 
 <style scoped lang="scss">
-// Rangée mesurée sur le décor (1672×941) : cadres x 413..1242, y 652..748 ;
-// un cadre fait 91 px, le pas est de 105,6. L'écart de 14,6 px se rapporte à la
-// LARGEUR DE LA RANGÉE (829 px) et non au plateau — c'est ce que fait `gap` en
-// pourcentage : 14,6 / 829 = 1,76 %.
 .board-slots {
   position: absolute;
   left: 24.7%;
@@ -71,8 +67,6 @@ const SLOT_COUNT = 8
   width: 49.58%;
   height: 10.2%;
 
-  // Le dé est nettement plus petit que son cadre : le liseré doré du décor doit
-  // rester visible tout autour, sinon le dé a l'air posé DEVANT son logement.
   &__cell {
     --die-size: 4.4cqw;
 
@@ -87,7 +81,6 @@ const SLOT_COUNT = 8
       opacity: 0.25;
     }
 
-    // Cadre visé : il s'allume avant le lâcher, sinon on dépose à l'aveugle.
     &--target::after {
       content: '';
       position: absolute;

@@ -63,8 +63,6 @@ function scatterStyle(dieId: number): Record<string, string> {
 </script>
 
 <style scoped lang="scss">
-// Bornes du bois libre sur le décor : sous les lanternes, au-dessus de la
-// rangée d'emplacements, à gauche du cadre de carte.
 .board-dice {
   position: absolute;
   left: 19%;
@@ -77,17 +75,13 @@ function scatterStyle(dieId: number): Record<string, string> {
   width: 55%;
   height: 42%;
 
-  // Le dé porte sa propre taille : `--die-size` descend jusqu'au cube, qui en
-  // tire la profondeur de ses faces. Une longueur, donc, jamais un pourcentage.
   &__cell {
-    --die-size: 5cqw;
+    --die-size: 4cqw;
 
     width: var(--die-size);
     height: var(--die-size);
-    // Sans cela, un glissé au doigt fait défiler la page au lieu du dé.
     touch-action: none;
 
-    // Le dé saisi laisse un creux à sa place, pour qu'on voie d'où il vient.
     &--held {
       opacity: 0.25;
     }

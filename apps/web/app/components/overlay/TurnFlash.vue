@@ -18,14 +18,11 @@
 /**
  * Résultat d'un tour, en grand et par-dessus le plateau.
  *
- * Remplace la modale de récapitulatif : elle demandait un clic pour rien — le
- * tour est joué, il n'y a plus de décision à prendre — et masquait justement le
- * plateau qu'on veut relire pour comprendre ce qui vient d'arriver.
+ * Fond transparent et aucun bouton : le tour est joué, il n'y a plus de
+ * décision à prendre, et le plateau doit rester lisible derrière.
  *
- * D'où le fond transparent et l'absence de bouton. Le POURQUOI reste affiché,
- * lui : un zéro ne se lit pas de la même façon selon qu'on a fait trois têtes,
- * manqué un défi ou laissé filer le temps. Le détail chiffré, moins urgent,
- * s'est replié dans l'historique.
+ * Le POURQUOI est affiché : un zéro ne se lit pas de la même façon selon qu'on
+ * a fait trois têtes, manqué un défi ou laissé filer le temps.
  */
 import type { TurnOutcome } from '@rf/engine'
 
@@ -48,8 +45,6 @@ const why = computed(() => {
 </script>
 
 <style scoped lang="scss">
-// Aucun voile : le plateau reste lisible derrière, c'est tout l'intérêt.
-// `pointer-events: none` pour que le décor reste survolable pendant l'affichage.
 .flash {
   position: fixed;
   inset: 0;
@@ -68,7 +63,6 @@ const why = computed(() => {
     font-family: var(--font-display);
     font-size: clamp(1.2rem, 3vw, 2rem);
     letter-spacing: 0.04em;
-    // Sans halo, le texte se perd dans les zones claires du bois.
     text-shadow:
       0 0 0.6rem rgba(24, 14, 8, 0.95),
       0 2px 4px rgba(24, 14, 8, 1);
@@ -83,8 +77,6 @@ const why = computed(() => {
       0 4px 10px rgba(24, 14, 8, 1);
   }
 
-  // Vert et rouge lisibles sur bois sombre — ni le teal ni le rouge cire des
-  // fonds, qui perdent leur contraste à cette taille.
   &--pos &__score {
     color: #6ee08a;
   }
@@ -124,7 +116,6 @@ const why = computed(() => {
     }
   }
 
-  // Le mouvement n'apporte rien ici : l'information, si.
   @media (prefers-reduced-motion: reduce) {
     animation: none;
   }

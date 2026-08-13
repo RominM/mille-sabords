@@ -21,8 +21,6 @@
 </script>
 
 <style scoped lang="scss">
-// Aucun voile, aucun clic capté : on annonce, on ne bloque pas. Le joueur peut
-// saisir un dé pendant que l'annonce s'efface.
 .call {
   position: fixed;
   inset: 0;
@@ -39,7 +37,6 @@
     line-height: 1;
     letter-spacing: 0.04em;
     text-align: center;
-    // Sans halo, le texte se perd dans les zones claires du bois.
     text-shadow:
       0 0 1.2rem rgba(24, 14, 8, 0.95),
       0 4px 10px rgba(24, 14, 8, 1);
@@ -56,7 +53,6 @@
     }
   }
 
-  // Le mouvement n'apporte rien ici : l'information, si.
   @media (prefers-reduced-motion: reduce) {
     animation: none;
   }

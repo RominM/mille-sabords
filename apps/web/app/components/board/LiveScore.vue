@@ -46,7 +46,6 @@ const sign = computed(() => (props.score > 0 ? 'pos' : props.score < 0 ? 'neg' :
     line-height: 1;
   }
 
-  // Le zéro reste neutre : à ce stade du tour, il n'annonce pas une perte.
   &--zero &__value {
     color: var(--text-dim);
   }

@@ -28,7 +28,6 @@ const { rules } = useRules()
     text-align: left;
   }
 
-  // Le parchemin est clair : le texte du design system y serait illisible.
   &__item {
     color: #2a1c0e;
     font-family: var(--font-body);

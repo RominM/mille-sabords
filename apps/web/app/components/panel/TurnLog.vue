@@ -27,8 +27,6 @@
           <span class="log__score" :class="`log__score--${entry.sign}`">{{ entry.total }}</span>
         </button>
 
-        <!-- Le décompte, replié par défaut : douze tours dépliés ne se lisent
-             plus. Le dernier joué s'ouvre seul, c'est celui qu'on cherche. -->
         <ul v-if="open === entry.rank && entry.lines.length" class="log__detail">
           <li v-for="(line, i) in entry.lines" :key="i" class="log__line">
             <img v-if="line.icon" :src="line.icon" alt="" class="log__icon" />
@@ -55,9 +53,7 @@
  *
  * Il répond à une question que le plateau ne sait pas poser : « pourquoi
  * viens-je de perdre ? ». Le score seul ne le dit pas — trois têtes, une île,
- * un défi manqué et un minuteur expiré donnent tous zéro ou moins. Il a repris
- * du même coup le décompte détaillé, que la modale de fin de tour affichait
- * avant d'être remplacée par le score en grand.
+ * un défi manqué et un minuteur expiré donnent tous zéro ou moins.
  *
  * L'historique vient du MOTEUR, pas d'un cumul local : en multijoueur, tout le
  * monde doit lire la même chose, et un rechargement ne doit rien effacer.
@@ -150,8 +146,6 @@ watch(
     font-size: 0.8rem;
   }
 
-  // Le nom pousse les points contre le bord droit : la colonne de chiffres
-  // reste alignée, on lit la partie d'un coup d'œil.
   &__who {
     flex: 1;
     display: flex;
@@ -181,7 +175,6 @@ watch(
     }
   }
 
-  // ── Décompte détaillé ─────────────────────────────────────────────────────
   &__detail {
     display: flex;
     flex-direction: column;

@@ -22,9 +22,6 @@ defineProps({
 </script>
 
 <style scoped lang="scss">
-// Dans la bande libre entre les dés (qui s'arrêtent à 64 %) et la rangée
-// d'emplacements (qui commence à 69,3 %). Le bas du plateau revient aux cartes
-// joueurs, que l'indice recouvrait.
 .board-hint {
   position: absolute;
   left: 50%;
@@ -37,7 +34,6 @@ defineProps({
   line-height: 1.2;
   text-align: center;
   text-shadow: 0 1px 3px rgba(24, 14, 8, 0.85);
-  // Une phrase d'aide ne doit jamais intercepter un dé qu'on fait glisser.
   pointer-events: none;
 
   &--danger {

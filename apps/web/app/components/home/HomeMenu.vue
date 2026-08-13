@@ -1,11 +1,5 @@
 <template>
   <nav class="home-menu" role="tablist" aria-label="Menu principal">
-    <!--
-      Le survol suffit à changer de vue. `v-hover-sound` et non `v-click-sound` :
-      les deux sur le même bouton feraient sonner deux fois. `focus` garde la
-      navigation au clavier fonctionnelle, `click` sert aux écrans tactiles, où
-      le survol n'existe pas.
-    -->
     <button
       v-for="entry in entries"
       :key="entry.id"
@@ -56,8 +50,6 @@ function select(id: string): void {
     font-family: var(--font-display);
     font-size: 2.4rem;
     line-height: 1.1;
-    // Le fond de l'accueil est très chargé : sans ombre portée, le texte clair
-    // se perd dans les zones lumineuses de l'image.
     text-shadow: 0 2px 6px rgba(24, 14, 8, 0.9);
     text-align: left;
     transition:
@@ -68,7 +60,6 @@ function select(id: string): void {
       color: var(--text);
     }
 
-    // L'or ne signale QUE l'actionnable ou le gagné : ici, l'onglet courant.
     &--active {
       color: var(--accent);
       border-color: var(--accent);

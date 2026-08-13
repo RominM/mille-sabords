@@ -7,8 +7,6 @@
     >
       <img :src="panelUrl" alt="" class="side__img" />
 
-      <!-- La languette dépasse seule quand le panneau est rentré : c'est la
-           poignée. Elle reste atteignable en pleine partie sans rien masquer. -->
       <button
         v-click-sound
         v-tooltip="hint ?? label"
@@ -34,10 +32,8 @@
  * Tiroir sur le bord gauche : une planche de bois qui glisse, dont seule la
  * languette dépasse au repos.
  *
- * Extrait du barème le jour où l'historique en a demandé un second. Les
- * planches se SUPERPOSENT, décalées de leur seule languette : c'est ce qui
- * donne l'allure d'onglets de dossier, et ce qui laisse le plateau dégagé. D'où
- * l'ouverture exclusive — deux planches ouvertes au même endroit se
+ * Les planches se SUPERPOSENT, décalées de leur seule languette. D'où
+ * l'ouverture exclusive : deux planches ouvertes au même endroit se
  * masqueraient (cf. `useSidePanels`).
  *
  * `Teleport` vers le body : `.game__board` déclare `container-type: size`, ce qui
@@ -79,10 +75,6 @@ const open = computed(() => isOpen(props.id))
 </script>
 
 <style scoped lang="scss">
-// Mesures du fichier panel-bareme.webp (816x1102) : la planche opaque va de
-// 22,21 à 793,1080 (772x1060), dont les 94 derniers pixels de large sont la
-// languette. Le corps fait donc 677 px, soit 87,7 % de la planche — c'est de
-// cette part qu'on la sort de l'écran.
 .side {
   position: fixed;
   left: 0;
@@ -93,26 +85,17 @@ const open = computed(() => isOpen(props.id))
   transform: translate(-87.7%, calc(-50% + var(--side-shift, 0%)));
   transition: transform 0.32s ease;
 
-  // La planche est presque entièrement HORS de l'écran, mais sa boîte, elle,
-  // reste pleine grandeur : sans cette ligne, la planche du dessus recouvrait
-  // la languette de celle du dessous et lui volait clics et survol. Seuls les
-  // morceaux réellement manipulables reprennent les événements.
   pointer-events: none;
 
   &--open {
     transform: translate(0, calc(-50% + var(--side-shift, 0%)));
-    // Un tiroir ouvert passe devant celui qui ne l'est pas, sans quoi la
-    // planche voisine lui couperait un bord.
     z-index: 61;
   }
 
   &__img {
     position: absolute;
     inset: 0;
-    // Le reset plafonne toute image à 100 % : à neutraliser pour l'agrandir.
     max-width: none;
-    // 816/772 et 1102/1060 : le fichier ramené à la planche, puis décalé de la
-    // marge transparente pour que l'opaque tombe pile sur la boîte.
     width: 105.7%;
     height: 104%;
     left: -2.85%;
@@ -120,9 +103,6 @@ const open = computed(() => isOpen(props.id))
     pointer-events: none;
   }
 
-  // Calé sur la languette DESSINÉE, mesurée sur le fichier : y 465..589 sur
-  // 1102, soit 41,9 % de la planche opaque, sur 11,7 % de haut. Le bouton doit
-  // tomber pile dessus — à côté, il ne ressemble plus à rien.
   &__tab {
     position: absolute;
     right: 0;
@@ -138,8 +118,6 @@ const open = computed(() => isOpen(props.id))
     pointer-events: auto; // la planche les a coupés, la poignée les reprend
   }
 
-  // Une icône plutôt qu'un mot : la languette est étroite, et un libellé
-  // vertical se lit mal en pleine partie.
   &__tab-icon {
     display: block;
     margin: 0 auto;
@@ -152,7 +130,6 @@ const open = computed(() => isOpen(props.id))
     color: var(--accent-hi);
   }
 
-  // Bois utile, à l'intérieur du liseré doré.
   &__content {
     position: absolute;
     left: 7%;
@@ -166,14 +143,11 @@ const open = computed(() => isOpen(props.id))
     color: var(--text);
     font-family: var(--font-body);
     font-size: 0.95rem;
-    // Illisible et non cliquable tant que le tiroir est rentré.
     opacity: 0;
     transition: opacity 0.2s ease;
     pointer-events: none;
   }
 
-  // Ouvert, le contenu redevient lisible ET manipulable — c'est là qu'on
-  // défile le barème ou qu'on déplie une ligne d'historique.
   &--open &__content {
     opacity: 1;
     pointer-events: auto;

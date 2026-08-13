@@ -1,6 +1,5 @@
 <template>
   <div class="skull-eyes" aria-hidden="true">
-    <!-- Reprend exactement la géométrie du plateau pour rester aligné au décor -->
     <div class="skull-eyes__frame">
       <span class="skull-eyes__eye skull-eyes__eye--left" />
       <span class="skull-eyes__eye skull-eyes__eye--right" />
@@ -28,7 +27,6 @@
   place-items: center;
   pointer-events: none;
 
-  // Même calcul que .game__board → les yeux tombent pile sur le crâne
   &__frame {
     position: relative;
     width: min(100dvw, calc(100dvh * 1672 / 941));
@@ -38,8 +36,6 @@
     container-type: size;
   }
 
-  // Deux petits points lumineux : un cœur blanc-rouge et un halo, pas
-  // l'orbite entière. `screen` fait lire le tout comme de la lumière.
   &__eye {
     position: absolute;
     top: 8.5%;
@@ -83,7 +79,6 @@
   }
 }
 
-// Mouvement réduit : la lueur reste, mais fixe
 @media (prefers-reduced-motion: reduce) {
   .skull-eyes__eye {
     animation: none;

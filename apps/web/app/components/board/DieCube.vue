@@ -17,10 +17,6 @@
             class="die-cube__face"
             :class="`die-cube__face--${slot.name}`"
           >
-            <!-- `draggable="false"` n'est PAS décoratif : sans lui, un vrai
-                 clic-glissé sur la face déclenche le glisser-déposer d'image du
-                 navigateur, qui confisque le geste et affiche le curseur
-                 « interdit ». Notre propre saisie ne reçoit alors plus rien. -->
             <img :src="FACE_ART[slot.face]" alt="" class="die-cube__art" draggable="false" />
           </span>
         </div>
@@ -80,7 +76,7 @@ const props = withDefaults(
     /** Nombre minimum de tours complets pendant le vol. */
     turns?: number
     /**
-     * `tumble` : le dé culbute sur place, comme jusqu'ici.
+     * `tumble` : le dé culbute sur place.
      * `roll` : il ROULE — il traverse la table, et tourne parce qu'il avance.
      */
     motion?: 'tumble' | 'roll'
@@ -110,8 +106,6 @@ const props = withDefaults(
     duration: 1100,
     delay: 0,
     turns: 2,
-    // `tumble` par défaut : le plateau garde son animation tant que le roulé
-    // n'a pas été jugé à l'écran.
     motion: 'tumble',
     travel: 4,
     heading: -28,
@@ -415,37 +409,23 @@ defineExpose({ rollTo })
 </script>
 
 <style scoped lang="scss">
-// Le dé tient dans un carré dimensionné par `--die-size` : l'appelant décide de
-// l'échelle (px ici, `cqw` sur le plateau) sans que le composant ne s'en mêle.
 .die-cube {
   position: relative;
   width: var(--die-size, 120px);
   height: var(--die-size, 120px);
   perspective: calc(var(--die-size, 120px) * 4.5);
   perspective-origin: 50% 42%;
-  // `translate` et non `transform` : le second écraserait la scène 3D.
   transition:
     opacity 0.2s ease,
     translate 0.12s ease;
 
-  // Avant le premier jet du tour, le dé n'est pas encore sur la table — mais
-  // son composant, lui, est déjà monté. C'est ce qui permet au PREMIER lancer
-  // d'être animé comme les suivants : sans cela les dés apparaîtraient
-  // brutalement, déjà posés sur leur face.
   &--void {
     opacity: 0;
   }
 
-  // ── Dé rangé dans un cadre ────────────────────────────────────────────────
-  // Trois indices, et aucun n'est de la géométrie : c'est l'ÉCLAIRAGE qui dit
-  // à l'œil qu'un objet est dans un creux.
   &--seated {
-    // 1. Il repose bas dans son logement. Vu d'un peu au-dessus, un objet posé
-    //    au fond d'un cadre se lit plus près du bord proche que du centre.
     translate: 0 var(--die-seat-drop, 6%);
 
-    // 2. Ombre de CONTACT : courte, dense, décalée du côté opposé aux
-    //    lanternes du décor, qui éclairent depuis le haut du plateau.
     .die-cube__ground {
       width: 66%;
       height: 12%;
@@ -454,9 +434,6 @@ defineExpose({ rollTo })
       background: radial-gradient(ellipse at center, rgba(24, 14, 8, 0.95), rgba(24, 14, 8, 0) 72%);
     }
 
-    // 3. Occlusion : le pied du dé s'assombrit là où il rejoint le bois, comme
-    //    tout ce qui touche une surface. Sans elle, le dé reste « devant » son
-    //    cadre quoi qu'on fasse par ailleurs.
     .die-cube__face {
       box-shadow:
         inset 0 0 0 1px rgba(24, 14, 8, 0.55),
@@ -464,7 +441,6 @@ defineExpose({ rollTo })
     }
   }
 
-  // Ombre portée au sol : elle seule donne l'altitude pendant le vol.
   &__ground {
     position: absolute;
     left: 50%;
@@ -477,9 +453,6 @@ defineExpose({ rollTo })
     opacity: 0.55;
   }
 
-  // Trois couches distinctes, chacune un seul rôle : la translation du jet, la
-  // pose au repos, la rotation du cube. Les mélanger rendrait le calcul de
-  // l'orientation finale impossible à isoler.
   &__throw,
   &__scene,
   &__cube {
@@ -488,9 +461,6 @@ defineExpose({ rollTo })
     transform-style: preserve-3d;
   }
 
-  // Le roulis vient EN PREMIER dans la liste, donc en dernier à l'application :
-  // c'est une rotation dans le plan de l'écran, celle qui aligne les arêtes du
-  // dé sur celles de son cadre.
   &__scene {
     transform: rotateZ(var(--die-tilt-z, 0deg)) rotateX(var(--die-tilt-x, -14deg))
       rotateY(var(--die-tilt-y, -18deg));
@@ -505,8 +475,6 @@ defineExpose({ rollTo })
     inset: 0;
     overflow: hidden;
     border-radius: 8%;
-    // Fond bois opaque : les coins arrondis de la tuile laisseraient sinon voir
-    // l'intérieur du cube.
     background: linear-gradient(158deg, #5a3d29, #33200f);
     box-shadow: inset 0 0 0 1px rgba(24, 14, 8, 0.55);
     backface-visibility: hidden;
@@ -533,16 +501,11 @@ defineExpose({ rollTo })
     }
   }
 
-  // La tuile n'occupe que ~64 % de son fichier (marge transparente + ombre) :
-  // il faut l'agrandir pour qu'elle couvre la face du cube. Le reset plafonne
-  // toute image à 100 %, d'où `max-width: none`.
   &__art {
     position: absolute;
     left: 50%;
     top: 50%;
     max-width: none;
-    // Même raison que `draggable="false"` : ni glissé natif, ni sélection de
-    // texte qui viendrait parasiter la saisie du dé.
     user-select: none;
     -webkit-user-drag: none;
     width: calc(var(--die-art, 1.57) * 100%);

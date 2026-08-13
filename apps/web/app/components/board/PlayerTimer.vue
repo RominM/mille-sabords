@@ -23,7 +23,6 @@ const isLow = computed(() => props.seconds <= 10)
 </script>
 
 <style scoped lang="scss">
-// Les unités cqh se réfèrent à la carte joueur (.pslot, container-type: size)
 .ptimer {
   position: relative;
   display: flex;
@@ -52,7 +51,6 @@ const isLow = computed(() => props.seconds <= 10)
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
 
-  // Dernières secondes : la jauge passe au rouge
   &--low &__fill {
     background: linear-gradient(90deg, #6d1f1f, var(--danger-edge, #c0524b));
   }

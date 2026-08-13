@@ -45,7 +45,6 @@ const sealUrl = computed(() => props.image ?? defaultSeal)
     transform: scale(0.97);
   }
 
-  // Indisponible (jet en cours, ou ce n'est pas notre tour) : légèrement grisé
   &:disabled {
     opacity: 0.45;
     filter: grayscale(0.6);

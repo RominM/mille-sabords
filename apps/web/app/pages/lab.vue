@@ -10,7 +10,6 @@
       où le moteur (ou le serveur) a déjà tiré le résultat. Cliquer le dé le relance.
     </p>
 
-    <!-- Comparaison : le cube d'un côté, la tuile plate actuelle de l'autre. -->
     <section class="lab__stage">
       <div class="lab__seat">
         <div
@@ -44,7 +43,6 @@
       </div>
     </section>
 
-    <!-- Face imposée : c'est la contrainte à démontrer, elle vient en premier. -->
     <section class="lab__panel">
       <h2 class="lab__legend">Tomber sur</h2>
       <div class="lab__faces">
@@ -107,12 +105,6 @@
       </p>
     </section>
 
-    <!-- Réglage de la perspective, SUR le vrai décor : c'est le seul endroit où
-         l'on peut juger si un dé est posé sur la table ou flotte au-dessus. -->
-    <!-- UNE seule maquette pour tout le plateau : dés, emplacements, carte,
-         points et ambiance. Deux vues séparées obligeaient à régler chaque
-         élément sans voir ce que faisaient les autres, alors que c'est
-         justement leur cohabitation qu'on juge. -->
     <section class="lab__panel">
       <h2 class="lab__legend">Le plateau</h2>
       <div ref="boardEl" class="lab__board" :style="{ backgroundImage: `url(${layoutUrl})` }">
@@ -135,8 +127,6 @@
         <div class="lab__zone lab__zone--live" :style="zoneStyle(live)">
           <LiveScore :score="500" />
         </div>
-        <!-- La carte est POSÉE à plat : le décor ne dessine plus de cadre pour
-             l'encastrer, donc plus de quadrilatère à épouser. -->
         <div class="lab__zone lab__zone--card" :style="zoneStyle(card)">
           <PirateCard :card="{ type: 'guardian' }" :skulls="1" />
         </div>
@@ -151,9 +141,6 @@
         />
       </div>
 
-      <!-- Le plateau reste sous les yeux, les réglages changent dessous : c'est
-           tout l'objet des onglets. Corriger une teinte d'un degré ne doit pas
-           demander de faire l'aller-retour jusqu'en bas de page. -->
       <nav class="lab__tabs">
         <button
           v-for="t in TABS"
@@ -216,8 +203,6 @@
       <template v-if="tab === 'dice'">
         <PlateButton @click="rollBoard">Lancer sur le plateau</PlateButton>
 
-        <!-- Le labo ne sert à rien s'il faut ensuite retranscrire les valeurs à
-             la main : il rend directement le morceau de code à coller. -->
         <p class="lab__hint">
           Quand ça te va, colle ceci dans <code>BOARD_PERSPECTIVE</code> (<code>app/utils/boardTilt.ts</code>)
           — le plateau le reprend tel quel. Les deux dernières valeurs sont en CSS, dans
@@ -714,8 +699,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     }
   }
 
-  // La tuile plate n'a pas de taille propre : on lui donne celle du cube pour
-  // que la comparaison soit honnête.
   &__tile {
     width: 170px;
     height: 170px;
@@ -758,7 +741,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     }
   }
 
-  // Barre d'onglets, collée juste sous le plateau pour rester atteignable.
   &__tabs {
     position: sticky;
     top: min(46dvh, 420px);
@@ -841,11 +823,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     user-select: all;
   }
 
-  // ── Maquette du plateau ──────────────────────────────────────────────────
-  // Mêmes proportions et mêmes zones que `pages/game.vue` : régler la
-  // perspective sur une approximation ne servirait à rien.
-  // Collé en haut : c'est ce qui permet de régler en voyant. Un plateau qui
-  // sort de l'écran dès qu'on descend vers ses curseurs ne sert à rien.
   &__board {
     position: sticky;
     top: 0;
@@ -854,7 +831,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     height: min(46dvh, 420px);
     width: auto;
     margin-bottom: var(--space-3);
-    // Le contenu défile DERRIÈRE le plateau : sans fond, il transparaîtrait.
     box-shadow: 0 12px 24px -8px var(--bg);
     background-position: center;
     background-size: 100% 100%;
@@ -881,7 +857,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     height: var(--die-size);
   }
 
-  // Rangée mesurée sur l'image : cadres x 413..1242, y 652..748 sur 1672×941.
   &__board-slots {
     position: absolute;
     left: 24.7%;
@@ -894,8 +869,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     place-items: center;
   }
 
-  // Mêmes règles que sur le plateau : la perspective sur le parent, la rotation
-  // sur l'enfant — sinon il n'y a pas de profondeur, juste une projection plate.
   &__zone {
     position: absolute;
     perspective: 90cqw;
@@ -919,9 +892,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     height: 100%;
   }
 
-  // ── Piste de comparaison ─────────────────────────────────────────────────
-  // Le dé roulé arrive de HORS de sa case : la piste lui laisse la place, et
-  // ne masque pas ce qui déborde.
   &__track {
     display: flex;
     flex-wrap: wrap;
@@ -949,8 +919,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyTilt))
     height: 9rem;
   }
 
-  // Taille volontairement proche de celle du plateau : un cube joli en grand
-  // peut devenir illisible à 64 px.
   &__volley {
     display: flex;
     flex-wrap: wrap;

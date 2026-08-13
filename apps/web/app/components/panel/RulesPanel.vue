@@ -78,8 +78,6 @@ const { rules } = useRules()
 .rules-panel {
   display: flex;
   flex-direction: column;
-  // Écart resserré : c'est le panneau le plus chargé, et il doit tenir dans la
-  // planche sans déclencher de barre de défilement.
   gap: var(--space-3);
   align-content: start;
 
@@ -98,13 +96,6 @@ const { rules } = useRules()
     line-height: 1.45;
   }
 
-  // Deux colonnes seulement si la liste est longue — et une seule dès que le
-  // conteneur devient trop étroit pour les tenir.
-  //
-  // La largeur de colonne est le seuil de bascule : le navigateur ne passe à
-  // deux colonnes que si `2 × largeur + gouttière` tient dans le conteneur.
-  // 14rem plutôt que 18rem, sinon le panneau (~596px utiles) reste sur une
-  // seule colonne alors qu'il a la place pour deux.
   &__list--dual {
     columns: 20rem 2;
     column-gap: var(--space-5);

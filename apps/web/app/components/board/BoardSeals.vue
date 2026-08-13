@@ -38,8 +38,6 @@ const emit = defineEmits<{ roll: []; stop: [] }>()
 .board-seals {
   position: absolute;
   inset: 0;
-  // Le conteneur couvre tout le plateau : il ne doit rien intercepter. Seuls
-  // les cachets reprennent le pointeur, plus bas.
   pointer-events: none;
 
   &__roll,
@@ -60,8 +58,6 @@ const emit = defineEmits<{ roll: []; stop: [] }>()
     height: 9cqw;
   }
 
-  // Volontairement plus gros qu'avant : s'arrêter est la décision qui clôt le
-  // tour, elle ne doit pas se chercher.
   &__stop {
     left: 74.8%;
     top: 79.5%;

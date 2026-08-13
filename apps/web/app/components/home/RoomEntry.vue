@@ -1,9 +1,5 @@
 <template>
-  <!-- Rouleau COUCHÉ : nom, portraits et les deux chemins tiennent alors
-       sans faire défiler le parchemin. -->
   <Modal size="wide" title="Rejoindre l’équipage">
-    <!-- Deux colonnes : QUI tu es à gauche, COMMENT tu embarques à droite.
-         C'est ce que le rouleau couché permet, et ce qui supprime le défilement. -->
     <div class="entry__cols">
     <label class="entry__field">
       <span class="entry__label">Ton nom de pirate</span>
@@ -35,8 +31,6 @@
       </div>
     </fieldset>
 
-    <!-- Deux chemins, un seul écran : l'hôte crée et dicte le code, les autres
-         le saisissent. Rien ne distingue les deux joueurs à ce stade. -->
     <div class="entry__ways">
       <button v-click-sound class="btn entry__btn" type="button" :disabled="!named" @click="create">
         Créer une partie
@@ -107,8 +101,6 @@ function join(): void {
 </script>
 
 <style scoped lang="scss">
-// Le parchemin est clair : tout le texte doit être sombre, et les champs
-// posés dessus doivent s'éclaircir plutôt que de creuser un trou noir.
 $ink: #2a1c0e;
 
 .entry {
@@ -117,11 +109,8 @@ $ink: #2a1c0e;
   gap: var(--space-3);
   color: $ink;
 
-  // Deux colonnes dès qu'il y a la place — c'est le gain du rouleau couché.
   &__cols {
     display: grid;
-    // 13rem : le seuil sous lequel une colonne ne tient plus ni un nom ni une
-    // rangée de portraits. Au-dessus, le rouleau couché en loge deux.
     grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
     gap: var(--space-4) var(--space-5);
     align-items: start;
@@ -141,8 +130,6 @@ $ink: #2a1c0e;
     margin: 0;
     padding: 0;
     border: 0;
-    // Le navigateur impose `min-inline-size: min-content` aux `fieldset` : sans
-    // ça, la bande des portraits refuse de rétrécir et fait déborder le panneau.
     min-width: 0;
   }
 
@@ -169,7 +156,6 @@ $ink: #2a1c0e;
       outline-offset: 2px;
     }
 
-    // Le code se dicte à l'oral : gros, espacé, en capitales.
     &--code {
       width: 7rem;
       font-family: var(--font-mono);
@@ -180,7 +166,6 @@ $ink: #2a1c0e;
     }
   }
 
-  // Les portraits défilent plutôt que de rétrécir : ils doivent rester lisibles.
   &__avatars {
     display: flex;
     gap: var(--space-2);
@@ -205,7 +190,6 @@ $ink: #2a1c0e;
       transform: translateY(-2px);
     }
 
-    // L'or signale le choix retenu, comme partout ailleurs dans le jeu.
     &--picked {
       border-color: var(--accent);
       background: rgba(201, 162, 39, 0.22);

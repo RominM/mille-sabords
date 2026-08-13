@@ -28,10 +28,6 @@ function onClick(): void {
 </script>
 
 <style scoped lang="scss">
-// La plaque est un dessin : le bouton épouse le ratio de sa partie opaque
-// (1181x318 dans un fichier 1536x1024), sinon le libellé ne tomberait pas sur
-// le bois. `container-type` permet ensuite de dimensionner le texte en
-// proportion de la plaque, quelle que soit sa taille à l'écran.
 .plate {
   position: relative;
   display: grid;
@@ -58,12 +54,8 @@ function onClick(): void {
     cursor: not-allowed;
   }
 
-  // L'image déborde de la boîte : sa partie opaque doit venir exactement
-  // dessus. 1536/1181 = 130 %, décalée de la position de la plaque dans le
-  // fichier (x 179/1536, y 331/1024).
   &__img {
     position: absolute;
-    // Le reset plafonne toute image à 100 % : à neutraliser pour agrandir.
     max-width: none;
     width: 130.1%;
     height: 322%;
@@ -72,7 +64,6 @@ function onClick(): void {
     pointer-events: none;
   }
 
-  // Le libellé reste sur le bois, à l'intérieur du liseré doré (~8 % du bord).
   &__label {
     position: relative;
     z-index: 1;

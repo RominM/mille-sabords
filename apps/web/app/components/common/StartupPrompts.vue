@@ -73,7 +73,6 @@ function closeAbout(): void {
 </script>
 
 <style scoped lang="scss">
-// Le parchemin est clair : tout le texte doit être sombre.
 $ink: #2a1c0e;
 
 .startup {
