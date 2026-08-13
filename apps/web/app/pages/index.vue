@@ -1,7 +1,13 @@
 <template>
   <main class="home" :style="{ backgroundImage: `url(${backgroundUrl})` }">
     <div class="home__layout">
-      <HomeMenu :entries="TABS" :current="activeTab" @select="activeTab = $event as TabId" />
+      <div class="home__nav">
+        <div class="home__logo">
+          <img :src="titleUrl" alt="Reckless Fathoms" class="home__logo-img" />
+        </div>
+
+        <HomeMenu :entries="TABS" :current="activeTab" @select="activeTab = $event as TabId" />
+      </div>
 
       <section class="home__panel" :style="{ backgroundImage: `url(${panelUrl})` }" role="tabpanel">
         <h1 class="home__panel-title">{{ TABS.find((tab) => tab.id === activeTab)?.title }}</h1>
@@ -26,6 +32,7 @@
 <script setup lang="ts">
 import backgroundUrl from '~/assets/images/ui/captain-quartier.webp'
 import panelUrl from '~/assets/images/ui/panel-menu.webp'
+import titleUrl from '~/assets/images/main-title.webp'
 import type { Pirate } from '~/composables/net/useRoom'
 
 type TabId = 'play' | 'multi' | 'rules' | 'settings'
@@ -70,6 +77,9 @@ function enterRoom(pirate: Pirate, code?: string): void {
   --panel-w: calc(var(--layout-w) - var(--nav-w) - var(--space-4));
   --panel-h: calc(var(--panel-w) / 1.734);
   --board-top: calc(var(--panel-h) * 0.254);
+  // La bande libre au-dessus de la planche, moins le pas qui sépare le logo
+  // des sections : le menu retombe ainsi pile à hauteur du bois.
+  --logo-h: calc(var(--board-top) - var(--space-3));
 
   &__layout {
     display: grid;
@@ -79,8 +89,30 @@ function enterRoom(pirate: Pirate, code?: string): void {
     width: var(--layout-w);
   }
 
-  :deep(.home-menu) {
-    margin-top: var(--board-top);
+  &__nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__logo {
+    position: relative;
+    height: var(--logo-h);
+  }
+
+  // L'encre du titre n'occupe qu'une partie du fichier (x 112..1085,
+  // y 117..635 sur 1200×800) : on dimensionne et on décale l'image pour que
+  // cette encre-là remplisse la bande, alignée à gauche sur les sections.
+  // La marge transparente déborde alors sur le menu — d'où `pointer-events`,
+  // sans quoi elle volerait le survol de la première entrée.
+  &__logo-img {
+    position: absolute;
+    left: calc(var(--logo-h) * -0.216);
+    top: calc(var(--logo-h) * -0.225);
+    height: calc(var(--logo-h) * 1.541);
+    max-width: none;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 8px rgba(24, 14, 8, 0.9));
   }
 
   // Conteneur de dimensionnement : le contenu du panneau se règle en `cq*`,
