@@ -6,6 +6,11 @@
 
   <div v-else-if="mode !== 'start'" class="stage">
     <div ref="plateauEl" class="plateau" :style="{ backgroundImage: `url(${layoutUrl})` }">
+      <!-- Minuteur de décision : un seul bandeau pour la table, en haut. Le
+           compte à rebours ne concerne que le siège actif — le répéter sur
+           chaque carte laissait croire que tout le monde était chronométré. -->
+      <TurnBar v-if="gamePhase === 'playing' && turn" :seconds="secondsLeft" :total="TURN_SECONDS" />
+
       <div class="zone-action-layout">
         <button
           v-click-sound
@@ -47,15 +52,6 @@
             :key="p.id"
             :avatar="portraitOf(p.id)"
             :current="gamePhase === 'playing' && i === currentIndex"
-          />
-          <!-- Le minuteur ne s'affiche que pour le siège actif : c'est SA
-               décision qu'on décompte. La même condition sert de garde et de
-               valeur, sinon `seconds` pourrait arriver vide. -->
-          <PlayerTimer
-            v-if="gamePhase === 'playing' && i === currentIndex"
-            class="pslot__timer"
-            :seconds="secondsLeft"
-            :total="TURN_SECONDS"
           />
         </div>
         <!-- <PlayerSlot
@@ -640,22 +636,27 @@ watch(isDefeat, async (value) => {
   }
 }
 
+// Bandeau des joueurs, collé au bord bas du plateau. Il défile en LARGEUR et
+// non en hauteur : la table monte à huit, et une rangée qui déborde vaut mieux
+// qu'une colonne qui grimpe sur les emplacements de dés.
 .zone-players {
   position: absolute;
   left: 0;
-  bottom: 2%;
-  transform: translate(-50%s, 50%s);
+  bottom: 0.8%;
   width: 100%;
-  overflow-y: auto;
-  scrollbar-width: none;
   display: flex;
   justify-content: center;
-  gap: 12px;
-  padding: 0 12px;
+  align-items: flex-end;
+  gap: 0.8cqw;
+  padding: 0 1cqw;
+  overflow-x: auto;
+  // La barre de défilement mangerait la hauteur utile d'une carte.
+  scrollbar-width: none;
 
   .gamer-wrapper {
-    flex: 1 1 0;
-    max-width: 180px;
+    flex: 0 1 12cqw;
+    min-width: 8cqw;
+    max-width: 12cqw;
   }
 }
 // Cadre de la carte, mesuré sur le nouveau décor (1672×941) : liseré doré à
@@ -841,17 +842,23 @@ watch(isDefeat, async (value) => {
   font-weight: 600;
 }
 
+// L'indice remonte dans la bande libre entre les dés (qui s'arrêtent à 64 %) et
+// la rangée d'emplacements (qui commence à 69,3 %). Le bas du plateau revient
+// aux cartes joueurs, qu'il recouvrait.
 .zone-hint {
   position: absolute;
-  bottom: 50px;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 47%;
+  top: 64.6%;
+  translate: -50% 0;
+  width: 52%;
   text-align: center;
   color: var(--parchment, #ede0c8);
-  font-size: 1.3cqw;
+  font-size: 1.25cqw;
   font-weight: 300;
+  line-height: 1.2;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  // Une phrase d'aide ne doit jamais intercepter un dé qu'on fait glisser.
+  pointer-events: none;
 }
 .danger-txt {
   color: var(--danger-edge);
