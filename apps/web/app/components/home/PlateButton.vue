@@ -32,7 +32,9 @@ function onClick(): void {
   position: relative;
   display: grid;
   place-items: center;
-  width: min(20rem, 100%);
+  // Réglable par le contexte : posée dans un décor qui se met à l'échelle, la
+  // plaque doit suivre le décor et non garder une taille absolue.
+  width: var(--plate-w, min(20rem, 100%));
   aspect-ratio: 1181 / 318;
   container-type: size;
   padding: 0;

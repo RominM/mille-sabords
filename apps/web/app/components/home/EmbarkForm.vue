@@ -61,7 +61,11 @@ function submit(): void {
   // La plaque déborde VOLONTAIREMENT de sa boîte, vers le haut : elle recouvre
   // la fin du formulaire sans jamais l'intercepter (son image ne prend pas le
   // pointeur), et le corps garde ainsi toute la hauteur disponible.
+  // La plaque se mesure sur la PLANCHE, pas en pixels : à taille fixe, elle
+  // dévorait la hauteur du formulaire dès que la fenêtre se resserrait.
   &__cta {
+    --plate-w: min(20rem, 42cqw);
+
     display: flex;
     flex-direction: column;
     align-items: center;
