@@ -76,6 +76,11 @@ const { rules } = useRules()
 
 <style scoped lang="scss">
 .rules-panel {
+  // Le seul contenu de l'accueil qui dépasse : il porte donc son propre
+  // défilement, plutôt que de l'imposer au panneau qui l'accueille.
+  height: 100%;
+  overflow-y: auto;
+
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

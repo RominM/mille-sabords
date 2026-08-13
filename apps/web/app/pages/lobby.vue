@@ -1,13 +1,7 @@
 <template>
   <main class="lobby" :style="{ backgroundImage: `url(${backgroundUrl})` }">
-    <RoomEntry
-      v-if="!room.connected.value"
-      :error="room.error.value"
-      @create="(pirate) => room.connect(pirate)"
-      @join="(pirate, code) => room.connect(pirate, code)"
-    />
 
-    <div v-else class="lobby__grid">
+    <div class="lobby__grid">
       <h1 class="lobby__title">Salle d’équipage</h1>
 
       <div v-if="room.isHost.value" class="lobby__ai">
@@ -127,6 +121,16 @@ const hint = computed(() => {
   if (!humans.value.every((s) => s.ready)) return 'Tout l’équipage doit se déclarer paré.'
   if (!room.isHost.value) return 'L’équipage est paré — l’hôte peut lever l’ancre.'
   return 'L’équipage est au complet — en route !'
+})
+
+/**
+ * La salle d'équipage suppose une connexion : le pirate se saisit à l'accueil,
+ * dans son parchemin. Arriver ici par l'URL sans connexion n'a donc rien à
+ * montrer — on retente la dernière salle connue, sinon on repart à l'accueil.
+ */
+onMounted(() => {
+  if (room.connected.value) return
+  if (!room.resume()) router.push('/')
 })
 
 /**

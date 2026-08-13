@@ -1,5 +1,5 @@
 <template>
-  <Modal size="wide" title="Rejoindre l’équipage">
+  <Modal size="wide" show-cross title="Rejoindre l’équipage" @close="emit('close')">
     <div class="entry__cols">
     <label class="entry__field">
       <span class="entry__label">Ton nom de pirate</span>
@@ -76,6 +76,7 @@ import type { Pirate } from '~/composables/net/useRoom'
 
 defineProps<{ error?: string }>()
 const emit = defineEmits<{
+  close: []
   create: [pirate: Pirate]
   join: [pirate: Pirate, code: string]
 }>()

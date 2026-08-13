@@ -20,6 +20,14 @@
     </div>
 
     <SoloSetupModal v-if="showSoloSetup" @close="showSoloSetup = false" />
+
+    <RoomEntry
+      v-if="showRoomEntry"
+      :error="room.error.value"
+      @close="showRoomEntry = false"
+      @create="(pirate) => enterRoom(pirate)"
+      @join="(pirate, code) => enterRoom(pirate, code)"
+    />
   </main>
 </template>
 
@@ -27,6 +35,7 @@
 import backgroundUrl from '~/assets/images/ui/captain-quartier.webp'
 import panelUrl from '~/assets/images/ui/panel-menu.webp'
 import titleUrl from '~/assets/images/main-title.webp'
+import type { Pirate } from '~/composables/net/useRoom'
 
 type TabId = 'play' | 'multi' | 'rules' | 'settings'
 
@@ -47,17 +56,28 @@ const pitch = computed(() =>
 )
 
 const router = useRouter()
+const room = useRoom()
 const showSoloSetup = ref(false)
+const showRoomEntry = ref(false)
 
 /**
- * Les deux modes divergent ici : le multi va composer son équipage au lobby,
- * le solo se règle sur place — nom, portrait, niveau de l'IA — puis part
- * directement sur le plateau. Aucun des deux ne saute vers `/game` sans que la
- * table ait été composée.
+ * Les deux modes se règlent sur place, dans le même parchemin : nom, portrait,
+ * puis le niveau de l'IA en solo ou le code de salle en multi. Aucun des deux
+ * ne quitte l'accueil avant que la table soit composée.
  */
 function onEmbark(mode: TabId): void {
-  if (mode === 'multi') router.push('/lobby')
+  if (mode === 'multi') showRoomEntry.value = true
   else showSoloSetup.value = true
+}
+
+/**
+ * On n'ouvre le lobby qu'une fois la connexion DEMANDÉE : la salle d'équipage
+ * n'a rien à montrer avant, et l'y envoyer d'abord obligeait à y refaire la
+ * saisie du pirate.
+ */
+function enterRoom(pirate: Pirate, code?: string): void {
+  room.connect(pirate, code)
+  router.push('/lobby')
 }
 </script>
 
@@ -106,14 +126,18 @@ function onEmbark(mode: TabId): void {
     height: auto;
   }
 
+  // Pas de défilement ICI : la plaque du bouton d'action déborde
+  // VOLONTAIREMENT de sa boîte — c'est ainsi qu'elle est dessinée — et ce
+  // débordement décoratif suffisait à faire apparaître une barre. Seul un
+  // contenu réellement trop long doit défiler, et il s'en charge lui-même.
   &__panel-content {
     position: absolute;
     left: 6%;
-    top: 39%;
+    top: 35%;
     width: 88%;
-    height: 50%;
-    display: grid; // une seule cellule : le contenu s'y place comme il veut
-    overflow: auto;
+    height: 57%;
+    display: grid;
+    align-content: start;
   }
 }
 </style>

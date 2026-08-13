@@ -1,6 +1,7 @@
 <template>
   <Modal size="wide" show-cross title="Contre le Corsaire" @close="emit('close')">
     <form class="solo-setup" @submit.prevent="start">
+      <div class="solo-setup__cols">
       <label class="solo-setup__field">
         <span class="solo-setup__label">Ton nom de pirate</span>
         <input
@@ -49,6 +50,8 @@
           </button>
         </div>
       </fieldset>
+
+      </div>
 
       <p v-if="!canStart" class="solo-setup__hint">Choisis un nom pour embarquer.</p>
 
@@ -122,6 +125,13 @@ function start(): void {
 $ink: #2a1c0e;
 
 .solo-setup {
+  &__cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-4) var(--space-5);
+    align-items: start;
+  }
+
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
