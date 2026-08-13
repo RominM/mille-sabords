@@ -21,6 +21,11 @@
         </button>
       </div>
     </fieldset>
+
+    <label class="solo-form__tutorial">
+      <input v-model="tutorial" class="solo-form__check" type="checkbox" />
+      <span>Activer le tutoriel</span>
+    </label>
   </EmbarkForm>
 </template>
 
@@ -51,6 +56,13 @@ const you = previous?.roster.find((seat) => !seat.bot)
 const name = ref(you?.name ?? '')
 const avatar = ref(you?.avatar ?? defaultAvatar)
 const difficulty = ref<BotDifficulty>(previous?.difficulty ?? 'medium')
+
+/**
+ * La case existe, RIEN ne la suit encore : le tutoriel reste à écrire, et son
+ * choix n'est donc ni transmis à la table ni mémorisé. Volontaire — la case
+ * pose la place que prendra la fonction, sans en préjuger la forme.
+ */
+const tutorial = ref(false)
 
 const canStart = computed(() => name.value.trim().length > 0)
 const hint = computed(() => (canStart.value ? '' : 'Choisis un nom pour embarquer.'))
@@ -105,6 +117,21 @@ function start(): void {
   &__choice {
     padding: var(--space-2) var(--space-4);
     font-size: 1.05rem;
+  }
+
+  &__tutorial {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+  }
+
+  &__check {
+    width: 1.3rem;
+    height: 1.3rem;
+    accent-color: var(--accent);
   }
 }
 </style>
