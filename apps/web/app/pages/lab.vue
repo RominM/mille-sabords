@@ -427,7 +427,7 @@
  * toucher au plateau. Rien ici ne doit être réutilisé tel quel.
  */
 import { FACES, type DieFace, type Player } from '@rf/engine'
-import layoutUrl from '~/assets/images/ui/layout-game.png'
+import layoutUrl from '~/assets/images/ui/layout-game.webp'
 import avatarUrl from '~/assets/images/character/chara_pirate.webp'
 
 const { musicEnabled } = useSoundSettings()

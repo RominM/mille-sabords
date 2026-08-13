@@ -40,9 +40,15 @@ const emit = defineEmits<{ roll: []; stop: [] }>()
   inset: 0;
   pointer-events: none;
 
+  // Les deux cachets se centrent sur le coin où la rangée d'emplacements
+  // (droite : 74,3 %) rencontre la carte (gauche : 78 %) : « Lancer » au-dessus
+  // de la rangée, « S'arrêter » en dessous. Centrés et non ancrés par un bord,
+  // pour qu'ils tiennent dans ce couloir sans mordre ni l'une ni l'autre.
   &__roll,
   &__stop {
     position: absolute;
+    left: 74.3%;
+    translate: -50% -50%;
 
     :deep(.wax) {
       width: 100%;
@@ -52,17 +58,15 @@ const emit = defineEmits<{ roll: []; stop: [] }>()
   }
 
   &__roll {
-    left: 74.5%;
-    top: 55%;
-    width: 9cqw;
-    height: 9cqw;
+    top: 62%;
+    width: 7cqw;
+    height: 7cqw;
   }
 
   &__stop {
-    left: 74.8%;
-    top: 79.5%;
-    width: 7.6cqw;
-    height: 7.6cqw;
+    top: 86%;
+    width: 6cqw;
+    height: 6cqw;
   }
 
   &__bot {

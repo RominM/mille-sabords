@@ -491,10 +491,19 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
    */
   let recapTimer: ReturnType<typeof setTimeout> | null = null
 
-  watch(mode, (value) => {
+  /**
+   * Le résultat ne se montre qu'une fois les dés retombés.
+   *
+   * Le moteur, lui, a déjà tout tranché à l'instant du jet : sans cette
+   * attente, « trois têtes — tour perdu » s'afficherait pendant que les dés
+   * roulent encore, et annoncerait au joueur ce qu'il est en train de regarder.
+   */
+  const showResult = computed(() => mode.value === 'turnEnd' && !rolling.value)
+
+  watch(showResult, (visible) => {
     if (recapTimer) clearTimeout(recapTimer)
     recapTimer = null
-    if (value !== 'turnEnd') return
+    if (!visible) return
     recapTimer = setTimeout(continueGame, RECAP_MS)
   })
 
@@ -546,6 +555,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     moveToSlot,
     botThinking,
     rolling,
+    showResult,
     rollSeq,
     turnActor,
     transient,

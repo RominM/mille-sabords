@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import type { Player } from '@rf/engine'
-import gamerLayout from '~/assets/images/ui/gamer-slot.png'
+import gamerLayout from '~/assets/images/ui/gamer-slot.webp'
 import botAvatar from '~/assets/images/character/chara_bot.webp'
 import pirateAvatar from '~/assets/images/character/chara_pirate.webp'
 

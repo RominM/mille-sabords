@@ -18,12 +18,12 @@
           :current-index="gamePhase === 'playing' ? currentIndex : -1"
         />
 
-        <div v-if="potentialScore !== null" class="game__live" :style="zoneStyle(LIVE_ZONE)">
+        <div v-if="potentialScore !== null && !rolling" class="game__live" :style="zoneStyle(LIVE_ZONE)">
           <LiveScore :score="potentialScore" />
         </div>
 
         <div v-if="turn" class="game__card" :style="zoneStyle(CARD_ZONE)">
-          <PirateCard :card="turn.card" :skulls="skulls" />
+          <PirateCard :card="turn.card" :skulls="rolling ? 0 : skulls" />
         </div>
 
         <BoardDice
@@ -65,7 +65,7 @@
 
     <TurnCall v-if="announcing && mode === 'playing'" />
 
-    <TurnFlash v-if="mode === 'turnEnd' && turn?.outcome" :outcome="turn.outcome" :actor="turnActor" />
+    <TurnFlash v-if="showResult && turn?.outcome" :outcome="turn.outcome" :actor="turnActor" />
 
     <GameOverModal
       v-if="mode === 'finished'"
@@ -104,7 +104,7 @@
  * L'autorité est ailleurs — le moteur en solo, le serveur en multi — et cette
  * page ne fait que la refléter.
  */
-import layoutUrl from '~/assets/images/ui/layout-game.png'
+import layoutUrl from '~/assets/images/ui/layout-game.webp'
 import darkLaugh from '~/assets/sounds/soundscrate-evil-chuckle-02.mp3'
 
 const route = useRoute()
@@ -128,6 +128,7 @@ const {
   keptIds,
   moveToSlot,
   rolling,
+  showResult,
   rollSeq,
   turnActor,
   transient,

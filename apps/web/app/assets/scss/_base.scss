@@ -14,11 +14,11 @@ body {
     radial-gradient(100% 100% at 50% 120%, var(--color-abyss-900) 0%, transparent 60%);
   background-attachment: fixed;
   cursor:
-    url('../images/ui/cursor-hook-32.webp') 3 3,
+    url('../images/ui/cursors/cursor-hook-32.webp') 3 3,
     auto;
   @media (min-resolution: 2dppx) {
     cursor:
-      url('../images/ui/cursor-hook-64.webp') 5 6,
+      url('../images/ui/cursors/cursor-hook-64.webp') 5 6,
       auto;
   }
 }
