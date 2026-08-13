@@ -10,6 +10,22 @@ export default defineNuxtConfig({
   css: ['~/assets/scss/main.scss'],
 
   /**
+   * Les composants sont RANGÉS par domaine (plateau, surcouches, panneaux…),
+   * mais gardent leur nom court : `pathPrefix: false` empêche Nuxt de préfixer
+   * par le dossier. `components/board/DieCube.vue` reste `<DieCube>`.
+   *
+   * Sans cela, ranger un composant obligerait à renommer chacun de ses usages —
+   * le classement coûterait plus cher qu'il ne rapporte.
+   */
+  components: [{ path: '~/components', pathPrefix: false }],
+
+  // Même logique pour les composables : ils se rangent par domaine sans perdre
+  // l'import automatique, que Nuxt limite au premier niveau par défaut.
+  imports: {
+    dirs: ['composables/**'],
+  },
+
+  /**
    * Le labo (`/lab`) sert à régler la perspective et l'animation des dés à
    * l'œil : il n'a rien à faire en production. `ignore` l'exclut de la
    * compilation, donc la route n'existe pas et le code n'est même pas

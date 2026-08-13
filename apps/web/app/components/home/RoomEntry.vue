@@ -78,7 +78,7 @@
  * Le composant ne connaît pas le réseau — il rend un pirate et une intention.
  * C'est la page qui ouvre la connexion.
  */
-import type { Pirate } from '~/composables/useRoom'
+import type { Pirate } from '~/composables/net/useRoom'
 
 defineProps<{ error?: string }>()
 const emit = defineEmits<{

@@ -28,9 +28,9 @@
 // Les trois nombres de l'ambiance, réunis pour être retouchés d'un coup d'œil.
 // Ils se règlent à l'œil dans le labo (`/lab`).
 .island {
-  --island-hue: -130deg;
-  --island-saturation: 0.8;
-  --island-brightness: 0.9;
+  --island-hue: -166deg;
+  --island-saturation: 0.35;
+  --island-brightness: 0.98;
 
   position: absolute;
   inset: 0;

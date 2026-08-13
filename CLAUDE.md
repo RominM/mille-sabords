@@ -101,12 +101,76 @@ Géométrie des assets, en pixels du fichier source :
 
 ## Conventions
 
-- Vue : ordre `<template>` → `<script setup>` → `<style scoped lang="scss">`.
-- SCSS en BEM imbriqué (`&__element`, `&--modifier`). Pas de sélecteurs à plat.
-- Fonctions nommées dans les composants ; flèches autorisées dans les composables.
 - Commentaires **en français**, qui expliquent le *pourquoi*.
 - Un composant isolé par bloc fonctionnel ; la page reste un orchestrateur.
 - Commit + push après chaque étape terminée.
+- Fonctions nommées dans les composants ; flèches autorisées dans les composables.
+
+### Rangement
+
+Composants et composables sont classés par DOMAINE. Les noms restent courts :
+`components: [{ path: '~/components', pathPrefix: false }]` empêche Nuxt de
+préfixer par le dossier, et `imports.dirs: ['composables/**']` étend l'import
+automatique aux sous-dossiers. Ranger un fichier ne renomme donc aucun usage.
+
+```
+components/board/    le plateau (dés, carte, cachets, joueurs, ambiance)
+components/overlay/  ce qui se pose PAR-DESSUS (modales, annonces plein écran)
+components/panel/    les tiroirs latéraux et leur contenu
+components/home/     accueil et entrée en salle
+components/sound/    réglages sonores
+components/common/   sans domaine (chargeur, invites de démarrage)
+
+composables/game/    moteur d'UI, transport, saisie des dés, table
+composables/net/     lien avec le serveur
+composables/ui/      son, avatars, tiroirs, préchargement, règles
+```
+
+### Structure d'un composant Vue
+
+Ordre imposé : `<template>` → `<script setup>` → `<style scoped lang="scss">`.
+
+Le template a **une seule div racine**, portant une classe du nom du composant
+(`MonBloc.vue` → `.mon-bloc`).
+
+Dans le `<script setup>`, cet ordre et pas un autre :
+
+1. `import`
+2. `type` / `interface` (si nécessaire)
+3. `defineProps` / `defineEmits` / `defineExpose`
+4. appels de composables — `useMonComposable()`
+5. constantes
+6. `ref()`
+7. `computed()` (avant ou après les `ref`, selon ce qui se lit le mieux)
+8. `onMounted()` et cycles de vie
+9. `async function`
+10. `function`
+11. **`watch` — toujours en DERNIER, sans exception**
+
+Props en déclaration RUNTIME, pas par type :
+
+```ts
+const props = defineProps({
+  joueur: { type: Object as PropType<Player>, required: true },
+  compact: { type: Boolean, default: false }
+})
+```
+
+### SCSS
+
+BEM imbriqué, jamais de sélecteurs à plat, et une seule classe racine :
+
+```scss
+.mon-bloc {
+  &__enfant {
+    &--modifieur {
+    }
+  }
+
+  &__autre-enfant {
+  }
+}
+```
 
 ## Vérification — éviter de brûler des allers-retours
 

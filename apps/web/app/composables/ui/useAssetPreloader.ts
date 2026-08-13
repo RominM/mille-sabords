@@ -45,7 +45,7 @@ export function useAssetPreloader(opts: PreloaderOptions = {}) {
   async function preload(): Promise<void> {
     const started = performance.now()
     try {
-      const modules = import.meta.glob('../assets/images/**/*.{png,jpg,jpeg,webp,avif,svg}', {
+      const modules = import.meta.glob('../../assets/images/**/*.{png,jpg,jpeg,webp,avif,svg}', {
         eager: true,
         query: '?url',
         import: 'default',

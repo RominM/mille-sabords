@@ -6,7 +6,7 @@
              d'un quart de tour pour la variante horizontale, sans toucher au
              contenu, qui doit rester droit. -->
         <div class="modal-dialog__frame">
-          <img class="modal-dialog__img" src="./../assets/images/ui/parchemin.webp" alt="" />
+          <img class="modal-dialog__img" src="~/assets/images/ui/parchemin.webp" alt="" />
         </div>
         <div class="modal-dialog__content">
           <header class="modal-dialog__header">
@@ -19,7 +19,7 @@
               aria-label="Fermer"
               @click="emit('close')"
             >
-              <img src="./../assets/images/ui/cross-bones.webp" alt="" />
+              <img src="~/assets/images/ui/cross-bones.webp" alt="" />
             </button>
           </header>
           <div class="modal-dialog__slot">
