@@ -29,7 +29,7 @@ const { rules } = useRules()
   }
 
   &__item {
-    color: #2a1c0e;
+    color: var(--text);
     font-family: var(--font-body);
     font-size: 1.1rem;
     line-height: 1.4;

@@ -42,13 +42,11 @@ const ranking = computed(() => [...props.players].sort((a, b) => b.score - a.sco
 </script>
 
 <style scoped lang="scss">
-$ink: #2a1c0e;
-
 .over {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  color: $ink;
+  color: var(--text);
   font-family: var(--font-body);
 
   &__winner {

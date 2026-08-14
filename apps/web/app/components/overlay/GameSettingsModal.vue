@@ -31,13 +31,11 @@ const emit = defineEmits<{ close: []; quit: [] }>()
 </script>
 
 <style scoped lang="scss">
-$ink: #2a1c0e;
-
 .settings {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  color: $ink;
+  color: var(--text);
   font-family: var(--font-body);
 
   &__leave {

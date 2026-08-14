@@ -99,13 +99,13 @@ const volume = defineModel<number>('volume', { required: true })
     &::-webkit-slider-runnable-track {
       height: 0.4rem;
       border-radius: 999px;
-      background: var(--color-oak);
+      background: var(--surface-2);
     }
 
     &::-moz-range-track {
       height: 0.4rem;
       border-radius: 999px;
-      background: var(--color-oak);
+      background: var(--surface-2);
     }
 
     &::-webkit-slider-thumb {

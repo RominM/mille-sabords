@@ -20,6 +20,7 @@
   --color-abyss-900: #180e08; // ombres, vignette
   --color-oak-700: #3a2619; // surfaces secondaires
   --color-wax-edge: #c0524b; // rouge éclairci — bordures danger (≥3:1 sur Abîme)
+  --color-doubloon-ink: #6b4a0d; // or ASSOMBRI — le seul lisible sur parchemin
 
   // ── Rôles sémantiques ─────────────────────────────────────────────────────
   --bg: var(--color-abyss);
@@ -80,6 +81,37 @@
   --scrollbar-track: rgba(24, 14, 8, 0.45);
   --scrollbar-thumb: var(--color-doubloon);
   --scrollbar-thumb-hover: var(--color-doubloon-hi);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTEXTE CLAIR — le parchemin
+//
+// Les rôles ci-dessus sont réglés pour les surfaces SOMBRES : bois, plateau,
+// planches. Posés tels quels sur un parchemin, ils s'effacent — du parchemin
+// pâle sur du parchemin, de l'or clair sur du sable.
+//
+// Un contexte clair les REDÉCLARE donc chez lui, et tout ce qu'on y pose suit
+// sans rien savoir de son hôte : c'est ce qui permet aux mêmes réglages de
+// servir le panneau de bois de l'accueil ET la modale de la partie. Les barres
+// de défilement suivaient déjà ce principe ; le texte le suit désormais aussi.
+//
+// Ne rien mettre ici qui ne soit pas un RÔLE : un composant qui aurait besoin
+// d'une exception a un problème de rôle, pas de contexte.
+// ═══════════════════════════════════════════════════════════════════════════
+
+.on-parchment {
+  --text: var(--color-abyss-900); // encre (≈ 9:1 sur le rouleau)
+  --text-dim: rgba(24, 14, 8, 0.72); // encre délavée (≈ 6:1)
+  --accent: var(--color-doubloon-ink); // or gravé, pour les TITRES uniquement
+  --accent-hi: var(--color-oak);
+  --border: rgba(42, 28, 14, 0.45);
+  --focus: var(--color-oak-700); // l'anneau doré serait invisible ici
+  --on-accent: var(--color-parchment);
+  --surface-2: rgba(42, 28, 14, 0.35); // rainure creusée, non planche posée
+
+  --scrollbar-track: rgba(42, 28, 14, 0.12);
+  --scrollbar-thumb: rgba(42, 28, 14, 0.42);
+  --scrollbar-thumb-hover: rgba(42, 28, 14, 0.68);
 }
 
 // ── API SCSS documentée (échelle typo) — pour la reprise Nuxt ────────────────

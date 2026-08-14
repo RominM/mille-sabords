@@ -72,13 +72,11 @@ function closeAbout(): void {
 </script>
 
 <style scoped lang="scss">
-$ink: #2a1c0e;
-
 .startup {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  color: $ink;
+  color: var(--text);
   font-family: var(--font-body);
   text-align: left;
 

@@ -5,7 +5,7 @@
         <div class="modal-dialog__frame">
           <img class="modal-dialog__img" src="~/assets/images/ui/parchemin.webp" alt="" />
         </div>
-        <div class="modal-dialog__content">
+        <div class="modal-dialog__content on-parchment">
           <header class="modal-dialog__header">
             <h2 class="modal-dialog__title">{{ title }}</h2>
             <button
@@ -144,10 +144,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-
-    --scrollbar-track: rgba(42, 28, 14, 0.12);
-    --scrollbar-thumb: rgba(42, 28, 14, 0.42);
-    --scrollbar-thumb-hover: rgba(42, 28, 14, 0.68);
+    // Les couleurs viennent de `.on-parchment` : rien à redéclarer ici, tout ce
+    // qu'on pose dans le rouleau y lit ses rôles.
   }
 
   &__header {
@@ -160,7 +158,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape))
 
   &__title {
     padding: 0 3.5rem;
-    color: #2a1c0e;
+    color: var(--text);
     font-size: var(--modal-title, var(--fs-display-l));
     line-height: 1.1;
     text-align: center;
