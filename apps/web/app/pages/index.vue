@@ -56,7 +56,7 @@ const TABS: { id: TabId; label: string; title: string; pitch: string }[] = [
     id: 'multi',
     label: 'Multijoueur',
     title: 'L’Équipage',
-    pitch: 'Ouvre ton équipage ou rejoins celui d’un ami — que le meilleur gagne.'
+    pitch: 'Ouvre ton équipage ou rejoins celui d’un ami ! Que le meilleur gagne.'
   },
   {
     id: 'rules',
@@ -190,7 +190,7 @@ async function enterRoom(pirate: Pirate, code: string, hosting: boolean): Promis
   &__panel-pitch {
     position: absolute;
     left: 6%;
-    top: 26.5%;
+    top: 28.5%;
     width: 27%;
     height: 11.5%;
     overflow: hidden;

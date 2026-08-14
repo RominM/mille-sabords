@@ -91,10 +91,15 @@ const { avatars } = useAvatars()
     }
   }
 
+  // Le portrait se SOULÈVE au survol, porte un liseré quand il est choisi et un
+  // anneau quand il a le focus — trois choses qui dépassent de sa boîte. La
+  // rangée défile, donc elle rogne : on lui donne la gouttière qu'il faut, et on
+  // la reprend en marge pour que rien ne se décale.
   &__avatars {
     display: flex;
     gap: var(--space-3);
-    padding-bottom: var(--space-1);
+    padding: var(--space-1);
+    margin: calc(var(--space-1) * -1);
     overflow-x: auto;
   }
 
