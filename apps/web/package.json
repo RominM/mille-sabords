@@ -13,7 +13,9 @@
     "typecheck": "nuxt typecheck",
     "assets": "node scripts/optimize-images.mjs && node scripts/optimize-audio.mjs",
     "assets:images": "node scripts/optimize-images.mjs",
-    "assets:audio": "node scripts/optimize-audio.mjs"
+    "assets:audio": "node scripts/optimize-audio.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@rf/engine": "*",
@@ -22,6 +24,7 @@
   },
   "devDependencies": {
     "ffmpeg-static": "^5.3.0",
+    "happy-dom": "^20.11.2",
     "nuxt": "^4.0.0",
     "sass": "^1.80.0",
     "sharp": "^0.35.3",

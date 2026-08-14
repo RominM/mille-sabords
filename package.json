@@ -6,7 +6,7 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "npm run test -w @rf/engine && npm run test -w @rf/server",
+    "test": "npm run test -w @rf/engine && npm run test -w @rf/server && npm run test -w @rf/web",
     "play": "npm start -w @rf/cli",
     "web": "npm run dev -w @rf/web",
     "server": "npm run dev -w @rf/server",
