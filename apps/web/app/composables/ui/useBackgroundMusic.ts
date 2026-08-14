@@ -106,7 +106,16 @@ export const useBackgroundMusic = () => {
     audio = new Audio()
     audio.loop = true
     audio.volume = 0
-    audio.preload = 'auto'
+    /**
+     * `none` et non `auto` : la piste pèse plusieurs mégaoctets, et le
+     * navigateur REFUSE de toute façon de la jouer avant le premier geste. La
+     * télécharger d'emblée, c'est disputer la bande passante aux images de
+     * l'écran d'accueil pour un son qui ne sortira pas.
+     *
+     * Poser `src` suffit à la demander le moment venu — au premier geste, ou
+     * tout de suite si l'autoplay est autorisé.
+     */
+    audio.preload = 'none'
     audio.dataset.ambience = 'true'
     audio.style.display = 'none'
     document.body.appendChild(audio)
