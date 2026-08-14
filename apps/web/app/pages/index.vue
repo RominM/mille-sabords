@@ -17,7 +17,12 @@
         <div class="home__panel-content">
           <SoloForm v-if="activeTab === 'play'" />
 
-          <CrewForm v-else-if="activeTab === 'multi'" :error="room.error.value" @embark="enterRoom" />
+          <CrewForm
+            v-else-if="activeTab === 'multi'"
+            :error="room.error.value"
+            :busy="connecting"
+            @embark="enterRoom"
+          />
 
           <RulesPanel v-else-if="activeTab === 'rules'" />
           <AppSettings v-else />
@@ -63,7 +68,7 @@ const TABS: { id: TabId; label: string; title: string; pitch: string }[] = [
     id: 'settings',
     label: 'Paramètres',
     title: 'Paramètres',
-    pitch: 'L’écran et le son, réglés une bonne fois.'
+    pitch: 'Réglage de l’écran et du son. Disponible aussi sur le plateau'
   }
 ]
 
@@ -75,14 +80,21 @@ const current = computed(() => TABS.find((tab) => tab.id === activeTab.value)!)
 const router = useRouter()
 const room = useRoom()
 
+const connecting = ref(false)
+
 /**
- * On n'ouvre le lobby qu'une fois la connexion DEMANDÉE : la salle d'équipage
- * n'a rien à montrer avant, et l'y envoyer d'abord obligeait à y refaire la
- * saisie du pirate.
+ * On n'ouvre le lobby qu'une fois la place OBTENUE — et pas seulement demandée.
+ *
+ * Partir sur la foi d'une intention menait le joueur dans une salle d'équipage
+ * vide, avec un message d'erreur et rien à y faire que revenir. Le refus se lit
+ * là où il se répare : dans le formulaire, sans avoir quitté l'accueil.
  */
-function enterRoom(pirate: Pirate, code: string, hosting: boolean): void {
-  room.connect(pirate, code, hosting)
-  router.push('/lobby')
+async function enterRoom(pirate: Pirate, code: string, hosting: boolean): Promise<void> {
+  if (connecting.value) return
+  connecting.value = true
+  const aboard = await room.join(pirate, code, hosting)
+  connecting.value = false
+  if (aboard) router.push('/lobby')
 }
 </script>
 
@@ -103,11 +115,7 @@ function enterRoom(pirate: Pirate, code: string, hosting: boolean): void {
   --nav-w: 15rem;
   // La planche a un ratio fixe : sa largeur est donc plafonnée par la HAUTEUR
   // disponible, sans quoi une fenêtre basse la ferait dépasser de l'écran.
-  --layout-w: min(
-    1400px,
-    94vw,
-    calc((100dvh - var(--space-4) * 2) * 1.734 + var(--nav-w) + var(--space-4))
-  );
+  --layout-w: min(1400px, 94vw, calc((100dvh - var(--space-4) * 2) * 1.734 + var(--nav-w) + var(--space-4)));
   --panel-w: calc(var(--layout-w) - var(--nav-w) - var(--space-4));
   --panel-h: calc(var(--panel-w) / 1.734);
   --board-top: calc(var(--panel-h) * 0.254);

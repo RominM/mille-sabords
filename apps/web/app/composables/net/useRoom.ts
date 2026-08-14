@@ -16,6 +16,14 @@ import type { BotDifficulty, GameState } from '@rf/engine'
 const TOKEN_KEY = 'rf-player-token'
 /** Dernière salle et dernier pirate, pour se reconnecter seul après un F5. */
 const LAST_ROOM_KEY = 'rf-last-room'
+/**
+ * Au-delà, on considère le serveur injoignable.
+ *
+ * Un socket qui n'aboutit pas ne le dit pas toujours : selon le réseau, l'échec
+ * peut mettre une minute à remonter, ou ne jamais remonter. Ce délai borne
+ * l'attente du joueur, qui n'a pas à la subir.
+ */
+const CONNECT_TIMEOUT_MS = 6_000
 
 export interface Pirate {
   name: string
@@ -172,6 +180,45 @@ export const useRoom = () => {
     })
   }
 
+  /**
+   * Ouvre la connexion et ATTEND le verdict du serveur.
+   *
+   * Rend vrai quand la place est obtenue, faux si le serveur est injoignable,
+   * s'il refuse (code inconnu, table complète) ou s'il ne répond pas. C'est ce
+   * qui permet de ne quitter l'accueil qu'une fois la salle RÉELLE : y envoyer
+   * le joueur d'abord, c'était lui montrer une salle d'équipage vide et un
+   * message d'erreur, sans rien à y faire que revenir.
+   */
+  function join(pirate: Pirate, roomCode?: string, create = false): Promise<boolean> {
+    connect(pirate, roomCode, create)
+
+    return new Promise((resolve) => {
+      const settle = (ok: boolean): void => {
+        clearTimeout(timer)
+        stop()
+        if (!ok) close()
+        resolve(ok)
+      }
+
+      const timer = setTimeout(() => {
+        // Ni réponse ni refus : le serveur est là sans l'être. On le dit, plutôt
+        // que de laisser tourner une attente sans fin.
+        error.value = 'Le serveur ne répond pas'
+        status.value = 'error'
+        settle(false)
+      }, CONNECT_TIMEOUT_MS)
+
+      const stop = watch(
+        [status, error],
+        () => {
+          if (status.value === 'lobby' || status.value === 'playing') return settle(true)
+          if (status.value === 'error' || error.value) return settle(false)
+        },
+        { immediate: true }
+      )
+    })
+  }
+
   /** Reprend la dernière salle connue. Rend `false` s'il n'y a rien à reprendre. */
   function resume(): boolean {
     const last = lastRoom()
@@ -213,6 +260,7 @@ export const useRoom = () => {
     connect,
     resume,
     close,
+    join,
     send,
     setReady,
     addBot,

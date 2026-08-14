@@ -1,9 +1,9 @@
 <template>
   <EmbarkForm
     class="crew-form"
-    :disabled="!canEmbark"
+    :disabled="!canEmbark || busy"
     :label="cta"
-    :hint="hint"
+    :hint="busy ? 'Connexion à la table…' : hint"
     :error="error"
     @submit="embark"
   >
@@ -57,7 +57,9 @@ import type { Pirate } from '~/composables/net/useRoom'
 
 defineProps({
   /** Refus du serveur sur la tentative précédente (code inconnu, salle pleine…). */
-  error: { type: String, default: '' }
+  error: { type: String, default: '' },
+  /** Une tentative est en cours : on n'en lance pas une seconde par-dessus. */
+  busy: { type: Boolean, default: false }
 })
 
 const emit = defineEmits<{ embark: [pirate: Pirate, code: string, hosting: boolean] }>()
