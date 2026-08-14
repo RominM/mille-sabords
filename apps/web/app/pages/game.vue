@@ -181,8 +181,16 @@ const isIsland = computed(() => turn.value?.phase === 'island-roll')
  */
 const tourOpen = computed(() => touring.value && !boarding.value && !waitingForTable.value)
 
-/** La première volée est retombée : c'est ce que la visite attend pour enchaîner. */
-const diceLanded = computed(() => !rolling.value && turn.value?.phase === 'decision')
+/**
+ * La première volée est RETOMBÉE — c'est ce que la visite attend pour enchaîner.
+ *
+ * Le critère est « le premier lancer est résolu », et non « on peut décider » :
+ * un lancer peut finir sur l'Île de la Tête-de-Mort ou sur trois têtes, et la
+ * visite resterait alors bloquée sur un geste déjà accompli.
+ */
+const diceLanded = computed(
+  () => !rolling.value && !!turn.value && turn.value.phase !== 'first-roll'
+)
 
 /**
  * Le siège actif est-il le MIEN ? En solo, tout siège non-IA l'est. En multi il
@@ -227,6 +235,16 @@ const skulls = computed(() => {
 })
 
 /**
+ * Trois têtes sont tombées et la Gardienne est encore là : elle partira d'office
+ * avec la prochaine relance. Le joueur n'a rien à désigner — mais il doit savoir
+ * que s'arrêter ici ne rapporte rien.
+ */
+const guardianRescue = computed(
+  () =>
+    guardianOffered.value && skulls.value >= 3
+)
+
+/**
  * En multi, tant que le serveur n'a rien envoyé, il n'y a pas de table à
  * dessiner. En solo la question ne se pose pas : le moteur répond tout de suite.
  */
@@ -234,8 +252,15 @@ const waitingForTable = computed(() => !isSolo && !turn.value)
 
 const boardingHint = computed(() => (waitingForTable.value ? 'Connexion à la table…' : 'On embarque…'))
 
-/** Tour perdu : les yeux du crâne du plateau s'embrasent. */
+/**
+ * Tour perdu : les yeux du crâne du plateau s'embrasent, et le rire part.
+ *
+ * ATTENDU que la volée soit RETOMBÉE, comme le résultat du tour : le verdict
+ * est déjà connu du moteur au moment où les dés quittent la main, et l'annoncer
+ * là revenait à rire d'un lancer que le joueur n'a pas encore vu.
+ */
 const isDefeat = computed(() => {
+  if (!showResult.value) return false
   const reason = turn.value?.outcome?.reason
   return reason === 'three-skulls' || reason === 'skull-island'
 })
@@ -292,6 +317,7 @@ const hint = useBoardHint({
   transient,
   guardianDie,
   guardianOffered,
+  guardianRescue,
   botTurn: isBotTurn,
   canRoll
 })

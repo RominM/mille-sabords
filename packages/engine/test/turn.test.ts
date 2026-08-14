@@ -201,6 +201,43 @@ describe('Gardienne face aux 3 têtes', () => {
     expect(t.guardianAvailable).toBe(false)
     expect(t.dice.filter(d => d.face === K)).toHaveLength(2)
   })
+
+  it('à 3 têtes, la Gardienne part D’OFFICE avec la relance', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, K, S, S, M, P, C]))
+    // Le joueur ne désigne QUE le dé 3 : une tête l'accompagne sans qu'il l'ait
+    // demandé — c'est le seul geste qui rende la relance légale.
+    t = applyAction(t, { type: 'reroll', diceIds: [3] }, roller([C, C]))
+    expect(t.guardianAvailable).toBe(false)
+    expect(t.phase).toBe('decision')
+    expect(t.dice.filter(d => d.face === K)).toHaveLength(2)
+  })
+
+  it('un seul dé à relancer suffit à 3 têtes : la tête fait le second', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, K, C, C, C, C, M]))
+    // Les quatre pièces sont gardées, il ne reste que le singe.
+    expect(() => applyAction(t, { type: 'reroll', diceIds: [7] }, roller([S, C]))).not.toThrow()
+  })
+
+  it('la Gardienne dépensée, la tête suivante clôt le tour', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, K, S, S, M, P, C]))
+    t = applyAction(t, { type: 'reroll', diceIds: [3] }, roller([C, C]))
+    expect(t.guardianAvailable).toBe(false)
+    // 2 têtes en jeu : la troisième ne trouve plus personne pour la renvoyer.
+    t = applyAction(t, { type: 'reroll', diceIds: [4, 5] }, roller([K, S]))
+    expect(t.phase).toBe('ended')
+    expect(t.outcome!.reason).toBe('three-skulls')
+  })
+
+  it('sans autre dé à relancer, la Gardienne ne sauve rien', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, K, S, S, M, P, C]))
+    expect(() => applyAction(t, { type: 'reroll', diceIds: [] }, roller([C]))).toThrow(
+      IllegalActionError,
+    )
+  })
 })
 
 describe('carte Tête de Mort et seuil des 3 têtes', () => {

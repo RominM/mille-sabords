@@ -227,6 +227,19 @@ export function applyAction(
         state.guardianAvailable = false
       }
 
+      // À 3 têtes de mort, la Gardienne est le SEUL moyen de poursuivre le tour :
+      // elle part donc D'OFFICE avec la relance, sans que le joueur ait à
+      // désigner la tête. Le lui demander laissait croire qu'on pouvait relancer
+      // sans elle — et poursuivre un tour déjà perdu, tête après tête.
+      if (state.guardianAvailable && totalSkulls(state) >= 3) {
+        const rescued = state.dice.find(d => d.face === 'skull' && d.locked)
+        if (rescued) {
+          rescued.locked = false
+          ids.add(rescued.id)
+          state.guardianAvailable = false
+        }
+      }
+
       const selected = state.dice.filter(d => ids.has(d.id))
       if (selected.length !== ids.size)
         throw new IllegalActionError('Dé inconnu dans la sélection')

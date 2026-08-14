@@ -13,6 +13,8 @@ interface HintContext {
   /** Tête de mort confiée à la Gardienne. */
   guardianDie: Ref<number | null>
   guardianOffered: Ref<boolean>
+  /** Les 3 têtes sont là et la Gardienne va devoir servir. */
+  guardianRescue: Ref<boolean>
   /** Vrai pendant le tour de l'IA : on ne lui explique pas les règles. */
   botTurn: Ref<boolean>
   canRoll: Ref<boolean>
@@ -29,7 +31,8 @@ interface HintContext {
  * qui garderait sa place.
  */
 export function useBoardHint(context: HintContext) {
-  const { turn, transient, guardianDie, guardianOffered, botTurn, canRoll } = context
+  const { turn, transient, guardianDie, guardianOffered, guardianRescue, botTurn, canRoll } =
+    context
 
   return computed<BoardHint | null>(() => {
     if (botTurn.value) return null
@@ -44,6 +47,16 @@ export function useBoardHint(context: HintContext) {
     }
 
     if (transient.value) return { text: `⛔ ${transient.value}`, tone: 'danger' }
+
+    // Trois têtes sont sorties : le tour est perdu si le joueur s'arrête. La
+    // Gardienne partira d'office avec la relance — il n'a rien à désigner, mais
+    // il doit savoir que c'est SA dernière carte, et qu'elle se joue en relançant.
+    if (guardianRescue.value) {
+      return {
+        text: '🗝 3 têtes de mort — la Gardienne en renverra une avec ta prochaine relance. T’arrêter maintenant ne rapporte rien.',
+        tone: 'guardian'
+      }
+    }
 
     if (guardianDie.value !== null) {
       return {

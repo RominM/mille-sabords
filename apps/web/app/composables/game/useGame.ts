@@ -11,6 +11,7 @@ import {
   applyAction,
   decideAction,
   DECISION_TIMEOUT_MS,
+  totalSkulls,
   WINNING_SCORE,
   type BotDifficulty,
   type DieFace,
@@ -415,7 +416,10 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     // La tête confiée à la Gardienne repart AVEC les autres : le moteur exige
     // qu'elle fasse partie de la sélection relancée.
     if (guardianDie.value !== null) ids.push(guardianDie.value)
-    if (ids.length < 2 || ids.length >= t.dice.length) return []
+    // À 3 têtes, le moteur emmène LUI-MÊME une tête dans la relance : un seul
+    // autre dé suffit alors à la rendre légale.
+    const rescue = t.guardianAvailable && totalSkulls(t) >= 3 ? 1 : 0
+    if (ids.length + rescue < 2 || ids.length >= t.dice.length) return []
     return ids
   }
 
