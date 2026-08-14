@@ -17,7 +17,7 @@
 .app-settings {
   // Les deux hôtes (le panneau de l'accueil, le parchemin de la partie) ont une
   // hauteur fixe : les réglages portent leur propre défilement.
-  height: 100%;
+  height: 90%;
   overflow-y: auto;
 
   display: flex;

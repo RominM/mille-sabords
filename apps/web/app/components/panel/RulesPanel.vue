@@ -77,7 +77,7 @@ const { rules } = useRules()
 .rules-panel {
   // Le seul contenu de l'accueil qui dépasse : il porte donc son propre
   // défilement, plutôt que de l'imposer au panneau qui l'accueille.
-  height: 100%;
+  height: 90%;
   overflow-y: auto;
 
   display: flex;
