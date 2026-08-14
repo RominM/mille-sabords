@@ -32,7 +32,7 @@ const RESIZE = process.argv.includes('--resize')
 const MAX_WIDTH = {
   dice: 320, // un dé occupe ~9,5 % d'un plateau de 1600 px → ~150 px
   character: 400, // avatar dans un cercle de ~40 px
-  cards: 420, // carte affichée sur 192 px de large (mesuré à 1440)
+  cards: 560, // carte à 13,3 % du plateau → ~261 px sur 2560
   ui: 2000, // décor plein écran (layout, loader)
   _default: 1200
 }
@@ -40,19 +40,20 @@ const MAX_WIDTH = {
 /**
  * Exceptions par FICHIER, parce que `ui/` mêle deux mondes : des décors plein
  * écran, qui méritent leurs 1700 px, et des pièces minuscules qui traînaient la
- * même définition — une icône de 1024² pour un bouton de 35 px.
+ * même définition — une icône de 1024² pour un bouton de 72 px.
  *
- * Les tailles d'affichage sont MESURÉES sur une fenêtre de 1440 px, et doublées
- * pour les écrans à haute densité.
+ * Ces éléments se dimensionnent en pourcentage du plateau : ils GRANDISSENT
+ * avec l'écran. Les tailles ci-dessous partent donc de leur affichage sur une
+ * fenêtre de 2560 px — le plus grand cas raisonnable — puis sont doublées pour
+ * la haute densité. Calibrer sur sa propre fenêtre, comme je l'ai fait d'abord,
+ * donne des images nettes chez soi et floues chez les autres.
  */
 const MAX_WIDTH_FILE = {
-  'wax-seal-lancer.webp': 256, // cachet affiché à 110 px
-  'wax-seal-stop.webp': 256,
-  'icon-rules.webp': 96, // bouton de 35 px
-  'gamer-slot.webp': 384, // fiche joueur de ~140 px
-  'main-cta.webp': 900, // plaque de 320 px, image dessinée à 130 %
-  'panel-bareme.webp': 540, // planche de tiroir, 341 px de large
-  'main-title.webp': 900 // plus large usage : 46 % du chargeur
+  'wax-seal-lancer.webp': 448, // cachet à 8,6 % du plateau → 220 px sur 2560
+  'wax-seal-stop.webp': 448,
+  'icon-rules.webp': 192, // bouton d'outils → ~98 px sur 2560
+  'gamer-slot.webp': 512, // fiche joueur → ~236 px sur 2560
+  'main-cta.webp': 800 // plaque plafonnée à 18 rem, image dessinée à 130 %
 }
 
 const KB = n => `${(n / 1024).toFixed(0)} Ko`
@@ -127,16 +128,17 @@ async function rewriteImports(renames) {
  * DÉCODER au démarrage. D'où ce passage à part, à lancer sciemment.
  */
 async function shrink(file) {
-  const before = (await stat(file)).size
-  const meta = await sharp(file).metadata()
+  // On lit les octets NOUS-MÊMES avant de les donner à sharp : nourri d'un
+  // chemin, il garde le fichier ouvert, et Windows refuse alors de le réécrire
+  // (`UNKNOWN: open`). Le tampon coupe le lien avec le chemin.
+  const input = await readFile(file)
+  const meta = await sharp(input).metadata()
   const max = maxWidthFor(file)
   if (!meta.width || meta.width <= max) return null
 
-  // `toBuffer` puis écriture : sharp ne peut pas écrire dans le fichier qu'il
-  // est en train de lire.
-  const buffer = await sharp(file).resize({ width: max }).webp({ quality: 82, effort: 6 }).toBuffer()
+  const buffer = await sharp(input).resize({ width: max }).webp({ quality: 82, effort: 6 }).toBuffer()
   if (!DRY) await writeFile(file, buffer)
-  return { file, before, after: buffer.byteLength, from: meta.width, to: max }
+  return { file, before: input.byteLength, after: buffer.byteLength, from: meta.width, to: max }
 }
 
 async function resizeExisting() {

@@ -107,6 +107,7 @@ const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
 const router = useRouter()
 const room = useRoom()
 const { botAvatar } = useAvatars()
+const { startBoarding } = useBoarding()
 
 const lobby = room.lobby
 
@@ -140,7 +141,11 @@ onMounted(() => {
 watch(
   () => room.status.value,
   (status) => {
-    if (status === 'playing') router.push('/game?mode=multi')
+    if (status !== 'playing') return
+    // L'écran couvre le passage : la route du plateau se charge, et la table
+    // arrive du serveur — deux attentes que le joueur n'a pas à subir à vide.
+    startBoarding('On lève l’ancre…')
+    router.push('/game?mode=multi')
   },
   { immediate: true }
 )

@@ -1,8 +1,6 @@
 <template>
   <div class="game">
-    <AppLoader v-if="boarding || waitingForTable" :hint="boardingHint" />
-
-    <div v-else-if="mode !== 'start'" class="game__stage">
+    <div v-if="mode !== 'start'" class="game__stage">
       <div ref="plateauEl" class="game__board" :style="{ backgroundImage: `url(${layoutUrl})` }">
         <TurnBar v-if="gamePhase === 'playing' && turn" :seconds="secondsLeft" :total="TURN_SECONDS" />
 
@@ -161,9 +159,12 @@ const {
  */
 const BOARDING_MS = 1600
 let boardingTimer: ReturnType<typeof setTimeout> | undefined
+/** Le plancher de temps est-il écoulé ? La table peut être prête avant lui. */
+let boarded = false
+
+const { boarding, startBoarding, endBoarding } = useBoarding()
 
 const plateauEl = ref<HTMLElement | null>(null)
-const boarding = ref(true)
 const darkLaughAudio = ref<HTMLAudioElement | null>(null)
 const showRules = ref(false)
 const showSettings = ref(false)
@@ -250,7 +251,14 @@ const guardianRescue = computed(
  */
 const waitingForTable = computed(() => !isSolo && !turn.value)
 
-const boardingHint = computed(() => (waitingForTable.value ? 'Connexion à la table…' : 'On embarque…'))
+/**
+ * L'embarquement se referme quand DEUX choses sont vraies : le plancher de
+ * temps est écoulé — le décor a eu de quoi s'installer — et la table est
+ * dressée. En multi, la seconde peut arriver bien après la première.
+ */
+function tryBoarded(): void {
+  if (boarded && !waitingForTable.value) endBoarding()
+}
 
 /**
  * Tour perdu : les yeux du crâne du plateau s'embrasent, et le rire part.
@@ -323,19 +331,38 @@ const hint = useBoardHint({
 })
 
 onMounted(function boardTheShip() {
-  boardingTimer = setTimeout(() => (boarding.value = false), BOARDING_MS)
+  // Arriver ici par l'URL ou par un F5 n'a ouvert aucun écran : on l'ouvre nous
+  // -mêmes, sinon le plateau se dresserait à vue.
+  startBoarding(isSolo ? 'On embarque…' : 'Connexion à la table…')
+  boardingTimer = setTimeout(() => {
+    boarded = true
+    tryBoarded()
+  }, BOARDING_MS)
 })
 
-onBeforeUnmount(() => clearTimeout(boardingTimer))
+onBeforeUnmount(() => {
+  clearTimeout(boardingTimer)
+  // Quitter le plateau en plein embarquement laisserait le chargeur sur l'écran
+  // suivant : l'état vit au-dessus des routes, il faut le rendre.
+  endBoarding()
+})
 
 onMounted(function openTable() {
   if (isSolo) {
-    const setup = tableSetup.value
-    if (!setup?.roster.length) return
+    /**
+     * La table composée à l'accueil ne survit pas à un rechargement (`useState`
+     * vit en mémoire). La DERNIÈRE table jouée, elle, est retenue : un F5 sur le
+     * plateau repart donc avec le même équipage, plutôt que de laisser un écran
+     * vide — ce qu'il faisait jusqu'ici, faute de quoi que ce soit à dresser.
+     */
+    const fresh = tableSetup.value
+    const setup = fresh ?? lastSoloSetup()
+    if (!setup?.roster.length) return void router.push('/')
+
     newGame(setup.difficulty, setup.roster)
-    // La visite attend que la table soit dressée : elle éclaire des zones qui
-    // n'existent pas encore, et le joueur ne verrait que l'écran d'embarquement.
-    if (setup.tutorial) {
+    // La visite n'accompagne qu'un VRAI embarquement : la rejouer à chaque
+    // rechargement serait pénible, et le joueur ne l'a pas redemandée.
+    if (fresh?.tutorial) {
       touring.value = true
       paused.value = true
     }
@@ -379,6 +406,10 @@ function leaveGame(): void {
   if (!isSolo) room.close()
   router.push('/')
 }
+
+// En multi, la table arrive quand le serveur veut : c'est elle qui referme
+// l'embarquement, pas le minuteur.
+watch(waitingForTable, tryBoarded)
 
 watch(isDefeat, async (defeated) => {
   if (!defeated) return

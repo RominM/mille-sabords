@@ -46,6 +46,7 @@ const DIFFICULTIES: { value: BotDifficulty; label: string }[] = [
 const router = useRouter()
 const tableSetup = useTableSetup()
 const { defaultAvatar } = useAvatars()
+const { startBoarding } = useBoarding()
 
 // Pré-rempli avec la dernière table jouée : on ne se resaisit pas à chaque partie.
 const previous = lastSoloSetup()
@@ -77,6 +78,9 @@ function start(): void {
 
   tableSetup.value = setup
   rememberSoloSetup(setup)
+  // L'écran s'ouvre AU CLIC, pas à l'arrivée : entre les deux il y a la route à
+  // charger et la table à dresser, et l'accueil resterait figé sans rien dire.
+  startBoarding('On embarque…')
   router.push('/game?mode=solo')
 }
 </script>
