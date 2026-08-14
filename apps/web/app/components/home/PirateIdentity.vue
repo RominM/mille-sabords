@@ -48,7 +48,6 @@ const { avatars } = useAvatars()
 <style scoped lang="scss">
 .pirate-identity {
   display: flex;
-  flex-direction: column;
   gap: var(--space-3);
 
   // Le navigateur impose `min-inline-size: min-content` aux fieldset : sans

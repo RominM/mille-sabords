@@ -1,7 +1,5 @@
 <template>
   <EmbarkForm class="solo-form" :disabled="!canStart" :hint="hint" @submit="start">
-    <p class="solo-form__pitch">Une partie rapide contre le Corsaire, sans quitter le quartier.</p>
-
     <PirateIdentity v-model:name="name" v-model:avatar="avatar" />
 
     <fieldset class="solo-form__field">
@@ -83,12 +81,6 @@ function start(): void {
 
 <style scoped lang="scss">
 .solo-form {
-  &__pitch {
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 1.15rem;
-  }
-
   &__field {
     display: flex;
     flex-direction: column;

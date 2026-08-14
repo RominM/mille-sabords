@@ -10,16 +10,14 @@
       </div>
 
       <section class="home__panel" :style="{ backgroundImage: `url(${panelUrl})` }" role="tabpanel">
-        <h1 class="home__panel-title">{{ TABS.find((tab) => tab.id === activeTab)?.title }}</h1>
+        <h1 class="home__panel-title">{{ current.title }}</h1>
+
+        <p class="home__panel-pitch">{{ current.pitch }}</p>
 
         <div class="home__panel-content">
           <SoloForm v-if="activeTab === 'play'" />
 
-          <CrewForm
-            v-else-if="activeTab === 'multi'"
-            :error="room.error.value"
-            @embark="enterRoom"
-          />
+          <CrewForm v-else-if="activeTab === 'multi'" :error="room.error.value" @embark="enterRoom" />
 
           <RulesPanel v-else-if="activeTab === 'rules'" />
           <AppSettings v-else />
@@ -37,15 +35,42 @@ import type { Pirate } from '~/composables/net/useRoom'
 
 type TabId = 'play' | 'multi' | 'rules' | 'settings'
 
-/** `label` est l'entrée du menu, `title` la pancarte du panneau qu'elle ouvre. */
-const TABS: { id: TabId; label: string; title: string }[] = [
-  { id: 'play', label: 'Jouer', title: 'Contre le Corsaire' },
-  { id: 'multi', label: 'Multijoueur', title: 'L’Équipage' },
-  { id: 'rules', label: 'Règles', title: 'Règles' },
-  { id: 'settings', label: 'Paramètres', title: 'Paramètres' }
+/**
+ * `label` est l'entrée du menu, `title` la pancarte du panneau qu'elle ouvre,
+ * `pitch` la ligne qui dit en quoi on s'engage. Les trois vivent ensemble :
+ * une section, c'est ce triplet — rien ne sert de les disperser.
+ */
+const TABS: { id: TabId; label: string; title: string; pitch: string }[] = [
+  {
+    id: 'play',
+    label: 'Jouer',
+    title: 'Contre le Corsaire',
+    pitch: 'Une partie rapide contre le Corsaire, sans quitter le quartier.'
+  },
+  {
+    id: 'multi',
+    label: 'Multijoueur',
+    title: 'L’Équipage',
+    pitch: 'Ouvre ton équipage ou rejoins celui d’un ami — que le meilleur gagne.'
+  },
+  {
+    id: 'rules',
+    label: 'Règles',
+    title: 'Règles',
+    pitch: 'De quoi savoir où tu mets les pieds avant de lever l’ancre.'
+  },
+  {
+    id: 'settings',
+    label: 'Paramètres',
+    title: 'Paramètres',
+    pitch: 'L’écran et le son, réglés une bonne fois.'
+  }
 ]
 
 const activeTab = ref<TabId>('play')
+
+/** La section ouverte, d'un bloc : le panneau y lit son titre et son pitch. */
+const current = computed(() => TABS.find((tab) => tab.id === activeTab.value)!)
 
 const router = useRouter()
 const room = useRoom()
@@ -65,7 +90,10 @@ function enterRoom(pirate: Pirate, code: string, hosting: boolean): void {
 .home {
   display: grid;
   place-items: center;
-  min-height: 100dvh;
+  // L'accueil tient dans la fenêtre, un point c'est tout : ce qui déborde,
+  // c'est le CONTENU du panneau, et il défile chez lui.
+  height: 100dvh;
+  overflow: hidden;
 
   padding: var(--space-4);
   background-position: center;
@@ -73,7 +101,13 @@ function enterRoom(pirate: Pirate, code: string, hosting: boolean): void {
   background-repeat: no-repeat;
 
   --nav-w: 15rem;
-  --layout-w: min(1400px, 94vw);
+  // La planche a un ratio fixe : sa largeur est donc plafonnée par la HAUTEUR
+  // disponible, sans quoi une fenêtre basse la ferait dépasser de l'écran.
+  --layout-w: min(
+    1400px,
+    94vw,
+    calc((100dvh - var(--space-4) * 2) * 1.734 + var(--nav-w) + var(--space-4))
+  );
   --panel-w: calc(var(--layout-w) - var(--nav-w) - var(--space-4));
   --panel-h: calc(var(--panel-w) / 1.734);
   --board-top: calc(var(--panel-h) * 0.254);
@@ -142,18 +176,33 @@ function enterRoom(pirate: Pirate, code: string, hosting: boolean): void {
     text-shadow: 0 0.3cqh 0.6cqh rgba(24, 14, 8, 0.85);
   }
 
-  // Pas de défilement ICI : la plaque du bouton d'action déborde
-  // VOLONTAIREMENT de sa boîte — c'est ainsi qu'elle est dessinée — et ce
-  // débordement décoratif suffisait à faire apparaître une barre. Seul un
-  // contenu réellement trop long doit défiler, et il s'en charge lui-même.
-  // Le contenu remplit la zone : c'est lui qui décide où il défile — le
-  // formulaire garde son bouton en bas, les règles défilent en entier.
+  // L'accroche de la section, à gauche du cartouche, sur la bande de bois que
+  // l'ornement laisse libre. FIXE : elle annonce, elle ne défile pas avec ce
+  // qu'elle annonce.
+  &__panel-pitch {
+    position: absolute;
+    left: 6%;
+    top: 26.5%;
+    width: 27%;
+    height: 11.5%;
+    overflow: hidden;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.25cqw;
+    line-height: 1.35;
+    text-shadow: 0 0.2cqh 0.5cqh rgba(24, 14, 8, 0.9);
+  }
+
+  // La zone utile s'arrête AVEC le bois (y 92,9 %) : tout ce qui vit ici —
+  // plaque d'action comprise — reste dans le cadre.
+  // Le contenu remplit la zone et décide où il défile : le formulaire garde sa
+  // plaque en bas, les règles défilent en entier.
   &__panel-content {
     position: absolute;
     left: 6%;
-    top: 35%;
+    top: 39%;
     width: 88%;
-    height: 57%;
+    height: 54%;
     display: grid;
     // Rangée EXPLICITE : sans elle, une rangée automatique se dimensionnerait
     // sur son contenu, le `height: 100%` de l'enfant deviendrait cyclique, et

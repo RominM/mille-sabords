@@ -65,13 +65,14 @@ const emit = defineEmits<{ roll: []; stop: [] }>()
     height: 8.6cqw;
   }
 
-  // Sous la carte (bas : 82,9 %), dans sa colonne : c'est le seul coin du
-  // plateau que ni les dés, ni la rangée, ni le gouvernail n'occupent.
+  // À l'OPPOSÉ de « Lancer » : même colonne, même taille, de l'autre côté de
+  // la rangée d'emplacements. Les deux gestes du tour se répondent, et celui
+  // qui met fin au tour ne se cherche pas dans un coin sombre.
   &__stop {
-    left: 82%;
+    left: 74.2%;
     top: 89%;
-    width: 6.4cqw;
-    height: 6.4cqw;
+    width: 8.6cqw;
+    height: 8.6cqw;
   }
 
   &__bot {

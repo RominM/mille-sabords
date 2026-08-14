@@ -34,7 +34,13 @@ function onClick(): void {
   place-items: center;
   // Réglable par le contexte : posée dans un décor qui se met à l'échelle, la
   // plaque doit suivre le décor et non garder une taille absolue.
-  width: var(--plate-w, min(20rem, 100%));
+  //
+  // La valeur par défaut est une LONGUEUR, jamais un pourcentage : dans un
+  // parent qui se dimensionne sur son contenu (`justify-self: end` au lobby),
+  // un `100%` ne peut pas se résoudre, `min()` le prend pour zéro, et la
+  // plaque disparaît en 0×0 sans que rien ne le signale.
+  width: var(--plate-w, 20rem);
+  max-width: 100%;
   aspect-ratio: 1181 / 318;
   container-type: size;
   padding: 0;

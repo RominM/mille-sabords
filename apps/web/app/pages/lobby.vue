@@ -148,7 +148,9 @@ watch(
 
 <style scoped lang="scss">
 .lobby {
-  min-height: 100dvh;
+  // Comme l'accueil : la salle tient dans la fenêtre, seul l'équipage défile.
+  height: 100dvh;
+  overflow: hidden;
   padding: var(--space-3);
   display: grid;
   place-items: center;
@@ -156,8 +158,11 @@ watch(
   background-size: cover;
   background-repeat: no-repeat;
 
+  // La planche a un ratio fixe : sa largeur est plafonnée par la hauteur qui
+  // reste une fois les rangées du dessus et du dessous servies — titre, niveau
+  // des IA, plaque « Lever l'ancre » (86 px), indication, et les gouttières.
   &__grid {
-    width: min(1340px, 94vw, calc((96dvh - 12rem) * 1708 / 985));
+    width: min(1340px, 94vw, calc((100dvh - 17rem) * 1708 / 985));
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-areas:

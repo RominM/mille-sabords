@@ -44,30 +44,34 @@ function submit(): void {
 
 <style scoped lang="scss">
 .embark-form {
+  // La plaque se mesure sur la PLANCHE, pas en pixels : à taille fixe, elle
+  // dévorait la hauteur du formulaire dès que la fenêtre se resserrait.
+  --plate-w: min(20rem, 42cqw);
+  // Son ratio est de 1181/318 : la hauteur s'en déduit, et sert de garde au
+  // corps qui défile dessous.
+  --plate-h: calc(var(--plate-w) / 3.714);
+
   height: 100%;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: var(--space-2);
   text-align: left;
 
+  // La rangée souple donne au corps EXACTEMENT ce que la plaque laisse : une
+  // hauteur fixée à la main déborderait du cadre dès que l'une des deux bouge.
   &__body {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
     padding-right: var(--space-3);
-    padding-bottom: 85px;
-    height: 47cqh;
+    padding-bottom: var(--plate-h);
     overflow-y: auto;
   }
 
   // La plaque déborde VOLONTAIREMENT de sa boîte, vers le haut : elle recouvre
   // la fin du formulaire sans jamais l'intercepter (son image ne prend pas le
-  // pointeur), et le corps garde ainsi toute la hauteur disponible.
-  // La plaque se mesure sur la PLANCHE, pas en pixels : à taille fixe, elle
-  // dévorait la hauteur du formulaire dès que la fenêtre se resserrait.
+  // pointeur), d'où la garde posée sous le corps.
   &__cta {
-    --plate-w: min(20rem, 42cqw);
-
     display: flex;
     flex-direction: column;
     align-items: center;

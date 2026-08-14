@@ -7,8 +7,6 @@
     :error="error"
     @submit="embark"
   >
-    <p class="crew-form__pitch">Crée un équipage ou rejoins celui d’un ami, et que le meilleur gagne.</p>
-
     <PirateIdentity v-model:name="name" v-model:avatar="avatar" />
 
     <fieldset class="crew-form__field">
@@ -109,12 +107,6 @@ function embark(): void {
 
 <style scoped lang="scss">
 .crew-form {
-  &__pitch {
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 1.15rem;
-  }
-
   &__field {
     display: flex;
     flex-direction: column;
