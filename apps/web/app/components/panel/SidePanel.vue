@@ -133,13 +133,14 @@ const open = computed(() => isOpen(props.id))
   &__content {
     position: absolute;
     left: 7%;
-    top: 6%;
+    top: 7.5%;
     width: 73%;
-    height: 88%;
+    height: 84%;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    padding: 8px 14px;
     color: var(--text);
     font-family: var(--font-body);
     font-size: 0.95rem;

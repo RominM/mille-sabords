@@ -66,7 +66,7 @@ const { avatars } = useAvatars()
     padding: 0;
     color: var(--accent);
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     letter-spacing: 0.04em;
   }
 
@@ -100,8 +100,8 @@ const { avatars } = useAvatars()
 
   &__avatar {
     flex: 0 0 auto;
-    width: 4.4rem;
-    height: 4.4rem;
+    width: 3.9rem;
+    height: 3.9rem;
     padding: 0;
     border: 2px solid transparent;
     border-radius: var(--radius-btn);

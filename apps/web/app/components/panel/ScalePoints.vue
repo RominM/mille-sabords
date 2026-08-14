@@ -140,7 +140,7 @@ function art(face: DieFace): Record<string, string> {
     flex-direction: column;
     gap: 0.35em;
     margin: 0 0 var(--space-2);
-    padding: 0;
+    padding: 0 8px;
     list-style: none;
   }
 
@@ -199,14 +199,14 @@ function art(face: DieFace): Record<string, string> {
   &__points {
     color: var(--accent);
     font-size: 1.05rem;
-    font-variant-numeric: tabular-nums;
+    font-weight: 600;
 
     &--lost {
       color: var(--danger-edge);
     }
 
     &--win {
-      color: var(--accent-hi);
+      color: var(--success);
       font-family: var(--font-display);
       font-size: 1.2rem;
       letter-spacing: 0.04em;
