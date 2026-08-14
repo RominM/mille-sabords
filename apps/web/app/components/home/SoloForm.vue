@@ -54,8 +54,13 @@ const you = previous?.roster.find((seat) => !seat.bot)
 const name = ref(you?.name ?? '')
 const avatar = ref(you?.avatar ?? defaultAvatar)
 const difficulty = ref<BotDifficulty>(previous?.difficulty ?? 'medium')
-/** Accompagner le joueur sur son premier tour, s'il le demande. */
-const tutorial = ref(previous?.tutorial ?? false)
+/**
+ * Accompagner le joueur sur son premier tour. Cochée par DÉFAUT : celui qui
+ * arrive ici pour la première fois n'a aucune raison de deviner qu'une visite
+ * existe, et la refuser ne coûte qu'un clic. Une fois qu'il a choisi, c'est SON
+ * choix qui revient — `lastSoloSetup` le mémorise, décoché comme coché.
+ */
+const tutorial = ref(previous?.tutorial ?? true)
 
 const canStart = computed(() => name.value.trim().length > 0)
 const hint = computed(() => (canStart.value ? '' : 'Choisis un nom pour embarquer.'))
