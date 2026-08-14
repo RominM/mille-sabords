@@ -73,7 +73,7 @@
     <GameOverModal
       v-if="mode === 'finished'"
       :players="players"
-      :winner="winner"
+      :winners="winners"
       :avatar-of="portraitOf"
       @replay="newGame(difficulty)"
       @menu="router.push('/')"
@@ -142,7 +142,7 @@ const {
   currentIndex,
   currentPlayer,
   gamePhase,
-  winner,
+  winners,
   newGame,
   rollOrReroll,
   stop,

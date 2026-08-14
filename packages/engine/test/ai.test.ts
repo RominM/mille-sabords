@@ -169,8 +169,8 @@ describe('partie complète pilotée par l’IA', () => {
     }
 
     expect(game.state.phase).toBe('finished')
-    expect(game.state.winnerId).not.toBeNull()
-    const winner = game.state.players.find(p => p.id === game.state.winnerId)!
+    expect(game.state.winnerIds).not.toHaveLength(0)
+    const winner = game.state.players.find(p => p.id === game.state.winnerIds[0])!
     expect(winner.score).toBeGreaterThanOrEqual(6000)
   })
 })

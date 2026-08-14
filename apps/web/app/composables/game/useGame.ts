@@ -135,7 +135,11 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
 
   const history = computed(() => snapshot.value?.history ?? [])
   const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
-  const winner = computed(() => players.value.find((p) => p.id === snapshot.value?.winnerId) ?? null)
+  /** Les vainqueurs — plusieurs quand la partie s'achève sur une égalité. */
+  const winners = computed(() => {
+    const ids = snapshot.value?.winnerIds ?? []
+    return players.value.filter((p) => ids.includes(p.id))
+  })
 
   // ── Détection des jets ──────────────────────────────────────────────────────
   /**
@@ -603,7 +607,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     currentIndex,
     currentPlayer,
     gamePhase,
-    winner,
+    winners,
     newGame,
     roll,
     reroll,

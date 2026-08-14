@@ -46,7 +46,12 @@ export interface GameState {
   discard: PirateCard[]
   turn: TurnState | null
   phase: GamePhase
-  winnerId: string | null
+  /**
+   * Les vainqueurs. Vide tant que la partie court, un seul nom d'ordinaire —
+   * et PLUSIEURS en cas d'égalité, qui est une victoire partagée et non un
+   * départage.
+   */
+  winnerIds: string[]
   /** Les derniers tours joués, du plus ancien au plus récent. */
   history: TurnRecord[]
   /** Deadline epoch-ms de la décision en cours (autorité serveur) */
@@ -94,7 +99,7 @@ export class Game {
       discard: [],
       turn: null,
       phase: 'playing',
-      winnerId: null,
+      winnerIds: [],
       history: [],
       decisionDeadline: null,
       finalTurnsLeft: null,
@@ -243,7 +248,7 @@ export class Game {
       this.state.discard.push(turn.card)
       this.state.phase = 'finished'
       this.state.decisionDeadline = null
-      this.state.winnerId = this.currentPlayer.id
+      this.state.winnerIds = [this.currentPlayer.id]
       return
     }
     this.concludeTurn(turn.card)
@@ -289,13 +294,21 @@ export class Game {
     this.rotate(card)
   }
 
-  /** Clôt la partie : meilleur score = vainqueur (départage : ordre de jeu). */
+  /**
+   * Clôt la partie : le meilleur score l'emporte — et s'ils sont plusieurs à
+   * l'avoir, ils l'emportent ENSEMBLE.
+   *
+   * Départager par l'ordre de jeu, comme avant, faisait gagner le premier assis
+   * sur un score identique : une victoire décidée par le placement des chaises,
+   * là où les deux joueurs ont fait exactement aussi bien. L'égalité est rare —
+   * raison de plus pour ne pas la trancher au hasard.
+   */
   private finish(card: PirateCard): void {
     this.state.discard.push(card)
     this.state.phase = 'finished'
     this.state.decisionDeadline = null
-    const winner = this.state.players.reduce((best, p) => (p.score > best.score ? p : best))
-    this.state.winnerId = winner.id
+    const best = Math.max(...this.state.players.map(p => p.score))
+    this.state.winnerIds = this.state.players.filter(p => p.score === best).map(p => p.id)
   }
 
   private rotate(card: PirateCard): void {

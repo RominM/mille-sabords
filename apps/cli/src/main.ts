@@ -402,8 +402,10 @@ async function main(): Promise<void> {
   }
 
   if (game.state.phase === 'finished') {
-    const winner = game.state.players.find(p => p.id === game.state.winnerId)!
-    console.log(bold(green(`\n🏆 ${winner.name} remporte la partie avec ${winner.score} pts !`)))
+    const winners = game.state.players.filter(p => game.state.winnerIds.includes(p.id))
+    const names = winners.map(p => p.name).join(' et ')
+    const verb = winners.length > 1 ? 'remportent la partie ENSEMBLE' : 'remporte la partie'
+    console.log(bold(green(`\n🏆 ${names} ${verb} avec ${winners[0]?.score ?? 0} pts !`)))
     console.log('\n' + renderScoreboard(game.state))
   }
 

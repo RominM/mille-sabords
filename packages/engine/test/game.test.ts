@@ -129,7 +129,7 @@ describe('fin de partie — dernier tour', () => {
     game.startTurn()
     game.timeout()
     expect(game.state.phase).toBe('finished')
-    expect(game.state.winnerId).toBe('a') // A garde le meilleur score
+    expect(game.state.winnerIds).toEqual(['a']) // A garde le meilleur score
   })
 
   it('carte Pirate sur l’Île : le malus des adversaires est DOUBLÉ', () => {
@@ -237,7 +237,7 @@ describe('fin de partie — dernier tour', () => {
     game.act({ type: 'stop' })
 
     expect(game.state.phase).toBe('finished')
-    expect(game.state.winnerId).toBe('a')
+    expect(game.state.winnerIds).toEqual(['a'])
     // Victoire immédiate : aucune dernière manche n'est armée.
     expect(game.state.finalTurnsLeft).toBeNull()
   })
@@ -279,7 +279,29 @@ describe('fin de partie — dernier tour', () => {
     game.startTurn()
     game.timeout()
     expect(game.state.phase).toBe('finished')
-    expect(game.state.winnerId).toBe('a')
+    expect(game.state.winnerIds).toEqual(['a'])
+  })
+
+  it('à égalité, la victoire est PARTAGÉE — pas départagée par l’ordre de jeu', () => {
+    const game = new Game(
+      [
+        { id: 'a', name: 'A' },
+        { id: 'b', name: 'B' },
+        { id: 'c', name: 'C' },
+      ],
+      { now: () => 0 },
+    )
+    game.state.players[0]!.score = 6000
+    game.state.players[1]!.score = 6000
+    game.state.players[2]!.score = 5900
+    // A déclenche la dernière manche, B et C la jouent sans rien marquer.
+    game.state.finalTurnsLeft = 1
+    game.state.deck = [{ type: 'coin' }]
+    game.startTurn()
+    game.timeout()
+
+    expect(game.state.phase).toBe('finished')
+    expect(game.state.winnerIds).toEqual(['a', 'b'])
   })
 
   it('le vainqueur est le meilleur score, pas forcément le déclencheur', () => {
@@ -308,7 +330,7 @@ describe('fin de partie — dernier tour', () => {
 
     expect(game.state.phase).toBe('finished')
     expect(game.state.players[1]!.score).toBeGreaterThan(6000)
-    expect(game.state.winnerId).toBe('b') // B a doublé A sur le fil
+    expect(game.state.winnerIds).toEqual(['b']) // B a doublé A sur le fil
   })
 
   it('sous 6000, aucun dernier tour armé', () => {

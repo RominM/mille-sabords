@@ -1,10 +1,15 @@
 <template>
   <Modal title="Fin de la partie">
     <div class="over">
-      <p class="over__winner">🏆 {{ winner?.name ?? '—' }} l’emporte !</p>
+      <p class="over__winner">🏆 {{ verdict }}</p>
 
       <ol class="over__ranking">
-        <li v-for="(p, i) in ranking" :key="p.id" class="over__row" :class="{ 'over__row--first': i === 0 }">
+        <li
+          v-for="(p, i) in ranking"
+          :key="p.id"
+          class="over__row"
+          :class="{ 'over__row--first': isWinner(p.id) }"
+        >
           <span class="over__rank">{{ i + 1 }}</span>
           <img v-if="avatarOf(p.id)" :src="avatarOf(p.id)" alt="" class="over__avatar" />
           <span class="over__name">{{ p.name }}</span>
@@ -31,7 +36,8 @@ import type { Player } from '@rf/engine'
 
 const props = defineProps<{
   players: Player[]
-  winner: Player | null
+  /** Plusieurs en cas d'égalité : la victoire est partagée, pas départagée. */
+  winners: Player[]
   avatarOf: (id: string) => string | undefined
 }>()
 
@@ -39,6 +45,21 @@ const emit = defineEmits<{ replay: []; menu: [] }>()
 
 /** Classement décroissant : on ne fait pas chercher le vainqueur des yeux. */
 const ranking = computed(() => [...props.players].sort((a, b) => b.score - a.score))
+
+const isWinner = (id: string): boolean => props.winners.some((p) => p.id === id)
+
+/**
+ * L'annonce dit ce qui s'est passé — et à égalité, elle nomme TOUT LE MONDE.
+ * Désigner un seul vainqueur sur des scores identiques reviendrait à trancher
+ * ce que la partie n'a pas tranché.
+ */
+const verdict = computed(() => {
+  const names = props.winners.map((p) => p.name)
+  if (!names.length) return '—'
+  if (names.length === 1) return `${names[0]} l’emporte !`
+  const last = names.pop()!
+  return `${names.join(', ')} et ${last} l’emportent ensemble !`
+})
 </script>
 
 <style scoped lang="scss">
