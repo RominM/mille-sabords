@@ -22,6 +22,8 @@ const CODE_DIRS = [join(ROOT, 'app')]
 const CODE_EXT = new Set(['.vue', '.ts', '.js', '.scss', '.css'])
 const SOURCE_EXT = new Set(['.png', '.jpg', '.jpeg'])
 const DRY = process.argv.includes('--dry')
+/** Passage à part : réduire les WebP DÉJÀ convertis mais trop grands. */
+const RESIZE = process.argv.includes('--resize')
 
 /**
  * Largeur maximale par dossier, calée sur la taille d'affichage réelle
@@ -30,9 +32,27 @@ const DRY = process.argv.includes('--dry')
 const MAX_WIDTH = {
   dice: 320, // un dé occupe ~9,5 % d'un plateau de 1600 px → ~150 px
   character: 400, // avatar dans un cercle de ~40 px
-  cards: 700, // carte affichée sur ~14 % de large
+  cards: 420, // carte affichée sur 192 px de large (mesuré à 1440)
   ui: 2000, // décor plein écran (layout, loader)
   _default: 1200
+}
+
+/**
+ * Exceptions par FICHIER, parce que `ui/` mêle deux mondes : des décors plein
+ * écran, qui méritent leurs 1700 px, et des pièces minuscules qui traînaient la
+ * même définition — une icône de 1024² pour un bouton de 35 px.
+ *
+ * Les tailles d'affichage sont MESURÉES sur une fenêtre de 1440 px, et doublées
+ * pour les écrans à haute densité.
+ */
+const MAX_WIDTH_FILE = {
+  'wax-seal-lancer.webp': 256, // cachet affiché à 110 px
+  'wax-seal-stop.webp': 256,
+  'icon-rules.webp': 96, // bouton de 35 px
+  'gamer-slot.webp': 384, // fiche joueur de ~140 px
+  'main-cta.webp': 900, // plaque de 320 px, image dessinée à 130 %
+  'panel-bareme.webp': 540, // planche de tiroir, 341 px de large
+  'main-title.webp': 900 // plus large usage : 46 % du chargeur
 }
 
 const KB = n => `${(n / 1024).toFixed(0)} Ko`
@@ -48,6 +68,8 @@ async function walk(dir) {
 }
 
 function maxWidthFor(file) {
+  const byFile = MAX_WIDTH_FILE[basename(file)]
+  if (byFile) return byFile
   const folder = relative(IMAGES, file).split(/[\\/]/)[0]
   return MAX_WIDTH[folder] ?? MAX_WIDTH._default
 }
@@ -96,7 +118,54 @@ async function rewriteImports(renames) {
   return touched
 }
 
+/**
+ * Réduit une image DÉJÀ en WebP qui dépasse sa taille utile.
+ *
+ * Le mode normal ignore les WebP — c'est ce qui rend le script réexécutable
+ * sans risque. Mais une image trop grande le reste alors pour toujours, et le
+ * coût n'est pas que le poids : ce sont surtout des millions de pixels à
+ * DÉCODER au démarrage. D'où ce passage à part, à lancer sciemment.
+ */
+async function shrink(file) {
+  const before = (await stat(file)).size
+  const meta = await sharp(file).metadata()
+  const max = maxWidthFor(file)
+  if (!meta.width || meta.width <= max) return null
+
+  // `toBuffer` puis écriture : sharp ne peut pas écrire dans le fichier qu'il
+  // est en train de lire.
+  const buffer = await sharp(file).resize({ width: max }).webp({ quality: 82, effort: 6 }).toBuffer()
+  if (!DRY) await writeFile(file, buffer)
+  return { file, before, after: buffer.byteLength, from: meta.width, to: max }
+}
+
+async function resizeExisting() {
+  const files = (await walk(IMAGES)).filter(f => extname(f).toLowerCase() === '.webp')
+  const results = []
+  for (const f of files) {
+    const r = await shrink(f)
+    if (!r) continue
+    results.push(r)
+    const gain = (1 - r.after / r.before) * 100
+    console.log(
+      `  ${relative(IMAGES, r.file).padEnd(42)} ${KB(r.before).padStart(8)} → ${KB(r.after).padStart(8)}  (−${gain.toFixed(0)} %)  ${r.from}→${r.to}px`
+    )
+  }
+  if (results.length === 0) {
+    console.log('Aucune image ne dépasse sa taille utile.')
+    return
+  }
+  const before = results.reduce((s, r) => s + r.before, 0)
+  const after = results.reduce((s, r) => s + r.after, 0)
+  const pixels = results.reduce((s, r) => s + (r.from / r.to) ** 2, 0)
+  console.log(`\n${results.length} image(s) réduite(s) : ${KB(before)} → ${KB(after)}  (−${((1 - after / before) * 100).toFixed(0)} %)`)
+  console.log(`Pixels à décoder divisés par ${(pixels / results.length).toFixed(1)} en moyenne.`)
+  if (DRY) console.log('\n(simulation : aucun fichier modifié)')
+}
+
 async function main() {
+  if (RESIZE) return resizeExisting()
+
   const files = (await walk(IMAGES)).filter(f => SOURCE_EXT.has(extname(f).toLowerCase()))
   if (files.length === 0) {
     console.log('Rien à convertir — toutes les images sont déjà en WebP.')
