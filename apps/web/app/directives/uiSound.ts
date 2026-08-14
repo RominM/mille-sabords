@@ -6,8 +6,13 @@
  *                                    (la navigation de l'accueil change de vue
  *                                    au survol)
  *
- * Ne pas poser les deux sur un même élément : on entendrait le son deux fois,
- * au survol puis au clic.
+ * Les deux COHABITENT sur un bouton ordinaire : l'oreille y entend deux moments
+ * distincts — on arrive dessus, puis on appuie. Ce qu'il ne faut pas, c'est les
+ * réunir sur un élément dont le SURVOL EST déjà l'action (la navigation de
+ * l'accueil change de vue au survol) : le son dirait deux fois la même chose.
+ *
+ * Sur écran tactile, `mouseenter` et `click` partent dans la même milliseconde ;
+ * le garde-fou ci-dessous n'en laisse alors passer qu'un.
  *
  * Une valeur falsy neutralise la directive : `v-click-sound="canClick"` sert aux
  * éléments qui restent cliquables au sens du DOM mais inactifs au sens du jeu

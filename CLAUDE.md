@@ -63,8 +63,10 @@ Icônes : **Lucide** (`lucide-vue-next`), importées nommément.
 `/lab` est la page de réglage — exclue du build de production par `ignore` dans
 `nuxt.config.ts`, dont le chemin est relatif à la RACINE et non à `srcDir`.
 
-Directives : `v-click-sound` (clic), `v-hover-sound` (survol). Jamais les deux
-sur le même élément. Enregistrées dans `app/plugins/ui-sound.ts`.
+Directives : `v-click-sound` (clic), `v-hover-sound` (survol). Les deux
+cohabitent sur un bouton ordinaire — on arrive dessus, puis on appuie ; jamais
+sur un élément dont le SURVOL est déjà l'action (la navigation de l'accueil).
+Enregistrées dans `app/plugins/ui-sound.ts`.
 
 ## Constantes mesurées — NE PAS re-mesurer
 

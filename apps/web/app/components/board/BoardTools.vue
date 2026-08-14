@@ -2,6 +2,7 @@
   <div class="board-tools">
     <button
       v-click-sound
+      v-hover-sound
       v-tooltip="'Règles du jeu'"
       class="board-tools__button"
       type="button"
@@ -13,6 +14,7 @@
 
     <button
       v-click-sound
+      v-hover-sound
       v-tooltip="'Paramètres — son, et quitter la partie'"
       class="board-tools__button"
       type="button"

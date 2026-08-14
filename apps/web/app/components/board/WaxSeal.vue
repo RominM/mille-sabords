@@ -1,6 +1,7 @@
 <template>
   <button
     v-click-sound
+    v-hover-sound
     class="wax"
     type="button"
     :aria-label="label"

@@ -9,6 +9,7 @@
 
       <button
         v-click-sound
+        v-hover-sound
         v-tooltip="hint ?? label"
         class="side__tab"
         type="button"

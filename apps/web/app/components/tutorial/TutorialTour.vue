@@ -13,6 +13,7 @@
       <div class="tour__actions">
         <button
           v-click-sound
+          v-hover-sound
           class="btn btn--ghost tour__btn"
           type="button"
           :disabled="index === 0"
@@ -23,6 +24,7 @@
 
         <button
           v-click-sound
+          v-hover-sound
           class="btn tour__btn"
           type="button"
           :disabled="held"
@@ -32,7 +34,7 @@
         </button>
       </div>
 
-      <button v-click-sound class="tour__skip" type="button" @click="emit('close')">
+      <button v-click-sound v-hover-sound class="tour__skip" type="button" @click="emit('close')">
         Passer le tutoriel
       </button>
     </aside>
@@ -55,6 +57,8 @@
  * verrait à aucun typecheck, d'où le repli silencieux (voile sans trou) plutôt
  * qu'un écran cassé.
  */
+type Side = 'top' | 'bottom' | 'left' | 'right'
+
 interface Step {
   /** Zones à éclairer, réunies en un seul trou. Vide = pas de trou. */
   targets: string[]
@@ -64,6 +68,11 @@ interface Step {
   panel?: string
   /** Geste attendu du joueur avant de pouvoir avancer. */
   hold?: string
+  /**
+   * Côté imposé au parchemin. Sans lui, il se pose là où il reste le plus de
+   * place — ce qui ne tient pas compte de ce qu'il ne DOIT pas cacher.
+   */
+  side?: Side
 }
 
 const props = defineProps({
@@ -89,9 +98,9 @@ const STEPS: Step[] = [
     text: `Il ne borne pas ton tour mais chaque décision : ${props.seconds} secondes pour choisir quels dés garder, puis il repart à zéro. Il ne tourne pas tant que la visite dure.`
   },
   {
-    targets: ['.game__card'],
+    targets: ['.pcard__img'],
     title: 'La carte du tour',
-    text: 'Tirée avant ton premier lancer, elle pèse sur tout le reste : elle peut multiplier tes points, t’imposer un défi à tenir, ou te coller une tête de mort d’avance.'
+    text: 'Tirée avant ton premier lancer, elle pèse sur tout le reste : elle peut multiplier tes points, t’imposer un défi à tenir, ou te coller une tête de mort d’avance. Passe la souris sur la carte pour voir les capacités de celle-ci.'
   },
   {
     targets: ['.side--bareme'],
@@ -108,7 +117,10 @@ const STEPS: Step[] = [
   {
     targets: ['.board-dice', '.board-slots'],
     title: 'Garder, ou relancer',
-    text: 'Clique un dé pour le garder, ou glisse-le dans le cadre de ton choix. Les dés gardés comptent ; les autres repartent au lancer suivant.'
+    text: 'Clique un dé pour le garder, ou glisse-le dans le cadre de ton choix. Les dés gardés comptent ; les autres repartent au lancer suivant.',
+    // À gauche, sans discussion : c'est l'instant du choix, et la carte du tour
+    // — posée à droite — est ce qui le décide. La cacher ici serait absurde.
+    side: 'left'
   },
   {
     targets: ['.board-seals__stop'],
@@ -126,6 +138,8 @@ const STEPS: Step[] = [
 /** Marge autour de la zone éclairée, et entre le trou et le parchemin. */
 const PADDING = 10
 const GAP = 16
+/** Largeur de confort du parchemin — il se resserre si la bande est étroite. */
+const MAX_WIDTH = 360
 
 const cardEl = ref<HTMLElement | null>(null)
 const index = ref(0)
@@ -155,36 +169,59 @@ const clamp = (value: number, low: number, high: number): number =>
   Math.min(Math.max(value, low), Math.max(low, high))
 
 /**
- * Le parchemin se pose du côté où il reste le plus de place : au-dessus ou en
- * dessous de la zone éclairée, et à côté d'elle quand elle est trop haute pour
- * laisser passer. Suivre son bord au pixel près le ferait sauter d'un pas à
- * l'autre, et sortirait de l'écran dès que la zone touche un bord.
+ * Le parchemin se pose CONTRE sa zone, du côté où il tient — et le pas peut
+ * imposer ce côté quand il y a quelque chose à ne pas cacher. Sa largeur se
+ * réduit à la bande libre plutôt que de déborder sur la zone qu'il commente.
+ *
+ * Le centrer dans la bande, comme avant, l'éloignait de ce qu'il désigne : on
+ * lisait un texte sans savoir de quoi il parlait.
  */
 const cardStyle = computed(() => {
   const box = hole.value
   const { w, h } = viewport.value
   // Sans zone à éclairer — l'accueil de la visite — le parchemin tient le
   // centre de l'écran : il ne montre rien, il se présente.
-  if (!box || !w) return { left: '50%', top: '50%', translate: '-50% -50%' }
-
-  const card = { w: cardSize.value.w, h: cardSize.value.h }
-  const above = box.y - PADDING
-  const below = h - (box.y + box.h + PADDING)
-
-  if (Math.max(above, below) >= card.h + GAP) {
-    const top =
-      above > below ? above - card.h - GAP : box.y + box.h + PADDING + GAP
-    const centre = clamp(box.x + box.w / 2, card.w / 2 + GAP, w - card.w / 2 - GAP)
-    return { left: `${centre}px`, top: `${clamp(top, GAP, h - card.h - GAP)}px`, translate: '-50% 0' }
+  if (!box || !w) {
+    return { left: '50%', top: '50%', width: `${MAX_WIDTH}px`, translate: '-50% -50%' }
   }
 
-  const left = box.x - PADDING
-  const right = w - (box.x + box.w + PADDING)
-  const centre = left >= right ? left / 2 : w - right / 2
-  const top = clamp(box.y + box.h / 2 - card.h / 2, GAP, h - card.h - GAP)
+  const band: Record<Side, number> = {
+    top: box.y - PADDING,
+    bottom: h - (box.y + box.h + PADDING),
+    left: box.x - PADDING,
+    right: w - (box.x + box.w + PADDING)
+  }
+
+  const cardH = cardSize.value.h
+  const order: Side[] = step.value.side
+    ? [step.value.side]
+    : (['bottom', 'top', 'right', 'left'] as Side[]).sort((a, b) => band[b] - band[a])
+
+  const fits = (side: Side): boolean =>
+    band[side] >= (side === 'top' || side === 'bottom' ? cardH : 240) + GAP
+  const side = order.find(fits) ?? order[0]!
+
+  const width =
+    side === 'left' || side === 'right'
+      ? clamp(band[side] - GAP * 2, 200, MAX_WIDTH)
+      : Math.min(MAX_WIDTH, w - GAP * 2)
+
+  const horizontal = side === 'left' || side === 'right'
+  const centre = horizontal
+    ? side === 'left'
+      ? box.x - PADDING - GAP - width / 2
+      : box.x + box.w + PADDING + GAP + width / 2
+    : box.x + box.w / 2
+  const top = horizontal
+    ? box.y + box.h / 2 - cardH / 2
+    : side === 'top'
+      ? box.y - PADDING - GAP - cardH
+      : box.y + box.h + PADDING + GAP
+
   return {
-    left: `${clamp(centre, card.w / 2 + GAP, w - card.w / 2 - GAP)}px`,
-    top: `${top}px`,
+    left: `${clamp(centre, width / 2 + GAP, w - width / 2 - GAP)}px`,
+    top: `${clamp(top, GAP, h - cardH - GAP)}px`,
+    width: `${width}px`,
     translate: '-50% 0'
   }
 })
@@ -199,7 +236,10 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKey)
   window.removeEventListener('resize', measure)
   clearSettle()
-  panels.open(null)
+  // Le tiroir se referme APRÈS le démontage : `openPanel` est un état partagé,
+  // et le toucher pendant que Vue démonte cet arbre-ci ferait rendre le tiroir
+  // au milieu d'un démontage — la pire fenêtre pour bouger un `Teleport`.
+  void nextTick(() => panels.open(null))
 })
 
 function clearSettle(): void {
@@ -302,9 +342,10 @@ $veil: rgba(24, 14, 8, 0.78);
       height 0.25s ease;
   }
 
+  // La largeur vient du placement : elle se réduit à la bande libre.
   &__card {
     position: absolute;
-    width: min(24rem, calc(100vw - var(--space-5)));
+    max-width: calc(100vw - var(--space-5));
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
