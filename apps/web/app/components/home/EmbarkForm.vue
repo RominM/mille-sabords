@@ -65,6 +65,11 @@ function submit(): void {
     gap: var(--space-2);
     padding-right: var(--space-3);
     padding-bottom: calc(var(--plate-h) + 2cqh + var(--space-4));
+    // L'anneau de focus se dessine EN DEHORS du champ : sans cette gouttière, le
+    // conteneur qui défile le rognait au ras du bord gauche. La marge négative
+    // la reprend, pour que le formulaire reste aligné sur le reste du panneau.
+    padding-left: var(--space-1);
+    margin-left: calc(var(--space-1) * -1);
     overflow-y: auto;
   }
 

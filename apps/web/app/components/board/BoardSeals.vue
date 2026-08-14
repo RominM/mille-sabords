@@ -8,7 +8,7 @@
       <WaxSeal label="S’arrêter" :image="stopSeal" :disabled="!canStop" @click="emit('stop')" />
     </div>
 
-    <span v-if="botThinking" class="board-seals__bot">Le Corsaire réfléchit…</span>
+    <!-- <span v-if="botThinking" class="board-seals__bot">Le Corsaire réfléchit…</span> -->
   </div>
 </template>
 
@@ -59,20 +59,20 @@ const emit = defineEmits<{ roll: []; stop: [] }>()
   // Dans le couloir entre la rangée d'emplacements (droite : 74,3 %) et la
   // carte (gauche : 78 %), au-dessus de la rangée.
   &__roll {
-    left: 74.2%;
+    left: 72.2%;
     top: 60%;
-    width: 8.6cqw;
-    height: 8.6cqw;
+    width: 10cqw;
+    height: 10cqw;
   }
 
   // À l'OPPOSÉ de « Lancer » : même colonne, même taille, de l'autre côté de
   // la rangée d'emplacements. Les deux gestes du tour se répondent, et celui
   // qui met fin au tour ne se cherche pas dans un coin sombre.
   &__stop {
-    left: 74.2%;
-    top: 89%;
-    width: 8.6cqw;
-    height: 8.6cqw;
+    left: 80.2%;
+    top: 71%;
+    width: 9.4cqw;
+    height: 9.4cqw;
   }
 
   &__bot {

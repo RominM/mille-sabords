@@ -258,7 +258,8 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     const t = turn.value
     if (!t || t.phase === 'ended') return
     transport.send({ type: 'timeout' })
-    afterAction()
+    // Le temps écoulé clôt le tour : aucune décision ne s'ouvre derrière.
+    afterAction(false)
     // Le joueur est probablement absent : personne ne cliquera « Continuer ».
     // On laisse le récapitulatif à l'écran le temps d'être lu, puis on enchaîne
     // de nous-mêmes — c'est tout l'objet du minuteur.
@@ -367,7 +368,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     if (!remote && currentPlayer.value?.bot) void runBot()
   }
 
-  function afterAction(): void {
+  function afterAction(rolled: boolean): void {
     // En distant, l'état n'est pas encore revenu du serveur au moment où l'on
     // passe ici : le lire donnerait une réponse périmée. Le `watch` ci-dessus
     // fait le travail quand la réponse arrive.
@@ -377,10 +378,13 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     if (turn.value?.phase === 'ended') {
       mode.value = 'turnEnd'
       stopTimer()
-    } else {
-      // Une nouvelle décision commence : le joueur récupère tout son temps.
-      restartTimer()
+      return
     }
+    // SEUL un lancer ouvre une nouvelle décision, donc rend tout son temps au
+    // joueur. Réserver un dé sur l'Île au Trésor est une action du moteur comme
+    // une autre, mais c'est encore la MÊME décision : la remettre à zéro offrait
+    // un temps illimité à qui cliquait ses dés un par un.
+    if (rolled) restartTimer()
   }
 
   /**
@@ -388,11 +392,11 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
    * refusée revient dans `lastError`, qu'on montre au joueur sans enchaîner sur
    * la suite du tour.
    */
-  function human(send: () => void): void {
+  function human(send: () => void, rolled = false): void {
     if (botThinking.value) return
     send()
     transient.value = transport.lastError.value
-    if (!transient.value) afterAction()
+    if (!transient.value) afterAction(rolled)
   }
 
   const act = (action: TurnAction) => transport.send({ type: 'act', action })
@@ -451,7 +455,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     selected.value = s
   }
 
-  const roll = () => human(() => act({ type: 'roll' }))
+  const roll = () => human(() => act({ type: 'roll' }), true)
   const reroll = () =>
     human(() => {
       const g = guardianDie.value
@@ -461,7 +465,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
         ...(g !== null ? { guardianDieId: g } : {})
       })
       guardianDie.value = null
-    })
+    }, true)
   const stop = () => human(() => act({ type: 'stop' }))
 
   /**
