@@ -217,6 +217,15 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   // passe. Dans tous les cas la partie avance, même si un joueur s'absente.
   const TURN_SECONDS = DECISION_TIMEOUT_MS / 1000
   const secondsLeft = ref(TURN_SECONDS)
+  /**
+   * Décompte SUSPENDU. Le tutoriel s'en sert pour laisser lire : on gèle la
+   * valeur au lieu de couper le minuteur, sinon il faudrait le relancer à la
+   * main — et la moindre reprise oubliée rendrait le tour éternel.
+   *
+   * Le mode distant l'ignore : là-bas c'est le serveur qui expire les
+   * décisions, et rien de local ne peut suspendre son horloge.
+   */
+  const paused = ref(false)
   let timerId: ReturnType<typeof setInterval> | null = null
 
   function stopTimer(): void {
@@ -236,6 +245,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     // affiché se déduit de l'échéance qu'il diffuse (voir plus bas).
     if (remote) return
     timerId = setInterval(() => {
+      if (paused.value) return
       secondsLeft.value = Math.max(0, secondsLeft.value - 1)
       if (secondsLeft.value > 0) return
       stopTimer()
@@ -566,6 +576,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     WINNING_SCORE,
     TURN_SECONDS,
     secondsLeft,
+    paused,
     mode,
     difficulty,
     selected,

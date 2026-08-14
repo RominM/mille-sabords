@@ -24,6 +24,12 @@ export interface TableSetup {
   roster: TableSeat[]
   /** Difficulté commune à toutes les IA de la table. */
   difficulty: BotDifficulty
+  /**
+   * Accompagner le joueur sur son premier tour. Demandé à la mise en place —
+   * c'est le seul moment où la question a un sens — et consommé une fois, à
+   * l'ouverture de la table.
+   */
+  tutorial?: boolean
 }
 
 /** État partagé (Nuxt `useState` : une seule instance pour toute l'app). */

@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div
       class="side"
-      :class="{ 'side--open': open }"
+      :class="[`side--${id}`, { 'side--open': open }]"
       :style="{ '--side-top': `${top}%`, '--side-shift': `${shift}%` }"
     >
       <img :src="panelUrl" alt="" class="side__img" />

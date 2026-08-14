@@ -54,12 +54,8 @@ const you = previous?.roster.find((seat) => !seat.bot)
 const name = ref(you?.name ?? '')
 const avatar = ref(you?.avatar ?? defaultAvatar)
 const difficulty = ref<BotDifficulty>(previous?.difficulty ?? 'medium')
-/**
- * La case existe, RIEN ne la suit encore : le tutoriel reste à écrire, et son
- * choix n'est donc ni transmis à la table ni mémorisé. Volontaire — la case
- * pose la place que prendra la fonction, sans en préjuger la forme.
- */
-const tutorial = ref(false)
+/** Accompagner le joueur sur son premier tour, s'il le demande. */
+const tutorial = ref(previous?.tutorial ?? false)
 
 const canStart = computed(() => name.value.trim().length > 0)
 const hint = computed(() => (canStart.value ? '' : 'Choisis un nom pour embarquer.'))
@@ -67,6 +63,7 @@ const hint = computed(() => (canStart.value ? '' : 'Choisis un nom pour embarque
 function start(): void {
   const setup = {
     difficulty: difficulty.value,
+    tutorial: tutorial.value,
     roster: [
       { id: 'you', name: name.value.trim(), bot: false, avatar: avatar.value },
       { id: 'bot', name: 'Le Corsaire', bot: true }

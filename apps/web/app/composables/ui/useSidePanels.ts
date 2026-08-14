@@ -16,5 +16,14 @@ export const useSidePanels = () => {
     openPanel.value = openPanel.value === id ? null : id
   }
 
-  return { openPanel, isOpen, toggle }
+  /**
+   * Ouvre ce tiroir, sans jamais le refermer. Le tutoriel montre des contenus
+   * qui vivent dans les tiroirs : il doit pouvoir les ouvrir sans risquer de
+   * refermer celui qu'il vient d'ouvrir.
+   */
+  const open = (id: string | null): void => {
+    openPanel.value = id
+  }
+
+  return { openPanel, isOpen, toggle, open }
 }

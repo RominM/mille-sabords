@@ -4,11 +4,7 @@
 
     <div v-else-if="mode !== 'start'" class="game__stage">
       <div ref="plateauEl" class="game__board" :style="{ backgroundImage: `url(${layoutUrl})` }">
-        <TurnBar
-          v-if="gamePhase === 'playing' && turn"
-          :seconds="secondsLeft"
-          :total="TURN_SECONDS"
-        />
+        <TurnBar v-if="gamePhase === 'playing' && turn" :seconds="secondsLeft" :total="TURN_SECONDS" />
 
         <BoardTools @rules="showRules = true" @settings="showSettings = true" />
 
@@ -62,6 +58,13 @@
         <IslandAmbience v-if="isIsland" />
       </div>
     </div>
+
+    <TutorialTour
+      v-if="tourOpen"
+      :seconds="TURN_SECONDS"
+      :rolled="diceLanded"
+      @close="endTour"
+    />
 
     <TurnCall v-if="announcing && mode === 'playing'" />
 
@@ -122,6 +125,7 @@ const { sfxGain } = useSoundSettings()
 const {
   TURN_SECONDS,
   secondsLeft,
+  paused,
   mode,
   difficulty,
   slots,
@@ -163,18 +167,29 @@ const boarding = ref(true)
 const darkLaughAudio = ref<HTMLAudioElement | null>(null)
 const showRules = ref(false)
 const showSettings = ref(false)
+/** Visite guidée demandée à la mise en place, et pas encore terminée. */
+const touring = ref(false)
 
 const isBotTurn = computed(() => !!currentPlayer.value?.bot)
 const isIsland = computed(() => turn.value?.phase === 'island-roll')
+
+/**
+ * La visite ne s'ouvre qu'une fois la table VISIBLE : pendant l'embarquement,
+ * les zones qu'elle éclaire n'existent pas encore. Le minuteur, lui, est
+ * suspendu dès la mise en place — le joueur ne doit pas perdre de temps à
+ * regarder l'écran de chargement.
+ */
+const tourOpen = computed(() => touring.value && !boarding.value && !waitingForTable.value)
+
+/** La première volée est retombée : c'est ce que la visite attend pour enchaîner. */
+const diceLanded = computed(() => !rolling.value && turn.value?.phase === 'decision')
 
 /**
  * Le siège actif est-il le MIEN ? En solo, tout siège non-IA l'est. En multi il
  * faut le comparer à mon identifiant : sans ça chaque joueur verrait ses
  * boutons actifs pendant le tour des autres.
  */
-const isMySeat = computed(() =>
-  isSolo ? !isBotTurn.value : currentPlayer.value?.id === room.youId.value
-)
+const isMySeat = computed(() => (isSolo ? !isBotTurn.value : currentPlayer.value?.id === room.youId.value))
 
 /** Les cachets restent affichés en permanence ; ils sont grisés hors du tour. */
 const myTurn = computed(() => isMySeat.value && !rolling.value && turn.value?.phase !== 'ended')
@@ -217,9 +232,7 @@ const skulls = computed(() => {
  */
 const waitingForTable = computed(() => !isSolo && !turn.value)
 
-const boardingHint = computed(() =>
-  waitingForTable.value ? 'Connexion à la table…' : 'On embarque…'
-)
+const boardingHint = computed(() => (waitingForTable.value ? 'Connexion à la table…' : 'On embarque…'))
 
 /** Tour perdu : les yeux du crâne du plateau s'embrasent. */
 const isDefeat = computed(() => {
@@ -294,6 +307,12 @@ onMounted(function openTable() {
     const setup = tableSetup.value
     if (!setup?.roster.length) return
     newGame(setup.difficulty, setup.roster)
+    // La visite attend que la table soit dressée : elle éclaire des zones qui
+    // n'existent pas encore, et le joueur ne verrait que l'écran d'embarquement.
+    if (setup.tutorial) {
+      touring.value = true
+      paused.value = true
+    }
     tableSetup.value = null // consommée : « Rejouer » réutilisera le même équipage
     return
   }
@@ -313,6 +332,15 @@ onMounted(function openTable() {
 function portraitOf(playerId: string): string | undefined {
   if (isSolo) return avatarOf(playerId)
   return room.roster.value.find((seat) => seat.id === playerId)?.avatar || undefined
+}
+
+/**
+ * Fin de la visite — terminée ou passée, c'est le même geste. Le minuteur
+ * reprend là où il s'était arrêté : le joueur retrouve sa décision entière.
+ */
+function endTour(): void {
+  touring.value = false
+  paused.value = false
 }
 
 /**
@@ -371,8 +399,7 @@ watch(isDefeat, async (defeated) => {
     perspective: 90cqw;
 
     > * {
-      transform: rotateZ(var(--tilt-z, 0deg)) rotateX(var(--tilt-x, 0deg))
-        rotateY(var(--tilt-y, 0deg));
+      transform: rotateZ(var(--tilt-z, 0deg)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
     }
   }
 

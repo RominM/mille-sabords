@@ -46,6 +46,7 @@ Toute règle de jeu vit dans `packages/engine`, **jamais** dans l'UI.
 | `SidePanel` | Tiroir de bord d'écran (planche + languette). Ouverture EXCLUSIVE. |
 | `ScalePoints` / `TurnLog` | Contenus des deux tiroirs : barème, historique des tours. |
 | `TurnFlash` | Résultat du tour en grand, transparent, sans action. Remplace l'ancienne modale. |
+| `TutorialTour` | Visite guidée du plateau au premier tour : elle éclaire des zones, elle n'applique aucune règle. |
 | `WaxSeal`, `PirateCard`, `PlayerSlot`, `SkullEyes`, `AppLoader` | Plateau. |
 | `SmallScreenGuard` | Barre l'application sous 740 px. Tout en CSS, aucune mesure en JS. |
 
@@ -125,6 +126,7 @@ components/overlay/  ce qui se pose PAR-DESSUS (modales, annonces plein écran)
 components/panel/    les tiroirs latéraux et leur contenu
 components/home/     accueil et entrée en salle
 components/sound/    réglages sonores
+components/tutorial/ la visite guidée du plateau
 components/common/   sans domaine (chargeur, invites de démarrage)
 
 composables/game/    moteur d'UI, transport, saisie des dés, table

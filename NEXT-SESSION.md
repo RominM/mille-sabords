@@ -138,12 +138,34 @@ formulaire solo — **rien derrière**, le choix n'est ni transmis ni mémorisé
       les deux provenances (accueil et lobby) et enchaîne sans coupure sur
       l'attente réelle du serveur en multi. `AppLoader` accepte un `progress`
       nul — la jauge balaie au lieu d'inventer un pourcentage.
-- [ ] **Le bouton manquant côté lobby** — À PRÉCISER. Vérifié en salle : l'hôte
-      a bien sa plaque « Lever l'ancre » (grisée tant que l'équipage n'est pas
-      prêt), l'invité n'a que « Je suis paré » et « ← Retour ». Reste à savoir
-      lequel manque.
+- [x] **Le bouton manquant côté lobby** — ce n'était pas un manque : « Lever
+      l'ancre » se rendait en **0×0**, donc invisible même l'équipage paré. La
+      largeur par défaut de `PlateButton` valait `min(20rem, 100%)`, et dans un
+      parent qui se dimensionne sur son contenu (`justify-self: end`) ce `100 %`
+      ne peut pas se résoudre : `min()` le prend pour zéro. Défaut désormais en
+      LONGUEUR, plafonné par `max-width`.
 - [x] **Garde-fou mobile en CSS** : sous **740 px**, `SmallScreenGuard` barre
       tout. Requête de média seule, aucune mesure en JavaScript.
+
+### Tutoriel — fait le 2026-08-14
+
+`TutorialTour` accompagne le joueur sur son PREMIER tour, et seulement s'il a
+coché « Activer le tutoriel » à la mise en place solo (`TableSetup.tutorial`).
+Huit escales : accueil au centre de l'écran, sablier, carte du tour, barème,
+lancer, dés et cadres, arrêt, historique. Chacune éclaire sa zone par un trou
+dans le voile, et le parchemin se pose du côté où il reste de la place — à
+côté quand la zone est trop haute.
+
+Le minuteur est SUSPENDU tout du long (`useGame().paused` gèle le décompte au
+lieu de couper le minuteur : une reprise oubliée rendrait le tour éternel).
+L'escale « lancer » attend le geste — le bouton « Suivant » reste grisé
+jusqu'à ce que la volée soit retombée, puis la visite enchaîne d'elle-même —
+sans jamais bloquer « Passer le tutoriel » ni Échap.
+
+Les zones sont désignées par leur CLASSE CSS ; les tiroirs portent désormais
+`side--<id>` pour être visables de l'extérieur. Un renommage de classe ne se
+verrait à aucun typecheck : la visite se replie sur un voile sans trou plutôt
+que de casser l'écran.
 
 ### Bloquant pour jouer vraiment
 
