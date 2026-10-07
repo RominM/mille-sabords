@@ -1,6 +1,6 @@
 # Reckless Fathoms — brief de reprise
 
-> À jour au 2026-08-14. Les conventions, les constantes mesurées des assets et
+> À jour au 2026-10-07. Les conventions, les constantes mesurées des assets et
 > les pièges techniques vivent dans **`CLAUDE.md`**, lu automatiquement au
 > démarrage — ce document-ci ne parle que de l'ÉTAT et du RESTE À FAIRE.
 
@@ -10,6 +10,10 @@
 
 Jeu de dés type « pousse ta chance », jouable en solo contre l'IA **et en
 multijoueur en ligne**. Monorepo npm workspaces, Node 22, Windows.
+
+**Déployé depuis le 2026-10-07** sur une machine prêtée — arbitre et pages
+réunis, partie à deux éprouvée. Il ne manque que la porte vers l'extérieur
+(cf. § 4, *Hébergement*).
 
 ```
 packages/engine    Moteur pur TypeScript. AUTORITÉ des règles. 89 tests.
@@ -211,23 +215,92 @@ que de casser l'écran.
 - **Sons au survol** sur les cachets, les outils du plateau, les languettes des
   tiroirs et les boutons de la visite.
 
-### Bloquant pour jouer vraiment
+### Hébergement — EN PLACE depuis le 2026-10-07
 
-- [ ] **Hébergement du SERVEUR.** En attente du Raspberry Pi du collègue de
-      Romin (64 bits, 2 Go, Docker non installé — largement suffisant). Le
-      Dockerfile est écrit mais **jamais construit**. Prévoir un volume monté
-      sur `RF_DATA_DIR`, et Cloudflare Tunnel plutôt qu'une ouverture de port.
-- [ ] **Le SOLO peut partir en ligne sans attendre le Pi.** Le front est une
-      SPA et le solo tourne entièrement dans le navigateur, moteur compris : il
-      se construit en fichiers statiques (Cloudflare Pages, Netlify…). Le multi
-      s'annoncera de lui-même comme indisponible, sans écran cassé, depuis que
-      l'accueil garde le joueur quand le serveur ne répond pas.
-      **Réserve** : sur un hébergeur statique, `NUXT_PUBLIC_WS_URL` est figée à
-      la CONSTRUCTION — il n'y a pas de serveur pour l'injecter à l'exécution.
-      Le jour du Pi, il faudra reconstruire (une minute). La phrase « sans
-      reconstruire » ne vaut que derrière un serveur Node.
-      **Jamais construit non plus** : `npm run generate -w @rf/web` reste à
-      lancer une fois, serveur de dev arrêté.
+**La machine n'est pas un Raspberry** mais un **Dell OptiPlex 3060** prêté par
+Ludo, un collègue de Romin : Debian 13, x86-64, 3,7 Go de RAM (≈ 900 Mo libres),
+400 Go de disque. Docker, Node, git, curl et SSH y étaient déjà installés.
+
+**C'est SA machine, et il s'en sert.** Son nginx tient déjà les ports 80 et 443
+pour ses propres services, et une douzaine d'autres sont occupés (3306, 4000,
+5001, 8080, 8082, 8090…). On ne pose rien dans le partagé, on demande avant de
+toucher à son nginx, et on ne prend que des ports qu'on a vérifiés libres.
+
+Deux conteneurs à nous, sur le réseau Docker `rf-net` :
+
+| Conteneur | Rôle | Écoute |
+|---|---|---|
+| `reckless-fathoms` | l'arbitre, image bâtie depuis `apps/server/Dockerfile` | `127.0.0.1:8787` |
+| `rf-web` | un nginx À NOUS : sert `~/front`, relaie les WebSockets | `127.0.0.1:8899` |
+
+Les deux en `--restart unless-stopped`, et l'arbitre plafonné à
+`--memory 512m` — promesse tenue à Ludo : le jeu ne peut pas dévorer sa mémoire,
+et le tueur de processus de Linux n'ira jamais chercher ses services à lui.
+
+**Les deux n'écoutent que sur `127.0.0.1` : rien n'est exposé.** Éprouvé de bout
+en bout depuis le navigateur de la machine — salle créée, code diffusé, partie
+lancée à deux onglets. Le passage du WebSocket par le portier, celui qui casse
+en silence quand on l'oublie, est validé.
+
+#### Le détail qui a tout débloqué : l'adresse n'est PAS gravée
+
+`useRoom.serverUrl()` retombe sur l'hôte qui a servi la page quand
+`NUXT_PUBLIC_WS_URL` est vide. Le front se construit donc **sans connaître son
+adresse finale** : il suffira que les pages et l'arbitre sortent du même nom.
+C'est ce qui a permis de tout faire sans attendre la réponse de Ludo.
+
+Piège : `apps/web/.env` contient l'adresse de DÉVELOPPEMENT, lue à la
+construction. Sans la vider, `ws://localhost:8787` se grave dans le paquet.
+
+```bash
+NUXT_PUBLIC_WS_URL="" npm run generate -w @rf/web   # puis vérifier :
+grep -r "localhost:8787" apps/web/.output/public    # doit ne RIEN rendre
+```
+
+#### Il ne reste que la porte
+
+Ludo n'était pas chez lui. Une seule chose manque : que **`jeu.mgl-studio.fr`**
+(domaine de Romin, un sous-domaine ne coûte rien) arrive sur son nginx, et que
+celui-ci renvoie vers `127.0.0.1:8899`. La configuration à lui donner est
+exactement celle de `~/front-conf/default.conf`, déjà éprouvée — il faut qu'elle
+laisse passer `Upgrade` et `Connection`, sinon le jeu se connecte et se fait
+raccrocher aussitôt.
+
+**SSH n'est pas joignable de l'extérieur** : le 22 écoute bien sur la machine,
+mais la box ne redirige rien vers lui (`Connection timed out`, alors que le 3390
+du bureau à distance répond). Tout s'est donc fait par xrdp, en copier-coller.
+Une clé est déjà déposée dans `~/.ssh/authorized_keys` là-bas, et sa moitié
+privée est sur le PC de Romin (`~/.ssh/rf-deploy`) : le jour où Ludo ouvre un
+port, l'accès direct marche sans rien retoucher.
+
+#### Mettre à jour, plus tard
+
+**L'arbitre**, après modification du moteur ou du serveur :
+
+```bash
+cd ~/game && git pull && \
+docker build -f apps/server/Dockerfile -t reckless-fathoms . && \
+docker rm -f reckless-fathoms && \
+docker run -d --name reckless-fathoms --restart unless-stopped --memory 512m \
+  --network rf-net -p 127.0.0.1:8787:8787 -v rf-data:/data reckless-fathoms
+```
+
+Les parties en cours survivent : elles vivent dans le volume `rf-data`.
+
+**Le front** se construit sur le PC (une construction Nuxt demande plus de
+mémoire qu'il n'en reste là-bas), puis voyage par une branche du dépôt :
+
+```bash
+# sur le PC, serveur de dev ARRÊTÉ
+NUXT_PUBLIC_WS_URL="" npm run generate -w @rf/web
+# publier le contenu de apps/web/.output/public sur la branche `deploy-front`
+# sur l'OptiPlex
+cd ~/front && git pull
+```
+
+`~/front` est un clone superficiel de la branche `deploy-front`, qui ne contient
+QUE le résultat de la construction — jamais de code source. nginx la lit en
+direct : aucun conteneur à relancer.
 
 ### Décor et finitions
 
