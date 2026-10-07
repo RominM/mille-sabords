@@ -1,0 +1,1 @@
+import"./CpTM14uR.js";var e=``+new URL(`main-title.Cg7wiEad.webp`,import.meta.url).href;export{e as t};
