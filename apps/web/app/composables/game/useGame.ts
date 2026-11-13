@@ -18,7 +18,7 @@ import {
   type TurnAction,
   type TurnState
 } from '@rf/engine'
-import { RECAP_MS } from '@rf/protocol'
+import { RECAP_MS, TURN_CALL_MS } from '@rf/protocol'
 
 export type Mode = 'start' | 'playing' | 'turnEnd' | 'finished'
 
@@ -48,7 +48,15 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   /** Tête de mort désignée pour la relance exceptionnelle de la Gardienne. */
   const guardianDie = ref<number | null>(null)
   const botThinking = ref(false)
+  /**
+   * Celui dont le tour est À L'ÉCRAN — et non le joueur courant du moteur.
+   *
+   * Le moteur passe la main dès la fin du tour, pendant que le score est encore
+   * affiché : lire le joueur courant mettait le nom du SUIVANT sur le score du
+   * précédent. On ne change donc d'acteur qu'à l'ouverture d'un tour.
+   */
   const turnActor = ref('')
+  const actorIndex = ref(-1)
   const transient = ref('')
   /** Vrai pendant le jet de dés : les boutons d'action sont alors inactifs. */
   const rolling = ref(false)
@@ -190,15 +198,21 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
    */
   const paused = ref(false)
   let timerId: ReturnType<typeof setInterval> | null = null
+  let graceId: ReturnType<typeof setTimeout> | null = null
 
   function stopTimer(): void {
+    if (graceId) {
+      clearTimeout(graceId)
+      graceId = null
+    }
     if (timerId) {
       clearInterval(timerId)
       timerId = null
     }
   }
 
-  function restartTimer(): void {
+  /** `grace` : délai avant que le décompte ne commence, barre pleine. */
+  function restartTimer(grace = 0): void {
     stopTimer()
     secondsLeft.value = TURN_SECONDS
     // L'IA joue seule et sans délibérer : lui opposer un minuteur n'aurait pas
@@ -207,6 +221,13 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     // En distant, c'est le serveur qui expire les décisions — le décompte
     // affiché se déduit de l'échéance qu'il diffuse (voir plus bas).
     if (remote) return
+    if (grace > 0) {
+      graceId = setTimeout(() => {
+        graceId = null
+        restartTimer()
+      }, grace)
+      return
+    }
     timerId = setInterval(() => {
       if (paused.value) return
       secondsLeft.value = Math.max(0, secondsLeft.value - 1)
@@ -220,14 +241,11 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     const t = turn.value
     if (!t || t.phase === 'ended') return
     transport.send({ type: 'timeout' })
-    // Le temps écoulé clôt le tour : aucune décision ne s'ouvre derrière.
+    // Le temps écoulé clôt le tour : aucune décision ne s'ouvre derrière. La
+    // suite est celle de tout tour fini — le récapitulatif s'efface de lui-même
+    // (cf. `showResult`). Une seconde minuterie ici enchaînait DEUX fois, et
+    // sautait un joueur.
     afterAction(false)
-    // Le joueur est probablement absent : personne ne cliquera « Continuer ».
-    // On laisse le récapitulatif à l'écran le temps d'être lu, puis on enchaîne
-    // de nous-mêmes — c'est tout l'objet du minuteur.
-    setTimeout(() => {
-      if (mode.value === 'turnEnd') continueGame()
-    }, 2500)
   }
 
   /** Ticker d'AFFICHAGE du mode distant, distinct du minuteur local. */
@@ -250,7 +268,12 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
       snapshot,
       (s) => {
         if (!s) return
-        turnActor.value = s.players[s.currentPlayerIndex]?.name ?? ''
+        // Tour terminé : la main est déjà passée, l'acteur reste celui du score.
+        // Seule exception, l'arrivée en cours de route, où l'on n'en a aucun.
+        if (s.turn?.phase !== 'ended' || actorIndex.value === -1) {
+          actorIndex.value = s.currentPlayerIndex
+          turnActor.value = s.players[s.currentPlayerIndex]?.name ?? ''
+        }
         mode.value =
           s.phase === 'finished' ? 'finished' : s.turn?.phase === 'ended' ? 'turnEnd' : 'playing'
       },
@@ -265,8 +288,10 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     // l'expiration réelle reste arbitrée par le serveur.
     remoteTickId = setInterval(() => {
       const deadline = snapshot.value?.decisionDeadline
+      // L'échéance inclut l'annonce du tour : on plafonne, pour que la barre
+      // reste pleine pendant « À toi de jouer » au lieu d'afficher 53 s.
       secondsLeft.value = deadline
-        ? Math.max(0, Math.round((deadline - Date.now()) / 1000))
+        ? Math.min(TURN_SECONDS, Math.max(0, Math.round((deadline - Date.now()) / 1000)))
         : TURN_SECONDS
     }, 500)
   }
@@ -325,8 +350,11 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     // ignoré, au pire une course avec sa propre horloge.
     if (!remote) transport.send({ type: 'start-turn' })
     turnActor.value = currentPlayer.value?.name ?? ''
+    actorIndex.value = currentIndex.value
     mode.value = 'playing'
-    restartTimer()
+    // Le décompte attend la fin de « À toi de jouer » : lire l'annonce ne doit
+    // rien coûter au joueur. (L'IA n'a ni annonce ni minuteur.)
+    restartTimer(TURN_CALL_MS)
     if (!remote && currentPlayer.value?.bot) void runBot()
   }
 
@@ -558,6 +586,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     showResult,
     rollSeq,
     turnActor,
+    actorIndex,
     transient,
     turn,
     players,

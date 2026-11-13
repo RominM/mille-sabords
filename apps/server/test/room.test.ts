@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DECISION_TIMEOUT_MS } from '@rf/engine'
-import { Room, RECAP_MS, LOBBY_GRACE_MS, type RoomSnapshot } from '../src/room.js'
+import { Room, TURN_PAUSE_MS, TURN_CALL_MS, LOBBY_GRACE_MS, type RoomSnapshot } from '../src/room.js'
 import type { LobbyView, SeatView, ServerMessage } from '@rf/protocol'
 
 /** Salle instrumentée : on capture ce qu'elle émet, à qui. */
@@ -154,10 +154,19 @@ describe('partie', () => {
     expect(lastStateFor(a)!.turn!.phase).toBe('ended')
 
     // Personne ne clique : le serveur enchaîne de lui-même après le récap.
-    room.tick(RECAP_MS - 1)
+    room.tick(TURN_PAUSE_MS - 1)
     expect(lastStateFor(a)!.turn!.phase).toBe('ended')
-    room.tick(RECAP_MS + 1)
+    room.tick(TURN_PAUSE_MS + 1)
     expect(lastStateFor(a)!.currentPlayerIndex).not.toBe(depart)
+    expect(lastStateFor(a)!.turn!.phase).toBe('first-roll')
+  })
+
+  it('le temps de l’annonce n’est pas pris sur la décision', () => {
+    const { room, a, actif, lastStateFor } = enDecision()
+    room.handle(actif, { t: 'act', action: { type: 'stop' } }, 0)
+    const ouverture = TURN_PAUSE_MS + 1
+    room.tick(ouverture)
+    expect(lastStateFor(a)!.decisionDeadline).toBe(ouverture + DECISION_TIMEOUT_MS + TURN_CALL_MS)
   })
 
   it('un joueur qui revient retrouve son siège et ses points', () => {
@@ -212,7 +221,7 @@ describe('partie', () => {
     // La table continue de tourner : le minuteur fait avancer les tours.
     const avant = lastStateFor(b)!.currentPlayerIndex
     room.tick(60_000)
-    room.tick(60_000 + RECAP_MS + 1)
+    room.tick(60_000 + TURN_PAUSE_MS + 1)
     expect(lastStateFor(b)!.currentPlayerIndex).not.toBe(avant)
   })
 })
@@ -287,5 +296,32 @@ describe('reprise après redémarrage', () => {
     // Les sockets n'ont pas survécu : prétendre le contraire enverrait l'état à
     // des destinataires inexistants et fausserait le ramassage des salles.
     expect(repris.room.isEmpty).toBe(true)
+  })
+})
+
+describe('cadence de fin de tour', () => {
+  it('une table d’absents et d’une IA enchaîne ses tours sans se bloquer', () => {
+    const sent: ServerMessage[] = []
+    const room = new Room('WXYZ', (_to, msg) => void sent.push(msg))
+    const a = room.join('tok-a', 'Romin', 'av', 0)!
+    const b = room.join('tok-b', 'Ami', 'av', 0)!
+    room.handle(a, { t: 'add-bot' }, 0)
+    room.handle(a, { t: 'ready', ready: true }, 0)
+    room.handle(b, { t: 'ready', ready: true }, 0)
+    room.handle(a, { t: 'start' }, 0)
+
+    // Personne ne joue : les humains expirent, l'IA joue. On avance seconde par
+    // seconde pendant dix minutes et l'on compte les tours qui s'ouvrent.
+    let opened = 0
+    let before = sent.length
+    for (let t = 1_000; t <= 600_000; t += 1_000) {
+      room.tick(t)
+      for (const msg of sent.slice(before)) {
+        // Un état par joueur humain : on ne compte que celui destiné à A.
+        if (msg.t === 'state' && msg.youId === a && msg.game.turn?.phase === 'first-roll') opened++
+      }
+      before = sent.length
+    }
+    expect(opened).toBeGreaterThan(8)
   })
 })

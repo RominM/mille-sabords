@@ -9,7 +9,7 @@
         <BoardCrew
           :players="players"
           :avatars="portraits"
-          :current-index="gamePhase === 'playing' ? currentIndex : -1"
+          :current-index="gamePhase === 'playing' ? shownIndex : -1"
         />
 
         <div v-if="potentialScore !== null && !rolling" class="game__live" :style="zoneStyle(LIVE_ZONE)">
@@ -133,6 +133,7 @@ const {
   showResult,
   rollSeq,
   turnActor,
+  actorIndex,
   transient,
   turn,
   players,
@@ -171,6 +172,15 @@ const showSettings = ref(false)
 /** Visite guidée demandée à la mise en place, et pas encore terminée. */
 const touring = ref(false)
 
+/**
+ * Le portrait éclairé. Tant que le score d'un tour est à l'écran, c'est celui
+ * qui l'a fait : le moteur a déjà passé la main, mais l'éclairer AVANT
+ * l'annonce associait le score du précédent au visage du suivant.
+ */
+const shownIndex = computed(() =>
+  turn.value?.phase === 'ended' && actorIndex.value !== -1 ? actorIndex.value : currentIndex.value
+)
+
 const isBotTurn = computed(() => !!currentPlayer.value?.bot)
 const isIsland = computed(() => turn.value?.phase === 'island-roll')
 
@@ -208,7 +218,8 @@ const canStop = computed(() => myTurn.value && turn.value?.phase === 'decision')
 // En phase de décision, le cachet ne s'allume que si la relance est LÉGALE :
 // au moins deux dés à relancer, et au moins un dé gardé.
 const canRoll = computed(() => {
-  if (!myTurn.value) return false
+  // Pendant « À toi de jouer », on lit : lancer sous l'annonce la masquerait.
+  if (!myTurn.value || announcing.value) return false
   const phase = turn.value?.phase ?? ''
   if (phase === 'first-roll' || phase === 'island-roll') return true
   return phase === 'decision' && eligibleReroll().length > 0

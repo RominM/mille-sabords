@@ -17,11 +17,29 @@ import {
   type BotDifficulty,
   type GameState
 } from '@rf/engine'
-import { BOT_STEP_MS, RECAP_MS, type ClientMessage, type LobbyView, type SeatView, type ServerMessage } from '@rf/protocol'
+import {
+  BOT_STEP_MS,
+  RECAP_MS,
+  ROLL_SETTLE_MS,
+  TURN_CALL_MS,
+  type ClientMessage,
+  type LobbyView,
+  type SeatView,
+  type ServerMessage
+} from '@rf/protocol'
 
 // Le temps laissé au résultat d'un tour vient du protocole : le front l'utilise
 // pour la même chose, et deux valeurs divergentes désynchroniseraient l'écran.
-export { BOT_STEP_MS, RECAP_MS }
+export { BOT_STEP_MS, RECAP_MS, TURN_CALL_MS }
+
+/**
+ * Pause entre la fin d'un tour et l'ouverture du suivant.
+ *
+ * Le score ne s'affiche qu'une fois les dés RETOMBÉS : compter le récapitulatif
+ * dès la fin du tour l'amputait du vol, et « À toi de jouer » arrivait presque
+ * sur le score. On lui rend donc ses cinq secondes pleines.
+ */
+export const TURN_PAUSE_MS = ROLL_SETTLE_MS + RECAP_MS
 /** Un siège déconnecté avant le départ finit par libérer sa place. */
 export const LOBBY_GRACE_MS = 30_000
 
@@ -362,7 +380,13 @@ export class Room {
   // ── Déroulement, piloté par le serveur ─────────────────────────────────────
 
   private beginTurn(): void {
-    this.game!.startTurn()
+    const game = this.game!
+    game.startTurn()
+    // Un humain commence par lire « À toi de jouer » : ce temps-là ne doit pas
+    // être pris sur sa décision. L'IA, elle, n'a pas d'annonce.
+    if (!game.currentPlayer.bot && game.state.decisionDeadline !== null) {
+      game.state.decisionDeadline += TURN_CALL_MS
+    }
     this.afterGameChange()
   }
 
@@ -376,7 +400,7 @@ export class Room {
     } else if (!turn || turn.phase === 'ended') {
       // Laisser le récapitulatif à l'écran, puis enchaîner de nous-mêmes : aucun
       // client ne doit pouvoir bloquer la table en ne cliquant pas.
-      this.nextStepAt = this.now + RECAP_MS
+      this.nextStepAt = this.now + TURN_PAUSE_MS
     } else if (game.currentPlayer.bot) {
       this.nextStepAt = this.now + BOT_STEP_MS
     } else {

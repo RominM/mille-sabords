@@ -18,6 +18,24 @@ import type { BotDifficulty, GameState, TurnAction } from '@rf/engine'
 export const RECAP_MS = 5_000
 
 /**
+ * Le temps que la volée met à RETOMBER, dernier dé compris.
+ *
+ * Le moteur tranche le tour à l'instant du jet, mais le score ne s'affiche
+ * qu'une fois les dés posés. Le serveur doit donc ajouter ce temps-là au
+ * récapitulatif, sinon le score était amputé de la durée du vol (~3 s sur 5).
+ * Le front en vérifie la cohérence avec son réglage du jet (`DICE_THROW`).
+ */
+export const ROLL_SETTLE_MS = 1_700
+
+/**
+ * Durée de l'annonce « À toi de jouer ».
+ *
+ * Partagée : le front l'affiche, le serveur la retranche du temps de décision —
+ * le joueur ne doit pas perdre ses premières secondes à lire l'annonce.
+ */
+export const TURN_CALL_MS = 2_500
+
+/**
  * Cadence de l'IA : le temps qu'elle laisse entre deux de ses gestes.
  *
  * Partagé pour la même raison que `RECAP_MS` : le serveur l'applique, le front

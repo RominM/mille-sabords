@@ -1,7 +1,7 @@
 import type { TurnState } from '@rf/engine'
-
-/** Le temps que l'annonce reste à l'écran. Elle réveille, elle n'explique pas. */
-const TURN_CALL_MS = 2_500
+// Le temps que l'annonce reste à l'écran. Partagé : le serveur l'ajoute au
+// temps de décision, pour que la lire ne coûte rien au joueur.
+import { TURN_CALL_MS } from '@rf/protocol'
 
 /**
  * « À toi de jouer » au début de NOTRE tour.
