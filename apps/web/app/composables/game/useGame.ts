@@ -69,6 +69,25 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   const currentIndex = computed(() => snapshot.value?.currentPlayerIndex ?? 0)
   const currentPlayer = computed(() => players.value[currentIndex.value] ?? null)
   /**
+   * Je REGARDE jouer quelqu'un d'autre (multi). On se fie au joueur À L'ÉCRAN
+   * et non au joueur courant du moteur : pendant le score de fin de tour, la
+   * main est déjà passée, mais c'est encore le rangement du précédent qu'on doit
+   * voir.
+   */
+  const watching = computed(
+    () => remote && players.value[actorIndex.value]?.id !== transport.youId.value
+  )
+  /**
+   * Dés choisis par le joueur à l'écran : les miens quand je joue, ceux que le
+   * serveur relaie quand je regarde. Ma propre sélection ne veut rien dire sur
+   * le tour d'un autre.
+   */
+  const chosenIds = computed<Set<number>>(() =>
+    watching.value
+      ? new Set((transport.table.value ?? []).filter((id): id is number => id !== null))
+      : selected.value
+  )
+  /**
    * Dés GARDÉS : ceux choisis par le joueur, plus les têtes de mort
    * (verrouillées, donc gardées d'office) et les dés réservés de l'Île au
    * Trésor. La définition vit ici et non dans l'écran : la table des
@@ -82,7 +101,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
         (d) =>
           d.face !== null &&
           (d.banked ||
-            selected.value.has(d.id) ||
+            chosenIds.value.has(d.id) ||
             // Une tête de mort QUI VIENT DE SORTIR reste au centre le temps du
             // vol : c'est la face qu'on veut voir tomber, elle ne doit pas
             // sauter dans son cadre avant d'avoir fini de rouler.
@@ -96,6 +115,40 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   })
 
   watch(keptIds, syncSlots, { immediate: true })
+
+  /**
+   * Spectateur : les cadres reprennent l'ordre EXACT du joueur actif — il range
+   * ses dés comme il l'entend, et c'est ce rangement-là qu'on commente.
+   *
+   * Déclaré après la synchronisation ci-dessus, donc exécuté après elle : sans
+   * quoi l'ordre relayé serait aussitôt retassé dans les premiers cadres libres.
+   * Le `syncSlots` final ne fait qu'ajouter les têtes que le relais n'a pas
+   * encore reçues (tour d'une IA, qui ne range rien).
+   */
+  watch(
+    [() => transport.table.value, watching],
+    () => {
+      const table = transport.table.value
+      if (!watching.value || !table) return
+      slots.value = [...table]
+      syncSlots(keptIds.value)
+    },
+    { immediate: true }
+  )
+
+  /**
+   * Joueur actif : chaque changement de rangement part au serveur, qui le
+   * relaie aux autres. Seulement le mien, seulement pendant mon tour — et pas
+   * deux fois le même, chaque mouvement de la table déclenchant ce `watch`.
+   */
+  let tableSent = ''
+  watch(slots, (next) => {
+    if (!remote || watching.value || !turn.value || turn.value.phase === 'ended') return
+    const signature = JSON.stringify(next)
+    if (signature === tableSent) return
+    tableSent = signature
+    transport.send({ type: 'table', slots: [...next] })
+  })
 
   const history = computed(() => snapshot.value?.history ?? [])
   const gamePhase = computed(() => snapshot.value?.phase ?? 'playing')
@@ -369,6 +422,9 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   function clearTable(): void {
     selected.value = new Set()
     clearSlots()
+    // Le serveur remet sa table à zéro à chaque tour : ce qu'on lui a envoyé
+    // au tour d'avant ne vaut plus, même si le prochain rangement y ressemble.
+    tableSent = ''
   }
 
   function startTurn(): void {

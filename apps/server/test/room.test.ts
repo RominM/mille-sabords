@@ -325,3 +325,54 @@ describe('cadence de fin de tour', () => {
     expect(opened).toBeGreaterThan(8)
   })
 })
+
+describe('rangement des dés relayé aux autres', () => {
+  /** Dernier rangement diffusé à toute la table. */
+  const lastTable = (sent: { to: string; msg: ServerMessage }[]) => {
+    for (let i = sent.length - 1; i >= 0; i--) {
+      const m = sent[i]!.msg
+      if (m.t === 'table') return m.slots
+    }
+    return null
+  }
+
+  it('le joueur actif range ses dés : toute la table le voit', () => {
+    const { room, sent, actif } = enDecision()
+    room.handle(actif, { t: 'table', slots: [4, null, 2, null, null, null, null, null] }, 0)
+    const diffusion = sent[sent.length - 1]!
+    expect(diffusion.to).toBe('all')
+    expect(lastTable(sent)).toEqual([4, null, 2, null, null, null, null, null])
+  })
+
+  it('un autre joueur ne peut pas brouiller la table de celui qui joue', () => {
+    const { room, sent, a, b, actif } = enDecision()
+    const autre = actif === a ? b : a
+    room.handle(actif, { t: 'table', slots: [1, null, null, null, null, null, null, null] }, 0)
+    room.handle(autre, { t: 'table', slots: [5, 6, null, null, null, null, null, null] }, 0)
+    expect(lastTable(sent)).toEqual([1, null, null, null, null, null, null, null])
+  })
+
+  it('un rangement mal formé est ignoré', () => {
+    const { room, sent, actif } = enDecision()
+    const avant = lastTable(sent)
+    for (const slots of [
+      [1, 1, null, null, null, null, null, null], // doublon
+      [9, null, null, null, null, null, null, null], // dé inexistant
+      [1, null], // pas huit cadres
+      'n’importe quoi'
+    ]) {
+      room.handle(actif, { t: 'table', slots: slots as never }, 0)
+    }
+    expect(lastTable(sent)).toEqual(avant)
+  })
+
+  it('le tour suivant repart d’une table vide, chez tout le monde', () => {
+    const { room, sent, actif } = enDecision()
+    room.handle(actif, { t: 'table', slots: [3, null, null, null, null, null, null, null] }, 0)
+    room.handle(actif, { t: 'act', action: { type: 'stop' } }, 0)
+    // Pendant le score, on voit encore le rangement de celui qui a joué.
+    expect(lastTable(sent)).toEqual([3, null, null, null, null, null, null, null])
+    room.tick(TURN_PAUSE_MS + 1)
+    expect(lastTable(sent)).toEqual(Array(8).fill(null))
+  })
+})

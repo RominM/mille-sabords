@@ -11,6 +11,7 @@
  */
 import type { Ref, ShallowRef } from 'vue'
 import { Game, IllegalActionError, type GameState, type TurnAction } from '@rf/engine'
+import type { TableSlots } from '@rf/protocol'
 
 /**
  * Les commandes que le client peut émettre. Le serveur les recevra telles
@@ -23,6 +24,8 @@ export type GameCommand =
   | { type: 'start-turn' }
   | { type: 'act'; action: TurnAction }
   | { type: 'timeout' }
+  /** Mon rangement des dés, pour les autres. Sans objet en solo. */
+  | { type: 'table'; slots: TableSlots }
 
 export interface GameTransport {
   /** Dernier état connu. Nouvelle identité à chaque publication (réactivité). */
@@ -37,6 +40,13 @@ export interface GameTransport {
    * Faux en local : c'est l'onglet qui doit faire tourner la partie.
    */
   remote: boolean
+  /**
+   * Rangement du joueur ACTIF, tel que le serveur le relaie — `null` en solo,
+   * où il n'y a personne d'autre à qui le montrer.
+   */
+  table: Ref<TableSlots | null>
+  /** Mon siège, pour savoir si le tour à l'écran est le mien. `null` en solo. */
+  youId: Ref<string | null>
   send: (cmd: GameCommand) => void
   close: () => void
 }
@@ -90,6 +100,8 @@ export const createLocalTransport = (): GameTransport => {
     state,
     lastError,
     remote: false,
+    table: ref(null),
+    youId: ref(null),
     send,
     close: () => {
       game = null
@@ -108,8 +120,11 @@ export const createNetworkTransport = (room: ReturnType<typeof useRoom>): GameTr
   state: room.gameState,
   lastError: room.error,
   remote: true,
+  table: room.table,
+  youId: room.youId,
   send: (cmd) => {
     if (cmd.type === 'act') room.send({ t: 'act', action: cmd.action })
+    if (cmd.type === 'table') room.send({ t: 'table', slots: cmd.slots })
     // Les autres commandes sont volontairement ignorées : les émettre serait
     // demander au serveur ce qu'il fait déjà de lui-même.
   },

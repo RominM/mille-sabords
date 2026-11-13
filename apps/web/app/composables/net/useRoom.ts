@@ -9,7 +9,7 @@
  * serveur répond. Toute règle refusée revient par `error`, jamais par une
  * exception : c'est une réponse, pas un incident.
  */
-import type { ClientMessage, LobbyView, SeatView, ServerMessage } from '@rf/protocol'
+import type { ClientMessage, LobbyView, SeatView, ServerMessage, TableSlots } from '@rf/protocol'
 import type { BotDifficulty, GameState } from '@rf/engine'
 
 /** Clé du jeton d'identité : c'est lui qui rend son siège au joueur. */
@@ -65,6 +65,8 @@ const lobby = ref<LobbyView | null>(null)
 const roster = ref<SeatView[]>([])
 const gameState = shallowRef<GameState | null>(null)
 const youId = ref<string | null>(null)
+/** Rangement des dés du joueur actif, relayé par le serveur. */
+const table = ref<TableSlots | null>(null)
 const code = ref('')
 const error = ref('')
 const status = ref<RoomStatus>('idle')
@@ -113,6 +115,9 @@ export const useRoom = () => {
         gameState.value = msg.game
         youId.value = msg.youId
         status.value = 'playing'
+        return
+      case 'table':
+        table.value = msg.slots
         return
       case 'error':
         error.value = msg.message
@@ -251,6 +256,7 @@ export const useRoom = () => {
     connected,
     code,
     youId,
+    table,
     lobby,
     roster,
     gameState,

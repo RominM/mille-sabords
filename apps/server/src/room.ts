@@ -25,7 +25,8 @@ import {
   type ClientMessage,
   type LobbyView,
   type SeatView,
-  type ServerMessage
+  type ServerMessage,
+  type TableSlots
 } from '@rf/protocol'
 
 // Le temps laissé au résultat d'un tour vient du protocole : le front l'utilise
@@ -89,6 +90,13 @@ export class Room {
   private seq = 0
   /** Dernière composition diffusée : on ne réémet que si elle a changé. */
   private rosterSent = ''
+  /**
+   * Rangement des dés du joueur actif, tel qu'il l'a annoncé. De la mise en
+   * scène : on le garde pour le rejouer à qui arrive (ou recharge) en plein
+   * tour, mais il n'entre pas dans la sauvegarde — perdu, il se reconstruit au
+   * premier geste du joueur.
+   */
+  private table: TableSlots = emptyTable()
 
   constructor(
     code: string,
@@ -189,6 +197,9 @@ export class Room {
       for (const s of this.seats) {
         if (!s.bot && s.connected) this.emit(s.id, { t: 'state', game: this.game.state, youId: s.id })
       }
+      // Le rangement suit l'état : un tour qui s'ouvre le remet à zéro chez
+      // tous, et qui arrive en cours de tour le reçoit avec le reste.
+      this.emit('all', { t: 'table', slots: this.table })
       return
     }
     this.emit('all', { t: 'lobby', lobby: this.view() })
@@ -339,6 +350,9 @@ export class Room {
 
       case 'act':
         return this.act(seatId, msg)
+
+      case 'table':
+        return this.arrange(seatId, msg.slots)
     }
   }
 
@@ -377,11 +391,30 @@ export class Room {
     this.afterGameChange()
   }
 
+  /**
+   * Relaie le rangement du joueur actif à toute la table.
+   *
+   * Aucune règle n'en dépend — les faces viennent toujours de l'état arbitré —,
+   * mais on ne relaie que ce qui a une forme sensée, et seulement de la part du
+   * joueur dont c'est le tour : un autre ne doit pas pouvoir brouiller l'écran
+   * de ceux qui regardent.
+   */
+  private arrange(seatId: string, slots: unknown): void {
+    const turn = this.game?.state.turn
+    if (!turn || turn.phase === 'ended') return
+    if (this.game!.currentPlayer.id !== seatId) return
+    const clean = sanitizeTable(slots, turn.dice.length)
+    if (!clean) return
+    this.table = clean
+    this.emit('all', { t: 'table', slots: clean })
+  }
+
   // ── Déroulement, piloté par le serveur ─────────────────────────────────────
 
   private beginTurn(): void {
     const game = this.game!
     game.startTurn()
+    this.table = emptyTable()
     // Un humain commence par lire « À toi de jouer » : ce temps-là ne doit pas
     // être pris sur sa décision. L'IA, elle, n'a pas d'annonce.
     if (!game.currentPlayer.bot && game.state.decisionDeadline !== null) {
@@ -453,4 +486,26 @@ export class Room {
       this.afterGameChange()
     }
   }
+}
+
+// ── Rangement des dés ────────────────────────────────────────────────────────
+
+/** Les huit cadres du plateau, comme les huit dés. */
+const TABLE_SIZE = 8
+
+const emptyTable = (): TableSlots => Array(TABLE_SIZE).fill(null)
+
+/**
+ * Le rangement reçu, s'il a une forme sensée : huit cadres, chacun vide ou
+ * occupé par un dé existant, sans doublon. Sinon `null`, et on l'ignore.
+ */
+export function sanitizeTable(slots: unknown, diceCount: number): TableSlots | null {
+  if (!Array.isArray(slots) || slots.length !== TABLE_SIZE) return null
+  const seen = new Set<number>()
+  for (const id of slots) {
+    if (id === null) continue
+    if (!Number.isInteger(id) || id < 0 || id >= diceCount || seen.has(id)) return null
+    seen.add(id)
+  }
+  return [...slots] as TableSlots
 }

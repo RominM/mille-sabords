@@ -62,6 +62,18 @@ export const makeRoomCode = (): string =>
     () => ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)]
   ).join('')
 
+/**
+ * Rangement des dés dans les huit cadres : un identifiant de dé par cadre, ou
+ * `null` pour un cadre vide.
+ *
+ * Ce n'est PAS une règle — le moteur ignore tout des cadres. C'est ce que le
+ * joueur actif a choisi de garder, et dans quel ordre : la seule chose que les
+ * autres ne pouvaient pas voir, puisque l'état de jeu ne connaît que les têtes
+ * verrouillées. Sans elle, ils regardaient un plateau muet et ne pouvaient pas
+ * commenter les choix de celui qui joue.
+ */
+export type TableSlots = (number | null)[]
+
 /** Un siège tel que le voient tous les joueurs pendant la salle d'attente. */
 export interface SeatView {
   id: string
@@ -99,6 +111,8 @@ export type ClientMessage =
   | { t: 'difficulty'; value: BotDifficulty }
   | { t: 'start' }
   | { t: 'act'; action: TurnAction }
+  /** Le joueur actif annonce son rangement. Relayé tel quel, sans arbitrage de règle. */
+  | { t: 'table'; slots: TableSlots }
 
 export type ServerMessage =
   | { t: 'joined'; code: string; youId: string }
@@ -113,5 +127,7 @@ export type ServerMessage =
    */
   | { t: 'roster'; seats: SeatView[] }
   | { t: 'state'; game: GameState; youId: string }
+  /** Rangement du joueur ACTIF, pour que toute la table le voie. */
+  | { t: 'table'; slots: TableSlots }
   /** Règle ou droit refusé. Jamais fatal : la salle continue. */
   | { t: 'error'; message: string }
