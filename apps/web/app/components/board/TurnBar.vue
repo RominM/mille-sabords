@@ -18,7 +18,9 @@
  *
  * Il ne mesure rien : la valeur vient du moteur en solo, du serveur en multi.
  */
-const props = withDefaults(defineProps<{ seconds: number; total?: number }>(), { total: 30 })
+import { DECISION_TIMEOUT_MS } from '@rf/engine'
+
+const props = withDefaults(defineProps<{ seconds: number; total?: number }>(), { total: DECISION_TIMEOUT_MS / 1000 })
 
 const ratio = computed(() => Math.max(0, Math.min(1, props.seconds / props.total)))
 /** Les dix dernières secondes changent de couleur — on ne lit plus un chiffre. */

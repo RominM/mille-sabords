@@ -26,8 +26,11 @@ export const MAX_PLAYERS = 8
  * Délai par DÉCISION (lancer, relancer, s'arrêter), et non par tour complet :
  * le compte repart à zéro à chaque lancer. Un joueur peut donc relancer autant
  * qu'il veut — ce qu'on borne, c'est le temps passé à choisir ses dés.
+ *
+ * 50 s et non plus 30 : en partie réelle, 30 s ne laissaient pas le temps de
+ * peser une relance risquée — ni aux autres de la commenter.
  */
-export const DECISION_TIMEOUT_MS = 30_000
+export const DECISION_TIMEOUT_MS = 50_000
 
 export interface Player {
   id: string
