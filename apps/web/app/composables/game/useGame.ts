@@ -183,6 +183,26 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     { immediate: true }
   )
 
+  /**
+   * Un tour qui S'OUVRE repart d'une table nette : rien de gardé, rien de rangé.
+   *
+   * En solo, `startTurn` s'en charge. Mais en multi, c'est le SERVEUR qui ouvre
+   * les tours, et `startTurn` n'est jamais appelé : la sélection du tour
+   * précédent survivait. Les identifiants de dés étant les mêmes d'un tour à
+   * l'autre (0 à 7), les dés gardés la fois d'avant sautaient d'eux-mêmes dans
+   * les cadres au premier lancer — chez le joueur actif comme chez ceux qui
+   * le regardaient.
+   *
+   * On s'accroche donc à l'ÉTAT, que tout le monde reçoit : un tour revenu en
+   * `first-roll` est un tour neuf.
+   */
+  watch(
+    () => turn.value?.phase,
+    (phase, before) => {
+      if (phase === 'first-roll' && before !== 'first-roll') clearTable()
+    }
+  )
+
   // ── Minuteur de DÉCISION ────────────────────────────────────────────────────
   // Il ne borne pas le tour mais chaque décision : un joueur peut relancer
   // autant qu'il veut, le compte repart à zéro à chaque lancer. Ce qu'on limite,
@@ -346,10 +366,14 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     startTurn()
   }
 
-  function startTurn(): void {
-    transient.value = ''
+  function clearTable(): void {
     selected.value = new Set()
     clearSlots()
+  }
+
+  function startTurn(): void {
+    transient.value = ''
+    clearTable()
     // Le serveur ouvre les tours de lui-même : le lui demander serait au mieux
     // ignoré, au pire une course avec sa propre horloge.
     if (!remote) transport.send({ type: 'start-turn' })
