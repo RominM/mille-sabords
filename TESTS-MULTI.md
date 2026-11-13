@@ -27,7 +27,7 @@ ajoute une IA.
 
 ## Test 4 — Temps écoulé (B ne touche à rien)
 
-- [ ] B a son temps de réflexion complet (30 s, ou 50 s si le point 1 est livré), annonce non comprise.
+- [ ] B a son temps de réflexion complet (50 s), annonce non comprise.
 - [ ] Ensuite la main passe **au joueur suivant, sans en sauter un**.
 
 ## Ressenti
