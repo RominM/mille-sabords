@@ -27,6 +27,17 @@ export function totalSkulls(state: TurnState): number {
   return diceSkulls(state.dice) + cardSkulls(state.card)
 }
 
+/**
+ * La tête de mort que la Gardienne relancera avec la prochaine relance, ou
+ * `null` si elle n'a rien à faire (carte absente ou déjà servie, aucune tête
+ * sur la table). Exportée pour que l'écran montre au joueur QUELLE tête part,
+ * sans refaire la règle de son côté.
+ */
+export function guardianTarget(state: TurnState): number | null {
+  if (!state.guardianAvailable) return null
+  return state.dice.find(d => d.face === 'skull' && d.locked)?.id ?? null
+}
+
 function lockSkulls(dice: Die[]): void {
   for (const d of dice) if (d.face === 'skull') d.locked = true
 }
@@ -214,30 +225,18 @@ export function applyAction(
       if (ids.size !== action.diceIds.length)
         throw new IllegalActionError('Dés en double dans la sélection')
 
-      // Gardienne : une tête de mort relançable, une seule fois dans le tour
-      if (action.guardianDieId !== undefined) {
-        if (!state.guardianAvailable)
-          throw new IllegalActionError('Gardienne indisponible')
-        const die = state.dice.find(d => d.id === action.guardianDieId)
-        if (!die || die.face !== 'skull')
-          throw new IllegalActionError("La Gardienne ne relance qu'une tête de mort")
-        if (!ids.has(die.id))
-          throw new IllegalActionError("Le dé Gardienne doit faire partie de la sélection")
-        die.locked = false
+      // Gardienne : dès qu'une tête de mort est sur la table, elle part D'OFFICE
+      // avec la relance suivante, et la carte est dépensée.
+      //
+      // Ni choix ni clic, et pas de report. Laissée « en réserve » jusqu'à ce
+      // que le joueur s'en serve, elle devenait un joker : une 3e tête ne
+      // perdait plus le tour, puisqu'une Gardienne inutilisée pouvait encore la
+      // renvoyer — et l'on relançait indéfiniment avec trois têtes sur la table.
+      const rescued = guardianTarget(state)
+      if (rescued !== null) {
+        state.dice[rescued]!.locked = false
+        ids.add(rescued)
         state.guardianAvailable = false
-      }
-
-      // À 3 têtes de mort, la Gardienne est le SEUL moyen de poursuivre le tour :
-      // elle part donc D'OFFICE avec la relance, sans que le joueur ait à
-      // désigner la tête. Le lui demander laissait croire qu'on pouvait relancer
-      // sans elle — et poursuivre un tour déjà perdu, tête après tête.
-      if (state.guardianAvailable && totalSkulls(state) >= 3) {
-        const rescued = state.dice.find(d => d.face === 'skull' && d.locked)
-        if (rescued) {
-          rescued.locked = false
-          ids.add(rescued.id)
-          state.guardianAvailable = false
-        }
       }
 
       const selected = state.dice.filter(d => ids.has(d.id))

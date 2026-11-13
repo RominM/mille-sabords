@@ -92,13 +92,25 @@ describe('choix de la relance', () => {
 
 describe('décision arrêter / relancer', () => {
   it('score solide + 2 têtes → s’arrête (l’espérance ne vaut pas le risque)', () => {
-    // 3 pièces (100 combo + 300 trésor = 400) et 2 têtes verrouillées
-    const t = decisionTurn({ type: 'guardian' }, [C, C, C, K, K, S, M, P])
+    // 3 pièces (100 combo + 300 trésor = 400) et 2 têtes verrouillées. La
+    // Gardienne sert ici de carte NEUTRE : on la donne pour déjà servie, sinon
+    // elle emporterait une tête à la relance et changerait tout le calcul.
+    const t = { ...decisionTurn({ type: 'guardian' }, [C, C, C, K, K, S, M, P]), guardianAvailable: false }
     const stopNow = scoreTurn(t.dice, t.card).total
     expect(stopNow).toBe(400)
     const ids = chooseRerollSet(t)!
     expect(expectedStopAfterReroll(t, ids)).toBeLessThan(stopNow)
     expect(decideAction(t, { difficulty: 'hard' }).type).toBe('stop')
+  })
+
+  it('la Gardienne active rend la même relance plus sûre : une tête repart', () => {
+    const faces: DieFace[] = [C, C, C, K, K, S, M, P]
+    const active = decisionTurn({ type: 'guardian' }, faces)
+    const spent = { ...active, guardianAvailable: false }
+    const ids = chooseRerollSet(active)!
+    expect(ids).toEqual([5, 6, 7])
+    // L'espérance doit compter le dé de plus : la tête emportée.
+    expect(expectedStopAfterReroll(active, ids)).toBeGreaterThan(expectedStopAfterReroll(spent, ids))
   })
 
   it('beaucoup de dés frais, aucune tête → relance', () => {

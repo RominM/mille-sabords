@@ -16,7 +16,7 @@
         v-if="dice[index - 1]"
         :die="dice[index - 1]!"
         :clickable="clickable"
-        :rescuable="guardianOffered && dice[index - 1]!.face === 'skull'"
+        :rescuable="dice[index - 1]!.id === guardianDie"
         :selected="dice[index - 1]!.id !== guardianDie"
         seated
         @click="emit('toggle', dice[index - 1]!.id)"
@@ -40,9 +40,7 @@ defineProps({
   /** Un dé par emplacement, à SA place — `null` pour une case vide. */
   dice: { type: Array as PropType<(Die | null)[]>, required: true },
   clickable: { type: Boolean, default: false },
-  /** La Gardienne peut reprendre une tête de mort, une fois dans le tour. */
-  guardianOffered: { type: Boolean, default: false },
-  /** Tête confiée à la Gardienne : elle se distingue des autres. */
+  /** Tête que la Gardienne emportera à la relance : elle se distingue des autres. */
   guardianDie: { type: Number as PropType<number | null>, default: null },
   /** Emplacement survolé pendant un glissé, pour l'éclairer avant le lâcher. */
   hovered: { type: Number as PropType<number | null>, default: null },

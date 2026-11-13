@@ -31,7 +31,7 @@ const EFFECT: Record<PirateCard['type'], string> = {
   'treasure-island': 'Île au Trésor : les dés gardés sont réservés sur la carte et comptent à la fin, même après trois têtes.',
   pirate: 'Carte Pirate : les points du tour sont doublés. Les têtes de mort du Bateau valent 200 au lieu de 100.',
   skulls: 'Tête de Mort : elle compte comme une tête déjà sortie, avant même ton premier lancer.',
-  guardian: 'Gardienne : une fois dans le tour, tu peux relancer une tête de mort déjà tombée.',
+  guardian: 'Gardienne : dès qu’une tête de mort tombe, elle repart d’office avec ta relance suivante — une seule fois dans le tour.',
   ship: 'Bateau Pirate : réunis le quota de sabres pour empocher la prime — sinon tu la perds.',
   coin: 'Pièce d’or : elle compte comme une pièce supplémentaire, +100 points.',
   diamond: 'Diamant : il compte comme un diamant supplémentaire, +100 points.',

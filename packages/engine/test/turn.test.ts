@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyAction, createTurn, IllegalActionError } from '../src/turn'
+import { applyAction, createTurn, guardianTarget, IllegalActionError } from '../src/turn'
 import { Game } from '../src/game'
 import type { DieFace, RollFn, TurnState } from '../src/types'
 
@@ -192,16 +192,6 @@ describe('Gardienne face aux 3 têtes', () => {
     expect(t.outcome!.score).toBe(0)
   })
 
-  it('la Gardienne relance une tête et le tour repart', () => {
-    let t = createTurn({ type: 'guardian' })
-    t = applyAction(t, { type: 'roll' }, roller([K, K, K, S, S, M, P, C]))
-    // La tête 0 est confiée à la Gardienne et repart avec le dé 3.
-    t = applyAction(t, { type: 'reroll', diceIds: [0, 3], guardianDieId: 0 }, roller([C, C]))
-    expect(t.phase).toBe('decision')
-    expect(t.guardianAvailable).toBe(false)
-    expect(t.dice.filter(d => d.face === K)).toHaveLength(2)
-  })
-
   it('à 3 têtes, la Gardienne part D’OFFICE avec la relance', () => {
     let t = createTurn({ type: 'guardian' })
     t = applyAction(t, { type: 'roll' }, roller([K, K, K, S, S, M, P, C]))
@@ -258,26 +248,56 @@ describe('carte Tête de Mort et seuil des 3 têtes', () => {
 })
 
 describe('carte Gardienne', () => {
-  it('relance une tête de mort, une seule fois', () => {
+  it('la tête de mort repart D’OFFICE dès la relance suivante', () => {
     let t = createTurn({ type: 'guardian' })
     t = applyAction(t, { type: 'roll' }, roller([K, K, S, S, M, M, P, C]))
+    expect(guardianTarget(t)).toBe(0)
 
-    t = applyAction(
-      t,
-      { type: 'reroll', diceIds: [0, 6, 7], guardianDieId: 0 },
-      roller([S, S, S]),
-    )
-    expect(t.phase).toBe('decision')
+    // Le joueur ne désigne que les dés 6 et 7 : la tête 0 les accompagne.
+    t = applyAction(t, { type: 'reroll', diceIds: [6, 7] }, roller([C, S, S]))
     expect(t.guardianAvailable).toBe(false)
-    expect(t.dice[0]!.face).toBe(S)
+    expect(t.dice[0]!.face).toBe(C)
+    expect(t.dice[0]!.locked).toBe(false)
+    expect(t.dice.filter(d => d.face === K)).toHaveLength(1)
+    expect(guardianTarget(t)).toBeNull()
+  })
 
-    // Deuxième usage interdit
+  it('la tête renvoyée peut retomber sur une tête : elle se reverrouille', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, S, S, M, M, P, C, D]))
+    t = applyAction(t, { type: 'reroll', diceIds: [3, 4] }, roller([K, S, S]))
+    expect(t.dice[0]!.locked).toBe(true)
+    expect(t.guardianAvailable).toBe(false)
+  })
+
+  it('pas de joker : une 3e tête après la relance de la Gardienne clôt le tour', () => {
+    // Le cas vécu en partie : 2 têtes, on relance, une 3e sort. La Gardienne
+    // a déjà servi à cette relance — rien ne la garde plus en réserve.
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, K, S, S, M, M, P, C]))
+    t = applyAction(t, { type: 'reroll', diceIds: [4, 5] }, roller([K, K, S]))
+    expect(t.phase).toBe('ended')
+    expect(t.outcome!.reason).toBe('three-skulls')
+  })
+
+  it('sans tête sur la table, la Gardienne attend la première', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([S, S, M, M, P, P, C, D]))
+    expect(guardianTarget(t)).toBeNull()
+    t = applyAction(t, { type: 'reroll', diceIds: [2, 3] }, roller([K, C]))
+    expect(t.guardianAvailable).toBe(true)
+    expect(guardianTarget(t)).toBe(2)
+    // Et c'est la relance SUIVANTE qui l'emporte.
+    t = applyAction(t, { type: 'reroll', diceIds: [4, 5] }, roller([C, C, C]))
+    expect(t.guardianAvailable).toBe(false)
+    expect(t.dice.some(d => d.face === K)).toBe(false)
+  })
+
+  it('la tête emportée compte dans les 8 dés : il faut en garder un', () => {
+    let t = createTurn({ type: 'guardian' })
+    t = applyAction(t, { type: 'roll' }, roller([K, S, S, M, M, P, C, D]))
     expect(() =>
-      applyAction(
-        t,
-        { type: 'reroll', diceIds: [1, 2], guardianDieId: 1 },
-        roller([S, S]),
-      ),
+      applyAction(t, { type: 'reroll', diceIds: [1, 2, 3, 4, 5, 6, 7] }, roller()),
     ).toThrow(IllegalActionError)
   })
 })

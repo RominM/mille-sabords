@@ -34,7 +34,6 @@
           v-if="turn"
           :dice="slotDice"
           :clickable="clickable"
-          :guardian-offered="guardianOffered"
           :guardian-die="guardianDie"
           :hovered="hovered"
           :held-die="heldDie"
@@ -106,6 +105,7 @@
  * page ne fait que la refléter.
  */
 import layoutUrl from '~/assets/images/ui/layout-game.webp'
+import { guardianTarget } from '@rf/engine'
 import darkLaugh from '~/assets/sounds/soundscrate-evil-chuckle-02.mp3'
 
 const route = useRoute()
@@ -148,7 +148,6 @@ const {
   toggleDie,
   eligibleReroll,
   avatarOf,
-  guardianDie,
   potentialScore
 } = useGame(isSolo ? createLocalTransport() : createNetworkTransport(room))
 
@@ -226,15 +225,12 @@ const canRoll = computed(() => {
 })
 
 /**
- * La Gardienne n'a de sens qu'affichée : sans indication, le joueur ignore
- * qu'il peut renvoyer une tête de mort — et perd un tour qu'il pouvait sauver.
+ * La tête que la Gardienne emportera avec la prochaine relance. Le moteur la
+ * désigne ; l'écran ne fait que la montrer — à tous, spectateurs compris : ils
+ * doivent comprendre pourquoi une tête quitte son cadre.
  */
-const guardianOffered = computed(
-  () =>
-    turn.value?.guardianAvailable === true &&
-    turn.value?.phase === 'decision' &&
-    isMySeat.value &&
-    turn.value.dice.some((die) => die.face === 'skull')
+const guardianDie = computed(() =>
+  turn.value?.phase === 'decision' ? guardianTarget(turn.value) : null
 )
 
 const skulls = computed(() => {
@@ -245,16 +241,6 @@ const skulls = computed(() => {
     (state.card.type === 'skulls' ? state.card.count : 0)
   )
 })
-
-/**
- * Trois têtes sont tombées et la Gardienne est encore là : elle partira d'office
- * avec la prochaine relance. Le joueur n'a rien à désigner — mais il doit savoir
- * que s'arrêter ici ne rapporte rien.
- */
-const guardianRescue = computed(
-  () =>
-    guardianOffered.value && skulls.value >= 3
-)
 
 /**
  * En multi, tant que le serveur n'a rien envoyé, il n'y a pas de table à
@@ -335,8 +321,8 @@ const hint = useBoardHint({
   turn,
   transient,
   guardianDie,
-  guardianOffered,
-  guardianRescue,
+  skulls,
+  mine: isMySeat,
   botTurn: isBotTurn,
   canRoll
 })

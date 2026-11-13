@@ -80,7 +80,7 @@ export function describeCard(card: PirateCard): { name: string; effect: string }
     case 'guardian':
       return {
         name: 'Gardienne (Sorcière)',
-        effect: 'Relance UNE tête de mort, une seule fois dans le tour (commande « guard »).',
+        effect: 'Une tête de mort repart d’office avec la relance qui suit sa sortie — une seule fois dans le tour.',
       }
     case 'ship':
       return {

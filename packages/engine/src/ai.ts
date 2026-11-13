@@ -17,7 +17,7 @@
  */
 import type { Game } from './game'
 import { scoreTurn } from './scoring'
-import { applyAction } from './turn'
+import { applyAction, guardianTarget } from './turn'
 import { FACES } from './types'
 import type { DieFace, RollFn, TurnAction, TurnState } from './types'
 
@@ -77,12 +77,16 @@ export function chooseRerollSet(turn: TurnState): number[] | null {
   }
 
   let candidates = eligible.filter(d => !scores(d.face!))
+  // La tête de la Gardienne part d'office avec la relance : elle compte dans le
+  // nombre de dés relancés, sans figurer dans la sélection.
+  const rescue = guardianTarget(turn) !== null ? 1 : 0
 
   // La règle interdit de relancer l'intégralité des dés : il faut toujours en
-  // réserver un. Le cas ne se présente que sans tête de mort et sans rien qui
-  // marque — on garde alors le dé du groupe le plus fourni, celui qui a le plus
-  // de chances de compléter une combinaison.
-  if (candidates.length === turn.dice.length) {
+  // réserver un. Le cas se présente sans rien qui marque, et sans tête de mort
+  // — ou avec une seule, que la Gardienne emporte. On garde alors le dé du
+  // groupe le plus fourni, celui qui a le plus de chances de compléter une
+  // combinaison.
+  if (candidates.length > 0 && candidates.length + rescue >= turn.dice.length) {
     const keep = candidates.reduce((best, d) =>
       (counts.get(groupKey(d.face!, merge)) ?? 0) > (counts.get(groupKey(best.face!, merge)) ?? 0)
         ? d
@@ -91,7 +95,7 @@ export function chooseRerollSet(turn: TurnState): number[] | null {
     candidates = candidates.filter(d => d.id !== keep.id)
   }
 
-  if (candidates.length < 2) return null
+  if (candidates.length + rescue < 2) return null
   return candidates.map(d => d.id)
 }
 
@@ -148,7 +152,10 @@ function faceMultisets(r: number): { faces: DieFace[]; prob: number }[] {
  */
 export function expectedStopAfterReroll(turn: TurnState, rerollIds: number[]): number {
   let ev = 0
-  for (const { faces, prob } of faceMultisets(rerollIds.length)) {
+  // Un dé de plus en l'air quand la Gardienne emporte sa tête de mort : sans
+  // lui, le dernier dé relancé retomberait sans face.
+  const rolled = rerollIds.length + (guardianTarget(turn) !== null ? 1 : 0)
+  for (const { faces, prob } of faceMultisets(rolled)) {
     const roller: RollFn = () => faces
     const next = applyAction(turn, { type: 'reroll', diceIds: rerollIds }, roller)
     // On demande au moteur ce que vaut un ARRÊT, au lieu de rescorer les dés à

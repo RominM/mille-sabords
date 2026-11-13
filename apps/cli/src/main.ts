@@ -205,7 +205,6 @@ function showTable(game: Game): void {
 const HELP = [
   bold('\nCommandes (phase de décision) :'),
   '  reroll <id…>   (r)  relance les dés indiqués (min 2, au moins 1 réservé)',
-  '  guard <tête> <id…> (g)  Gardienne : relance une tête de mort (une fois)',
   '  bank <id…>          Île au Trésor : réserve des dés',
   '  unbank <id…>        Île au Trésor : reprend des dés réservés',
   '  stop           (s)  s’arrête et compte les points',
@@ -316,18 +315,6 @@ async function playTurn(game: Game, config: Config): Promise<boolean> {
         case 'r': {
           const diceIds = parseIds(rest)
           await commitRoll(game, config, { type: 'reroll', diceIds })
-          break
-        }
-        case 'guard':
-        case 'g': {
-          const ids = parseIds(rest)
-          const guardianDieId = ids[0]
-          if (guardianDieId === undefined) {
-            console.log(red('  Usage : guard <id de la tête> <autres id…>'))
-            break
-          }
-          const diceIds = [...new Set(ids)]
-          await commitRoll(game, config, { type: 'reroll', diceIds, guardianDieId })
           break
         }
         default:

@@ -11,7 +11,7 @@ import {
   applyAction,
   decideAction,
   DECISION_TIMEOUT_MS,
-  totalSkulls,
+  guardianTarget,
   WINNING_SCORE,
   type BotDifficulty,
   type DieFace,
@@ -45,8 +45,6 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
   // transport, ni du minuteur, ni de la partie (cf. `useDiceSlots`).
   const { slots, slotOfDie, moveToSlot, syncSlots, clearSlots } = useDiceSlots(MAX_DICE)
 
-  /** Tête de mort désignée pour la relance exceptionnelle de la Gardienne. */
-  const guardianDie = ref<number | null>(null)
   const botThinking = ref(false)
   /**
    * Celui dont le tour est À L'ÉCRAN — et non le joueur courant du moteur.
@@ -134,6 +132,8 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
    */
   const lockedBeforeThrow = ref<number[]>([])
   let lockedNow: number[] = []
+  /** Tête que la Gardienne emportera au prochain jet, vue AVANT ce jet. */
+  let rescuedNow: number | null = null
 
   /**
    * Arme le drapeau « des dés sont en l'air ».
@@ -168,12 +168,17 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
       if (faces.some((face, i) => face !== null && face !== knownFaces[i])) {
         // On retient le verrouillage tel qu'il était AVANT ce jet : c'est lui
         // qui dit quelles têtes restent dans leur cadre pendant le vol.
-        lockedBeforeThrow.value = lockedNow
+        // Sauf la tête que la Gardienne vient d'emporter : elle a quitté son
+        // cadre pour rouler avec les autres, elle ne doit pas y rester figée.
+        lockedBeforeThrow.value = lockedNow.filter((id) => id !== rescuedNow)
         rollSeq.value += 1
         markRolling()
       }
       knownFaces = faces
       lockedNow = t ? t.dice.filter((d) => d.locked).map((d) => d.id) : []
+      // Seule une relance de décision emporte la tête : sur l'Île, la Gardienne
+      // n'a pas son mot à dire et les têtes restent dans leurs cadres.
+      rescuedNow = t?.phase === 'decision' ? guardianTarget(t) : null
     },
     { immediate: true }
   )
@@ -345,7 +350,6 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     transient.value = ''
     selected.value = new Set()
     clearSlots()
-    guardianDie.value = null
     // Le serveur ouvre les tours de lui-même : le lui demander serait au mieux
     // ignoré, au pire une course avec sa propre horloge.
     if (!remote) transport.send({ type: 'start-turn' })
@@ -407,13 +411,10 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     const ids = t.dice
       .filter((d) => d.face !== null && !d.locked && !d.banked && !selected.value.has(d.id))
       .map((d) => d.id)
-    // La tête confiée à la Gardienne repart AVEC les autres : le moteur exige
-    // qu'elle fasse partie de la sélection relancée.
-    if (guardianDie.value !== null) ids.push(guardianDie.value)
-    // À 3 têtes, le moteur emmène LUI-MÊME une tête dans la relance : un seul
-    // autre dé suffit alors à la rendre légale.
-    const rescue = t.guardianAvailable && totalSkulls(t) >= 3 ? 1 : 0
-    if (ids.length + rescue < 2 || ids.length >= t.dice.length) return []
+    // La Gardienne emmène LUI-MÊME une tête dans la relance : elle compte dans
+    // les deux bornes — un seul autre dé suffit, mais les sept autres non.
+    const rescue = guardianTarget(t) !== null ? 1 : 0
+    if (ids.length + rescue < 2 || ids.length + rescue >= t.dice.length) return []
     return ids
   }
 
@@ -424,13 +425,9 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     const d = t.dice[id]!
     if (d.face === null) return
 
-    // Une tête de mort est maudite : seule la Gardienne peut la renvoyer, une
-    // fois par tour. Cliquer dessus la désigne (ou la relâche).
-    if (d.locked) {
-      if (!t.guardianAvailable || d.face !== 'skull') return
-      guardianDie.value = guardianDie.value === id ? null : id
-      return
-    }
+    // Une tête de mort est maudite. Même la Gardienne ne se commande pas : elle
+    // emporte sa tête d'office à la relance, il n'y a rien à cliquer.
+    if (d.locked) return
 
     // Île au Trésor : garder un dé, c'est le RÉSERVER sur la carte — les deux
     // gestes n'en font qu'un. Le clic fait donc l'aller-retour lui-même, et un
@@ -447,15 +444,7 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
 
   const roll = () => human(() => act({ type: 'roll' }), true)
   const reroll = () =>
-    human(() => {
-      const g = guardianDie.value
-      act({
-        type: 'reroll',
-        diceIds: eligibleReroll(),
-        ...(g !== null ? { guardianDieId: g } : {})
-      })
-      guardianDie.value = null
-    }, true)
+    human(() => act({ type: 'reroll', diceIds: eligibleReroll() }), true)
   const stop = () => human(() => act({ type: 'stop' }))
 
   /**
@@ -606,7 +595,6 @@ export function useGame(transport: GameTransport = createLocalTransport()) {
     continueGame,
     eligibleReroll,
     avatarOf,
-    guardianDie,
     potentialScore
   }
 }

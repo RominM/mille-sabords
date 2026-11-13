@@ -139,8 +139,11 @@ export interface TurnState {
 export type TurnAction =
   /** Premier lancer, ou lancer forcé sur l'Île de la Tête-de-Mort */
   | { type: 'roll' }
-  /** Relance des dés sélectionnés. guardianDieId : la tête de mort relancée via Gardienne */
-  | { type: 'reroll'; diceIds: number[]; guardianDieId?: number }
+  /**
+   * Relance des dés sélectionnés. La tête de mort de la Gardienne s'y ajoute
+   * d'elle-même : le joueur ne la désigne pas (cf. `guardianTarget`).
+   */
+  | { type: 'reroll'; diceIds: number[] }
   /** Île au Trésor : réserver des dés */
   | { type: 'bank'; diceIds: number[] }
   /** Île au Trésor : reprendre des dés réservés */

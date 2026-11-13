@@ -10,11 +10,12 @@ interface HintContext {
   turn: Ref<TurnState | null>
   /** Message d'erreur du moteur, s'il vient d'en refuser un. */
   transient: Ref<string>
-  /** Tête de mort confiée à la Gardienne. */
+  /** Tête de mort que la Gardienne emportera à la prochaine relance. */
   guardianDie: Ref<number | null>
-  guardianOffered: Ref<boolean>
-  /** Les 3 têtes sont là et la Gardienne va devoir servir. */
-  guardianRescue: Ref<boolean>
+  /** Têtes de mort en jeu, carte comprise. */
+  skulls: Ref<number>
+  /** Le siège actif est le mien : la Gardienne ne s'explique qu'à son joueur. */
+  mine: Ref<boolean>
   /** Vrai pendant le tour de l'IA : on ne lui explique pas les règles. */
   botTurn: Ref<boolean>
   canRoll: Ref<boolean>
@@ -31,8 +32,7 @@ interface HintContext {
  * qui garderait sa place.
  */
 export function useBoardHint(context: HintContext) {
-  const { turn, transient, guardianDie, guardianOffered, guardianRescue, botTurn, canRoll } =
-    context
+  const { turn, transient, guardianDie, skulls, mine, botTurn, canRoll } = context
 
   return computed<BoardHint | null>(() => {
     if (botTurn.value) return null
@@ -48,26 +48,20 @@ export function useBoardHint(context: HintContext) {
 
     if (transient.value) return { text: `⛔ ${transient.value}`, tone: 'danger' }
 
-    // Trois têtes sont sorties : le tour est perdu si le joueur s'arrête. La
-    // Gardienne partira d'office avec la relance — il n'a rien à désigner, mais
-    // il doit savoir que c'est SA dernière carte, et qu'elle se joue en relançant.
-    if (guardianRescue.value) {
-      return {
-        text: '🗝 3 têtes de mort — la Gardienne en renverra une avec ta prochaine relance. T’arrêter maintenant ne rapporte rien.',
-        tone: 'guardian'
+    // La Gardienne part d'office : le joueur n'a rien à faire, mais il doit
+    // savoir qu'une tête va quitter son cadre — et, à trois têtes, que
+    // s'arrêter ne rapporte rien puisque seule la relance le sauve.
+    if (guardianDie.value !== null && mine.value) {
+      if (skulls.value >= 3) {
+        return {
+          text: '🗝 3 têtes de mort — la Gardienne en renvoie une avec ta relance. T’arrêter maintenant ne rapporte rien.',
+          tone: 'guardian'
+        }
       }
-    }
-
-    if (guardianDie.value !== null) {
+      // Le rappel du dé à garder n'est pas décoratif : la tête emportée compte
+      // dans la relance, et relancer les sept autres ferait huit dés.
       return {
-        text: '🗝 Tête de mort confiée à la Gardienne — elle repartira à la relance.',
-        tone: 'guardian'
-      }
-    }
-
-    if (guardianOffered.value) {
-      return {
-        text: '🗝 Gardienne : clique une tête de mort pour la relancer, une fois dans le tour.',
+        text: '🗝 Gardienne : ta tête de mort repart d’office avec ta prochaine relance — garde au moins un dé.',
         tone: 'guardian'
       }
     }

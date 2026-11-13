@@ -9,7 +9,7 @@
       'die-view--banked': die.banked,
       'die-view--rescuable': rescuable && die.locked
     }"
-    :disabled="die.locked && !rescuable"
+    :disabled="die.locked"
     type="button"
     :aria-label="die.face ?? 'dé vide'"
     @click="onClick"
@@ -43,7 +43,7 @@ const props = defineProps<{
   die: Die
   clickable?: boolean
   selected?: boolean
-  /** Tête de mort récupérable par la Gardienne : elle redevient cliquable. */
+  /** Tête que la Gardienne emporte à la prochaine relance. Signalée, PAS cliquable. */
   rescuable?: boolean
   /** Compteur de jets : toute incrémentation fait rouler le dé. */
   roll?: number
@@ -65,12 +65,9 @@ const emit = defineEmits<{ click: [] }>()
 
 /**
  * Un dé n'est cliquable que s'il est lancé et que la phase le permet. Une tête
- * de mort est maudite — sauf quand la Gardienne peut la reprendre, seul cas où
- * un dé verrouillé accepte le clic.
+ * de mort est maudite, toujours : la Gardienne l'emporte d'elle-même.
  */
-const canClick = computed(
-  () => props.clickable && props.die.face !== null && (!props.die.locked || !!props.rescuable)
-)
+const canClick = computed(() => props.clickable && props.die.face !== null && !props.die.locked)
 
 function onClick(): void {
   if (canClick.value) emit('click')
@@ -126,8 +123,6 @@ function onClick(): void {
   }
 
   &--rescuable {
-    cursor: pointer;
-
     &::before {
       opacity: 1;
       background: radial-gradient(ellipse at center, rgba(232, 196, 104, 0.9), transparent 70%);

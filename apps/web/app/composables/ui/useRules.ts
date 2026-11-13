@@ -9,7 +9,7 @@ export const useRules = () => {
   const rules: string[] = [
     `Le premier à ${WINNING_SCORE} points déclenche le dernier tour — le meilleur score l'emporte, et à égalité la victoire est partagée.`,
     'Trois têtes de mort et le tour est perdu : les têtes sont maudites, impossible de les relancer.',
-    'Carte Gardienne : à trois têtes de mort, elle en renvoie une d’office avec ta prochaine relance — une seule fois dans le tour.',
+    'Carte Gardienne : dès qu’une tête de mort tombe, elle repart d’office avec ta relance suivante — une seule fois dans le tour. La tête emportée compte parmi les dés relancés : garde-en toujours au moins un.',
     'Une relance se fait avec au moins deux dés, et tu dois toujours en garder un.',
     'Trois symboles identiques ou plus rapportent des points (100 pour 3, jusqu’à 4000 pour 8).',
     'Chaque pièce d’or et chaque diamant valent 100 points de plus.',
